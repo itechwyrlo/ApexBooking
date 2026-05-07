@@ -1,0 +1,153 @@
+Organization Registration and Login
+What this feature does
+An organization signs up on your platform, verifies their account, and logs in to access their workspace. This is the entry point of the entire system.
+Who triggers this
+The organization admin. This is the person who owns or manages the business and wants to offer bookings.
+Sub-features
+
+Registration
+Email verification
+Login
+Password reset
+Session management
+
+
+SUB-FEATURE 1: Registration
+What it does
+Collects basic information about the organization and the admin who owns it. Creates two records: one for the organization, one for the admin user.
+Fields required
+Admin personal details:
+
+First name
+Last name
+Email address
+Password
+Confirm password
+
+Organization details:
+
+Organization name
+Industry type (salon, clinic, gym, legal, etc.) - dropdown
+Phone number
+Country
+
+Flow
+
+Admin visits your platform and clicks "Register".
+Admin fills out the form above.
+Admin clicks "Create Account".
+System checks if the email is already registered. If yes, show error "Email already in use".
+System validates all fields. Password must be at least 8 characters, one uppercase, one number.
+System creates the organization record.
+System creates the admin user record and links it to the organization.
+System auto-generates a workspace slug from the organization name. Example: "Acme Salon" becomes "acme-salon". This becomes their booking URL later.
+System sends a verification email to the admin.
+Admin is redirected to a "Check your email" screen.
+
+Data created
+Organization record:
+
+ID
+Name
+Industry
+Phone
+Country
+Slug (unique, URL-safe)
+Status (unverified, active, suspended)
+Created at
+
+Admin user record:
+
+ID
+Organization ID
+First name
+Last name
+Email
+Password (hashed)
+Role (admin)
+Status (unverified)
+Created at
+
+
+SUB-FEATURE 2: Email Verification
+What it does
+Confirms the admin owns the email address they registered with. The account is not usable until this step is complete.
+Flow
+
+Admin receives a verification email with a link.
+The link contains a unique token tied to their account. Example: yourbookingapp.com/verify?token=abc123
+Admin clicks the link.
+System checks if the token is valid and not expired. Token expires in 24 hours.
+If valid, system updates the admin status to "verified" and organization status to "active".
+Admin is redirected to the login page with a message "Email verified. You can now log in."
+If the token is expired, show a "Resend verification email" option.
+
+Edge cases
+
+Admin clicks the link twice. System shows "Already verified. Please log in."
+Token does not exist. System shows "Invalid link."
+Admin never verifies. Account stays unverified. They cannot log in.
+
+
+SUB-FEATURE 3: Login
+What it does
+Authenticates the admin and gives them access to their workspace.
+Fields required
+
+Email address
+Password
+
+Flow
+
+Admin visits the login page.
+Admin enters email and password.
+Admin clicks "Log in".
+System checks if the email exists. If not, show "Invalid email or password." Do not specify which one is wrong for security.
+System checks if the account is verified. If not, show "Please verify your email first." with a resend option.
+System checks if the account is suspended. If yes, show "Your account has been suspended. Contact support."
+System validates the password against the stored hash.
+If all checks pass, system creates a session or issues a token (JWT or session cookie).
+Admin is redirected to their workspace dashboard.
+
+Security rules
+
+After 5 failed login attempts, lock the account for 15 minutes.
+Show a generic error message. Never tell the admin which field is wrong.
+All login attempts are logged with timestamp and IP address.
+
+
+SUB-FEATURE 4: Password Reset
+What it does
+Allows the admin to recover access if they forget their password.
+Flow
+
+Admin clicks "Forgot password" on the login page.
+Admin enters their email address.
+System checks if the email exists. Whether it exists or not, show the same message: "If that email is registered, you will receive a reset link." This prevents email enumeration.
+If the email exists, system sends a password reset email with a unique token. Token expires in 1 hour.
+Admin clicks the link in the email.
+System validates the token. If expired or invalid, show an error with an option to request a new one.
+Admin enters a new password and confirms it.
+System updates the password and invalidates the token.
+System invalidates all existing sessions for that account.
+Admin is redirected to login with the message "Password updated. Please log in."
+
+
+SUB-FEATURE 5: Session Management
+What it does
+Controls how long an admin stays logged in and handles logout.
+Rules
+
+Session lasts 7 days if the admin selects "Remember me".
+Session lasts until the browser is closed if "Remember me" is not selected.
+Admin can log out manually. This destroys the session immediately.
+If the session expires, admin is redirected to login with the message "Your session has expired."
+One admin account supports multiple active sessions across devices. Example: logged in on laptop and phone at the same time.
+When the admin resets their password, all sessions across all devices are invalidated.
+
+
+What is NOT part of this feature
+
+Social login (Google, Facebook). Not in scope for now.
+Two-factor authentication. Add later.
+Admin inviting other admins. That is part of Feature 2.

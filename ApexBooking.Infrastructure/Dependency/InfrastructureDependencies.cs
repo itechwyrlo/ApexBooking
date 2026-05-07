@@ -1,0 +1,40 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ApexBooking.Core.Domain.Interfaces;
+using ApexBooking.Core.Domain.Services.Cookie;
+using ApexBooking.Core.Domain.Services.Notification;
+using ApexBooking.Core.Domain.Services.TokenService;
+using ApexBooking.Infrastructure.Configuration;
+using ApexBooking.Infrastructure.ExternalServices.Brevo;
+using ApexBooking.Infrastructure.ExternalServices.Context;
+using ApexBooking.Infrastructure.ExternalServices.Cookie;
+using ApexBooking.Infrastructure.ExternalServices.Token;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace ApexBooking.Infrastructure.Dependency
+{
+    public static class InfrastructureDependencies
+    {
+        public static IServiceCollection AddInfrastructureService(this IServiceCollection service, IConfiguration config)
+        {
+            service.AddHttpContextAccessor();
+            service.AddMemoryCache();
+            service.AddScoped<IUserContextService, UserContextService>();
+            service.AddScoped<ITokenService, JwtTokenService>();
+            service.AddScoped<INotificationService, BrevoSmtpService>();
+             service.AddScoped<ICookieService, CookieService>();
+            
+            // Register configuration options
+            service.Configure<EmailSettings>(config.GetSection("EmailSettings"));
+            service.Configure<JwtOptions>(config.GetSection("Jwt"));
+            
+            // Add HttpClient for Brevo service
+            service.AddHttpClient();
+            
+            return service;
+        }
+    }
+}
