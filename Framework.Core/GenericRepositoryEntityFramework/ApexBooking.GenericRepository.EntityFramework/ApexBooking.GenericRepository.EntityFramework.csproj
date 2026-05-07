@@ -7,12 +7,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.1"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.1"/>
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.7" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\GenericRepository\ApexBooking.GenericRepository.Abstractions\ApexBooking.GenericRepository.Abstractions.csproj"/>
-    <ProjectReference Include="..\..\SharedKernel\ApexBooking.SharedKernel\ApexBooking.SharedKernel.csproj"/>
+    <ProjectReference Include="..\..\GenericRepository\ApexBooking.GenericRepository.Abstractions\ApexBooking.GenericRepository.Abstractions.csproj" />
+    <ProjectReference Include="..\..\SharedKernel\ApexBooking.SharedKernel\ApexBooking.SharedKernel.csproj" />
   </ItemGroup>
 </Project>
