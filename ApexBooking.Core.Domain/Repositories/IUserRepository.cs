@@ -11,9 +11,13 @@ public interface IUserRepository : IGenericRepository<User>
     Task<User?> FindByEmailAsync(TenantId tenantId, string email);
     Task<User?> FindByEmailAcrossAllTenantsAsync(string email);
     Task<User?> FindByRefreshTokenAsync(string refreshToken);
+    //unused method
     Task<bool> EmailExistsAsync(TenantId tenantId, string email);
+    //unused method
     Task<User?> FindByInvitationTokenAsync(string token);
+    //unused method
     Task<List<User>> GetUsersByRoleAsync(TenantId tenantId, UserRole role);
+    //unused method
     Task<List<User>> GetStaffWithResourceAssignmentsAsync(TenantId tenantId, ResourceId resourceId);
     Task<bool> CheckPasswordAsync(User user, string password);
     Task<IdentityResult> CreateAsync(User user, string password);
@@ -25,4 +29,5 @@ public interface IUserRepository : IGenericRepository<User>
     Task<bool> VerifyUserTokenAsync(User user, string token, string tokenProvider, string purpose);
     Task<IdentityResult> ResetPasswordAsync(User user, string token, string newPassword);
     Task<User> GetUserByEmailTokenAsync(string token);
+    Task<List<User>> GetAllByTenantAsync(TenantId tenantId);
 }

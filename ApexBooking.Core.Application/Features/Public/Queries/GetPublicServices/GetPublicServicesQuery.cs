@@ -8,5 +8,5 @@ using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Public.Queries.GetPublicServices
 {
-    public sealed record GetPublicServicesQuery(string Slug) : IQuery<BaseResponse<List<PublicServiceDto>>>;
+    public sealed record GetPublicServicesQuery(QueryObjectParams param, string Slug) : IQuery<PagedResult<PublicServiceDto>>;
 }

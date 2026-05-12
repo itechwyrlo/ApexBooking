@@ -1,16 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Threading.Tasks;
 using ApexBooking.Core.Domain.Entities;
-using ApexBooking.Core.Persistence.Mappings;
 using ApexBooking.SharedKernel.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Persistence.Data
 {
@@ -25,8 +20,10 @@ namespace ApexBooking.Core.Persistence.Data
 
         // Tenant entities
         public DbSet<Tenant> Tenants => Set<Tenant>();
+        public DbSet<TenantRequest> TenantRequests => Set<TenantRequest>();
         public DbSet<TenantProfile> TenantProfiles => Set<TenantProfile>();
         public DbSet<TenantSettings> TenantSettings => Set<TenantSettings>();
+        public DbSet<TenantPaymentPolicy> TenantPaymentPolicies => Set<TenantPaymentPolicy>();
 
         // Service entities
         public DbSet<Service> Services => Set<Service>();
@@ -41,11 +38,16 @@ namespace ApexBooking.Core.Persistence.Data
         // Booking entities
         public DbSet<Booking> Bookings => Set<Booking>();
         public DbSet<BookingStatusLog> BookingStatusLogs => Set<BookingStatusLog>();
+        public DbSet<Guest> Guests => Set<Guest>();
+        public DbSet<GuestCancellationToken> GuestCancellationTokens => Set<GuestCancellationToken>();
 
         // User entities
         public DbSet<User> Users => Set<User>();
         public DbSet<UserResourceAssignment> UserResourceAssignments => Set<UserResourceAssignment>();
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+        public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+        public DbSet<PlatformPaymentGateway> PlatformPaymentGateways => Set<PlatformPaymentGateway>();
 
         public ApexBookingDbContext(
             DbContextOptions<ApexBookingDbContext> options,
@@ -109,29 +111,32 @@ namespace ApexBooking.Core.Persistence.Data
 
         }
 
+        // Exposed for expression tree access in BuildTenantFilter
+        private TenantId? TenantContext => _tenantService?.TenantId;
+
         private LambdaExpression BuildTenantFilter(Type entityType)
         {
-            // At design time (migrations), _tenantService may be null
-            // In this case, skip tenant filtering
+            // Only skip at design-time (EF migrations) when no DI container is present
             if (_tenantService == null)
-            {
                 return null;
-            }
-
-            // If tenant context is not set, skip tenant filtering
-            // This prevents WHERE 0 = 1 when tenant context is null
-            if (_tenantService.TenantId == null)
-            {
-                return null;
-            }
 
             var param = Expression.Parameter(entityType, "e");
-            var property = Expression.Property(param, nameof(ITenantEntity.TenantId));
-            var tenantId = Expression.Property(
-                Expression.Constant(_tenantService),
-                nameof(ITenantService.TenantId));
-            var body = Expression.Equal(property, tenantId);
-            return Expression.Lambda(body, param);
+            var entityTenantId = Expression.Property(param, nameof(ITenantEntity.TenantId));
+
+            // Access TenantContext via 'this' — EF Core substitutes the current DbContext
+            // instance at query execution time, so each request reads its own tenant ID.
+            // Using Expression.Constant(_tenantService) directly would permanently capture
+            // the first request's scoped instance (bug fixed here).
+            var dbContextExpr = Expression.Constant(this, typeof(ApexBookingDbContext));
+            var currentTenantId = Expression.Property(dbContextExpr, nameof(TenantContext));
+            var nullTenantId = Expression.Constant(null, typeof(TenantId));
+
+            // TenantContext == null  →  no active tenant (super admin) — skip filter
+            // TenantContext != null  →  e.TenantId == TenantContext
+            var isNoContext = Expression.Equal(currentTenantId, nullTenantId);
+            var isSameTenant = Expression.Equal(entityTenantId, currentTenantId);
+
+            return Expression.Lambda(Expression.OrElse(isNoContext, isSameTenant), param);
         }
     }
 }

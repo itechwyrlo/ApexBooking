@@ -10,5 +10,5 @@ namespace ApexBooking.Core.Application.Features.Bookings.Queries.GetBookingById
 {
     public sealed record GetBookingByIdQuery(
         Guid BookingId
-    ) : IQuery<BaseResponse<BookingDto>>;
+    ) : IQuery<BaseResponse<BookingDetailDto>>;
 }

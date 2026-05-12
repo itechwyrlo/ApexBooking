@@ -1,0 +1,51 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../../services/axiosInstance';
+import { useAuth } from '../../../context/AuthContext';
+import type { BaseResponse } from '../../../types';
+
+interface SuperAdminLoginResponseData {
+  accessToken: string;
+}
+
+export const useSuperAdminLogin = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { setAccessToken } = useAuth();
+  const navigate = useNavigate();
+
+  const login = async (email: string, password: string): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await axiosInstance.post<BaseResponse<SuperAdminLoginResponseData>>(
+        '/auth/login/superadmin',
+        { email, password }
+      );
+      if (!result.isSuccess) {
+        setError(result?.errors?.[0]?.message ?? 'Login failed.');
+        return;
+      }
+      const accessToken = result.data?.accessToken;
+      if (!accessToken) {
+        setError('Missing access token.');
+        return;
+      }
+      sessionStorage.setItem('access_token', accessToken);
+      sessionStorage.setItem('isAuthenticated', 'true');
+      setAccessToken(accessToken);
+      navigate('/superadmin/payment-gateway');
+    } catch {
+      setError('Login failed.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    login,
+    isLoading,
+    error,
+    clearError: () => setError(null),
+  };
+};

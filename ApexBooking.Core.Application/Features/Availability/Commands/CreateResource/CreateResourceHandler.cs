@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ApexBooking.Core.Application.Common;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
@@ -23,15 +24,30 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.CreateReso
 
         public async Task<BaseResponse<Resource>> Handle(CreateResourceCommand command, CancellationToken ct)
         {
+            var tenantId = _contextService.GetCurrentTenantId();
+
+            var tenant = await _unitOfWork.TenantRepository.GetAsync(t => t.TenantId == tenantId);
+            if (tenant is null)
+                return BaseResponse<Resource>.Failure("Tenant not found.");
+
+            var limit = PlanLimits.MaxResources(tenant.Plan);
+            if (limit.HasValue)
+            {
+                var existing = await _unitOfWork.ResourceRepository.GetAllAsync();
+                if (existing.Count() >= limit.Value)
+                    throw new BusinessRuleBrokenException(
+                        $"Your {tenant.Plan} plan allows a maximum of {limit.Value} resources.");
+            }
+
             var resource = Resource.Create(
-                tenantId: _contextService.GetCurrentTenantId(),
+                tenantId: tenantId,
                 name: command.Name,
                 resourceType: command.ResourceType,
                 capacity: command.Capacity,
                 description: command.Description
             );
 
-             _unitOfWork.ResourceRepository.Add(resource);
+            _unitOfWork.ResourceRepository.Add(resource);
             await _unitOfWork.CompleteAsync(ct);
             return BaseResponse<Resource>.Success(resource);
         }

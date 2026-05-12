@@ -8,6 +8,10 @@ using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Public.Queries.GetPublicResources
 {
-    public sealed record GetPublicResourcesQuery(string Slug, Guid ServiceId)
+    public sealed record GetPublicResourcesQuery(
+        string Slug,
+        Guid ServiceId,
+        DateOnly? Date = null,
+        TimeOnly? Time = null)
         : IQuery<BaseResponse<List<PublicResourceDto>>>;
 }

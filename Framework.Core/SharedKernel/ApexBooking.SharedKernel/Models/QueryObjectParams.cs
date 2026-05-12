@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace ApexBooking.SharedKernel.Models
 {
     public record QueryObjectParams : PageParam
-{
-    public List<SortParam> SortingParams { get; init; } = [];
-}
+    {
+         public List<SortParam> SortingParams { get; init; } = [];
+    }
 }

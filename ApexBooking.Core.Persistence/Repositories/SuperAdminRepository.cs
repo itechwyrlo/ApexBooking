@@ -10,12 +10,14 @@ internal class SuperAdminRepository : GenericRepository<SuperAdmin>, ISuperAdmin
 {
     public SuperAdminRepository(ApexBookingDbContext context) : base(context) { }
 
+    //unused method
     public async Task<SuperAdmin?> FindByEmailAsync(string email)
     {
         return await Context.Set<SuperAdmin>()
             .FirstOrDefaultAsync(sa => sa.Email == email);
     }
 
+    //unused method
     public async Task<bool> EmailExistsAsync(string email)
     {
         return await Context.Set<SuperAdmin>()

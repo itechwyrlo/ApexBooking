@@ -26,5 +26,13 @@ namespace ApexBooking.Core.Domain.Repositories
         Task<Resource?> FindByIdWithAvailabilityAsync(
             ResourceId resourceId,
             CancellationToken cancellationToken = default);
+
+        Task<IEnumerable<Resource>> FindByIdsWithAvailabilityAsync(
+            IEnumerable<ResourceId> resourceIds,
+            CancellationToken cancellationToken = default);
+
+        Task<IEnumerable<Resource>> GetByTenantWithAvailabilityAsync(
+            TenantId tenantId,
+            CancellationToken cancellationToken = default);
     }
 }

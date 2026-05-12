@@ -1,13 +1,13 @@
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel;
+using ApexBooking.Core.Application.mapper;
 using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Bookings.Queries.GetBookings;
 
 internal sealed class GetBookingsQueryHandler
-    : IQueryHandler<GetBookingsQuery, BaseResponse<List<BookingDto>>>
+    : IQueryHandler<GetBookingsQuery, PagedResult<TenantBookingsDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -16,37 +16,18 @@ internal sealed class GetBookingsQueryHandler
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<BaseResponse<List<BookingDto>>> Handle(
+    public async Task<PagedResult<TenantBookingsDto>> Handle(
         GetBookingsQuery query,
         CancellationToken cancellationToken)
     {
-        var result = await _unitOfWork.BookingRepository
-            .GetPageAsync(
-                new QueryObjectParams { PageNumber = 1, PageSize = int.MaxValue })
+        var pagedResult = await _unitOfWork.BookingRepository
+            .GetPageAsync(query.param, predicate: null, b => b.Guest)
             .ConfigureAwait(false);
 
-        var dtos = result.data.Select(b => new BookingDto(
-            b.BookingId.Value,
-            b.BookingReference,
-            b.ServiceId.Value,
-            string.Empty,
-            b.ResourceId.Value,
-            string.Empty,
-            b.UserId,
-            b.ScheduledDate,
-            b.ScheduledStartTime,
-            b.ScheduledEndTime,
-            b.DurationMinutes,
-            b.Status,
-            b.ConfirmationMode,
-            b.PriceSnapshot,
-            b.CurrencyCode,
-            b.CustomerNotes,
-            b.CancellationReason,
-            b.CancelledAt,
-            b.CreatedAt
-        ));
+        var dtos = pagedResult.data
+            .Select(b => b.ToTenantDto())
+            .ToList();
 
-        return BaseResponse<List<BookingDto>>.Success(dtos.ToList());
+        return new PagedResult<TenantBookingsDto>(dtos, pagedResult.total);
     }
 }

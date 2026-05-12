@@ -10,26 +10,35 @@ import { ConfirmModal } from '../../../components/ui/modal/ConfirmModal';
 import { Pagination } from '../../../components/ui/pagination/Pagination';
 
 import { useBookings } from '../hooks/useBookings';
+import type { AdminBookingForm } from '../hooks/useBookings';
 import { useServices } from '../../service/hooks/useServices';
 import { useResources } from '../../resources/hooks/useResources';
 
 import type {
   Booking,
-  CreateBookingRequest,
   UpdateBookingRequest,
   BookingStatus,
 } from '../types';
 
 import type { ModelSchema } from '../../../components/ui/table/types';
 
+// const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
+//   Pending: 'Pending',
+//   Confirmed: 'Confirmed',
+//   Cancelled: 'Cancelled',
+//   Completed: 'Completed',
+// };
+
 const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
+  PendingPayment: 'Pending Payment',
   Pending: 'Pending',
   Confirmed: 'Confirmed',
   Cancelled: 'Cancelled',
   Completed: 'Completed',
+  NoShow: 'No Show',
 };
 
-const EMPTY_FORM: CreateBookingRequest = {
+const EMPTY_FORM: AdminBookingForm = {
   serviceId: '',
   resourceId: '',
   scheduledDate: '',
@@ -57,7 +66,7 @@ const BookingsPage: React.FC = () => {
   const [targetBooking, setTargetBooking] = useState<Booking | null>(null);
 
   const [formValue, setFormValue] =
-    useState<CreateBookingRequest>(EMPTY_FORM);
+    useState<AdminBookingForm>(EMPTY_FORM);
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -75,7 +84,7 @@ const BookingsPage: React.FC = () => {
   }, [services, resources, formValue.serviceId]);
 
   const bookingFormSchema = useMemo(
-    (): ModelSchema<CreateBookingRequest>[] => [
+    (): ModelSchema<AdminBookingForm>[] => [
       {
         key: 'serviceId',
         label: 'Service',
@@ -109,7 +118,7 @@ const BookingsPage: React.FC = () => {
     [services, filteredResources]
   );
 
-  const handleFormChange = (value: CreateBookingRequest) => {
+  const handleFormChange = (value: AdminBookingForm) => {
     if (value.serviceId !== formValue.serviceId) {
       setFormValue({ ...value, resourceId: '' });
     } else {
@@ -150,7 +159,7 @@ const BookingsPage: React.FC = () => {
     setShowConfirm(true);
   };
 
-  const handleSubmit = async (value: CreateBookingRequest): Promise<void> => {
+  const handleSubmit = async (value: AdminBookingForm): Promise<void> => {
     if (editingBooking) {
       const req: UpdateBookingRequest = {
         serviceId: value.serviceId,

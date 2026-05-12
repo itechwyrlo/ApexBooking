@@ -5,24 +5,29 @@ using System.Threading.Tasks;
 
 namespace ApexBooking.Core.Application.Dtos
 {
-    public sealed class AvailableSlotsDto
+    public sealed record AvailableSlotsDto(
+    Guid ServiceId,
+    Guid? ResourceId,
+    DateOnly Date,
+    int DurationMinutes,
+    IReadOnlyList<string> AvailableSlots
+);
+    public static class AvailabilityMappings
     {
-        public Guid ServiceId { get; init; }
-        public Guid ResourceId { get; init; }
-
-        /// <summary>ISO 8601: YYYY-MM-DD. TR-15.1</summary>
-        public DateOnly Date { get; init; }
-
-        /// <summary>
-        /// Duration of each slot in minutes. Returned so the client can
-        /// compute the slot end time without a second call.
-        /// </summary>
-        public int DurationMinutes { get; init; }
-
-        /// <summary>
-        /// Available slot start times in HH:mm 24-hour format. TR-15.2
-        /// Empty list means no slots are open on this date.
-        /// </summary>
-        public IReadOnlyList<string> AvailableSlots { get; init; } = [];
+        public static AvailableSlotsDto ToAvailableSlotsDto(
+            Guid serviceId,
+            Guid? resourceId,
+            DateOnly date,
+            int durationMinutes,
+            IReadOnlyList<string> slots)
+        {
+            return new AvailableSlotsDto(
+                serviceId,
+                resourceId,
+                date,
+                durationMinutes,
+                slots
+            );
+        }
     }
 }

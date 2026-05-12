@@ -52,4 +52,16 @@ namespace ApexBooking.Core.Domain.ValueObjects
     public record LocationId(Guid Value);
     [NotMapped]
     public record RefreshTokenId(Guid Value);
+    [NotMapped]
+    public record TenantPaymentGatewayId(Guid Value);
+    [NotMapped]
+    public record PlatformPaymentGatewayId(Guid Value);
+    [NotMapped]
+    public record TenantPaymentPolicyId(Guid Value);
+    [NotMapped]
+    public record GuestId(Guid Value);
+    [NotMapped]
+    public record GuestCancellationTokenId(Guid Value);
+    [NotMapped]
+    public record TenantRequestId(Guid Value);
 }

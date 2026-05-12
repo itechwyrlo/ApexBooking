@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
+using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
@@ -10,7 +7,7 @@ using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Bookings.Queries.GetBookingById
 {
-    internal sealed class GetBookingByIdQueryHandler : IQueryHandler<GetBookingByIdQuery, BaseResponse<BookingDto>>
+    internal sealed class GetBookingByIdQueryHandler : IQueryHandler<GetBookingByIdQuery, BaseResponse<BookingDetailDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -19,37 +16,20 @@ namespace ApexBooking.Core.Application.Features.Bookings.Queries.GetBookingById
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<BaseResponse<BookingDto>> Handle(GetBookingByIdQuery request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<BookingDetailDto>> Handle(GetBookingByIdQuery request, CancellationToken cancellationToken)
         {
             var bookingId = new BookingId(request.BookingId);
 
-            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(bookingId);
+            var booking = await _unitOfWork.BookingRepository.GetAsync(
+                predicate: b => b.BookingId == bookingId,
+                b => b.Guest);
+
             if (booking is null)
-                return BaseResponse<BookingDto>.Failure("Booking not found");
+                return BaseResponse<BookingDetailDto>.Failure("Booking not found");
 
-            var dto = new BookingDto(
-                booking.BookingId.Value,
-                booking.BookingReference,
-                booking.ServiceId.Value,
-                string.Empty,
-                booking.ResourceId.Value,
-                string.Empty,
-                booking.UserId,
-                booking.ScheduledDate,
-                booking.ScheduledStartTime,
-                booking.ScheduledEndTime,
-                booking.DurationMinutes,
-                booking.Status,
-                booking.ConfirmationMode,
-                booking.PriceSnapshot,
-                booking.CurrencyCode,
-                booking.CustomerNotes,
-                booking.CancellationReason,
-                booking.CancelledAt,
-                booking.CreatedAt
-            );
+            var dto = booking.ToDetailDto(booking.ServiceName, booking.ResourceName);
 
-            return BaseResponse<BookingDto>.Success(dto);
+            return BaseResponse<BookingDetailDto>.Success(dto);
         }
     }
 }

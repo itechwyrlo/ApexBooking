@@ -46,7 +46,7 @@ public class SecurityHeadersMiddleware
         headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
 
         // Permissions-Policy: Restrict access to sensitive features
-        headers.Append("Permissions-Policy", "geolocation=(), microphone=(), camera=()");;
+        headers.Append("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
 
         await _next(context);
     }

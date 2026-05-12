@@ -41,6 +41,42 @@ public static class ConfigurationValidationExtensions
                     "Connection string 'DefaultConnection' must be configured for production. " +
                     "Set via environment variable ConnectionStrings:DefaultConnection");
             }
+
+            // Validate AllowedHosts is not "*" in production
+            var allowedHosts = configuration["AllowedHosts"];
+            if (string.IsNullOrEmpty(allowedHosts) || allowedHosts == "*")
+            {
+                throw new InvalidOperationException(
+                    "AllowedHosts must be configured to specific hosts for production. " +
+                    "Set via environment variable AllowedHosts");
+            }
+
+            // Validate ApplicationUrls:BaseUrl
+            var baseUrl = configuration["ApplicationUrls:BaseUrl"];
+            if (string.IsNullOrEmpty(baseUrl))
+            {
+                throw new InvalidOperationException(
+                    "ApplicationUrls:BaseUrl must be configured for production. " +
+                    "Set via environment variable ApplicationUrls:BaseUrl");
+            }
+
+            // Validate AppSettings:FrontendBaseUrl
+            var frontendBaseUrl = configuration["AppSettings:FrontendBaseUrl"];
+            if (string.IsNullOrEmpty(frontendBaseUrl))
+            {
+                throw new InvalidOperationException(
+                    "AppSettings:FrontendBaseUrl must be configured for production. " +
+                    "Set via environment variable AppSettings__FrontendBaseUrl");
+            }
+
+            // Validate Cors:AllowedOrigins
+            var corsAllowedOrigins = configuration["Cors:AllowedOrigins"];
+            if (string.IsNullOrEmpty(corsAllowedOrigins))
+            {
+                throw new InvalidOperationException(
+                    "Cors:AllowedOrigins must be configured for production. " +
+                    "Set via environment variable Cors:AllowedOrigins");
+            }
         }
 
         // Validate external service credentials if configured

@@ -4,51 +4,45 @@ using System.Linq;
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.SharedKernel.Models;
+using ApexBooking.Core.Application.mapper;
+using ApexBooking.Core.Application.Services.Mappings;
 
 namespace ApexBooking.Core.Application.Features.Services.Queries.GetServices
 {
-    internal sealed class GetServicesQueryHandler : IQueryHandler<GetServicesQuery, BaseResponse<List<ServiceDto>>>
+    internal sealed class GetServicesQueryHandler
+    : IQueryHandler<GetServicesQuery, PagedResult<ServiceDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _contextService;
 
-        public GetServicesQueryHandler(IUnitOfWork unitOfWork, IUserContextService contextService)
+        public GetServicesQueryHandler(IUserContextService contextService, IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
             _contextService = contextService;
         }
 
-        public async Task<BaseResponse<List<ServiceDto>>> Handle(GetServicesQuery query, CancellationToken ct)
+        public async Task<PagedResult<ServiceDto>> Handle(
+            GetServicesQuery query,
+            CancellationToken cancellationToken)
         {
             var tenantId = _contextService.GetCurrentTenantId();
 
-            var services = await _unitOfWork.ServiceRepository
-                .GetActiveServicesAsync()
+            var pagedResult = await _unitOfWork.ServiceRepository.GetPageAsync(
+                query.param,
+                predicate: s => s.TenantId == tenantId,
+                includes: s => s.ServiceResources)
                 .ConfigureAwait(false);
 
-            var dtos = services
-                .Where(s => s.TenantId == tenantId)
-                .Select(s => new ServiceDto
-                {
-                    Id = s.ServiceId.Value,
-                    Name = s.Name,
-                    Description = s.Description,
-                    DurationMinutes = s.DurationMinutes,
-                    BufferBeforeMinutes = s.BufferBeforeMinutes,
-                    BufferAfterMinutes = s.BufferAfterMinutes,
-                    Price = s.Price,
-                    CurrencyCode = s.CurrencyCode,
-                    MinAdvanceBookingHours = s.MinAdvanceBookingHours,
-                    MaxAdvanceBookingDays = s.MaxAdvanceBookingDays,
-                    IsActive = s.IsActive,
-                    ResourceIds = s.ServiceResources.Select(sr => sr.ResourceId.Value).ToList(),
-                    CreatedAt = s.CreatedAt,
-                    UpdatedAt = s.UpdatedAt
-                }).ToList();
+            var dtos = pagedResult.data
+                .Select(b => b.ToServiceDto())
+                .ToList();
 
-            return BaseResponse<List<ServiceDto>>.Success(dtos);
+
+
+            return new PagedResult<ServiceDto>(dtos, pagedResult.total);
         }
     }
 }

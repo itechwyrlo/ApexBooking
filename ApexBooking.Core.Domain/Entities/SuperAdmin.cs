@@ -2,10 +2,11 @@ using System.Diagnostics.CodeAnalysis;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
 using ApexBooking.SharedKernel.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace ApexBooking.Core.Domain.Entities;
 
-public class SuperAdmin : IAggregateRoot
+public class SuperAdmin : IdentityUser<Guid>, IAggregateRoot
 {
     public SuperAdminId SuperAdminId { get; protected set; } = default!;
     public string FullName { get; private set; } = string.Empty;

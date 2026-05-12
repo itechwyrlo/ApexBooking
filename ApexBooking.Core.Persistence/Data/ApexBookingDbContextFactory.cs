@@ -11,28 +11,31 @@ namespace ApexBooking.Core.Persistence.Data
     {
         public ApexBookingDbContext CreateDbContext(string[] args)
         {
-            // Build configuration from appsettings
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
+            var basePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "ApexBooking.WebApi");
+
+            var userSecretsPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Microsoft", "UserSecrets",
+                "d44beffb-c57a-438b-8995-5fee3f5a90b8",
+                "secrets.json");
+
+            var configBuilder = new ConfigurationBuilder()
+                .SetBasePath(basePath)
                 .AddJsonFile("appsettings.json", optional: true)
                 .AddJsonFile("appsettings.Development.json", optional: true)
-                .Build();
+                .AddJsonFile(userSecretsPath, optional: true);
+
+            var configuration = configBuilder.Build();
 
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-
             if (string.IsNullOrEmpty(connectionString))
-            {
                 throw new InvalidOperationException("Connection string 'DefaultConnection' not found in configuration.");
-            }
 
             var optionsBuilder = new DbContextOptionsBuilder<ApexBookingDbContext>();
             optionsBuilder.UseSqlServer(connectionString);
 
-            // Create a mock ITenantService for design-time
-            // At design time, tenant filtering should be disabled
             var mockTenantService = new MockTenantService();
 
-            // Create a mock logger for design-time
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var logger = loggerFactory.CreateLogger<ApexBookingDbContext>();
 

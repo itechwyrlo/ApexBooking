@@ -1,15 +1,22 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
-import type { BaseResponse, RefreshTokenResponse } from '../features/auth/types';
+import type { RefreshTokenResponse } from '../features/auth/types';
+import type { BaseResponse } from '../types';
 
-interface TypedAxiosInstance extends Omit<AxiosInstance, 'get' | 'post' | 'put' | 'patch' | 'delete'> {
-  get<T extends BaseResponse>(url: string, config?: AxiosRequestConfig): Promise<T>;
-  post<T extends BaseResponse>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
-  put<T extends BaseResponse>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
-  patch<T extends BaseResponse>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
-  delete<T extends BaseResponse>(url: string, config?: AxiosRequestConfig): Promise<T>;
+// Define the shape of the error object your catch blocks will receive
+export interface ApiError {
+  message: string;
+  status?: number;
+  data?: any;
 }
 
+interface TypedAxiosInstance extends Omit<AxiosInstance, 'get' | 'post' | 'put' | 'patch' | 'delete'> {
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  post<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+  put<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+  patch<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+}
 const axiosInstance = axios.create({
   baseURL: '/api',
   withCredentials: true,
@@ -30,19 +37,21 @@ const axiosInstance = axios.create({
   (error: any) => Promise.reject(error)
 );
 
-// Response interceptor - unwraps axios envelope so callers get server response directly
+// Response interceptor
 (axiosInstance as any).interceptors.response.use(
+  // Success path: Unwraps axios envelope
   (response: any) => response.data,
+  
+  // Error path: Handles refreshes and extracts server error messages
   async (error: any) => {
     const originalRequest = error.config;
-
     const isAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true';
-
     const isAuthEndpoint =
       originalRequest.url?.includes('/auth/login') ||
       originalRequest.url?.includes('/auth/refresh') ||
       originalRequest.url?.includes('/auth/register');
 
+    // 1. Handle Token Refresh (401)
     if (
       error.response?.status === 401 &&
       isAuthenticated &&
@@ -74,7 +83,17 @@ const axiosInstance = axios.create({
       }
     }
 
-    return Promise.reject(error);
+    // 2. Extract and Format Error for the Page
+    // This looks for the error message in your BaseResponse structure
+    const serverData = error.response?.data as BaseResponse | undefined;
+    
+    const formattedError: ApiError = {
+      message: serverData?.errors?.[0]?.message || error.message || 'An unexpected error occurred.',
+      status: error.response?.status,
+      data: serverData
+    };
+
+    return Promise.reject(formattedError);
   }
 );
 

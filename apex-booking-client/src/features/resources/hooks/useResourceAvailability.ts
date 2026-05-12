@@ -35,15 +35,15 @@ export const useResourceAvailability = (resourceId: string) => {
     }
   }, [resourceId, tenantSlug]);
 
-  const getExceptions = useCallback(async () => {
+  const getExceptions = useCallback(async (pageNumber = 1, pageSize = 10) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await axiosInstance.get(`/resource/${resourceId}/exceptions`, { headers });
-      if (res && !res.isSuccess) {
-        setError(res.errors?.[0]?.message ?? 'Failed to load exceptions.');
-        return;
-      }
+      const res = await axiosInstance.get(`/resource/${resourceId}/exceptions`, 
+        { headers,
+          params: { pageNumber, pageSize }
+        });
+      
       setExceptions(res.data ?? []);
     } catch {
       setError('Failed to load exceptions.');

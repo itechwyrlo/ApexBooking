@@ -42,6 +42,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             .FirstOrDefaultAsync();
     }
 
+    //unused method
     public async Task<bool> EmailExistsAsync(TenantId tenantId, string email)
     {
         return await _userManager.Users
@@ -49,6 +50,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             .AnyAsync(u => u.TenantId == tenantId && u.Email == email);
     }
 
+    //unused method
     public async Task<User?> FindByInvitationTokenAsync(string token)
     {
         return await _userManager.Users
@@ -58,6 +60,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             .FirstOrDefaultAsync(u => u.InvitationToken == token && u.InvitationExpiresAt > DateTime.UtcNow);
     }
 
+    //unused method
     public async Task<List<User>> GetUsersByRoleAsync(TenantId tenantId, UserRole role)
     {
         return await _userManager.Users
@@ -66,6 +69,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
             .ToListAsync();
     }
 
+    //unused method
     public async Task<List<User>> GetStaffWithResourceAssignmentsAsync(TenantId tenantId, ResourceId resourceId)
     {
         return await _userManager.Users
@@ -102,9 +106,19 @@ public class UserRepository : GenericRepository<User>, IUserRepository
     public async Task<IdentityResult> ResetPasswordAsync(User user, string token, string newPassword)
         => await _userManager.ResetPasswordAsync(user, token, newPassword);
 
+    //unused method
     public async Task<IList<string>> GetRolesAsync(User user)
         => await _userManager.GetRolesAsync(user);
 
     public async Task<User> GetUserByEmailTokenAsync(string token)
         => await _userManager.Users.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.EmailConfirmationToken == token);
+
+    public async Task<List<User>> GetAllByTenantAsync(TenantId tenantId)
+    {
+        return await _userManager.Users
+            .IgnoreQueryFilters()
+            .Where(u => u.TenantId == tenantId)
+            .OrderBy(u => u.FullName)
+            .ToListAsync();
+    }
 }

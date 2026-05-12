@@ -8,10 +8,11 @@ import React, {
 import { jwtDecode } from "jwt-decode";
 
 interface User {
+  id: string;
   email: string;
   fullName: string;
   tenantId: string;
-  role: "TenantAdmin" | "Manager" | "Staff" | "Customer";
+  role: "TenantAdmin" | "Manager" | "Staff" | "customer" | "superadmin";
 }
 
 interface JWTPayload {
@@ -49,16 +50,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const setAccessToken = useCallback((token: string) => {
     const claims = jwtDecode<JWTPayload>(token);
 
-    const verified = claims.email_verified === true;
-
+    // Superadmin tokens carry no email_verified claim — treat them as verified.
+    const verified = claims.role === "superadmin" || claims.email_verified === true;
     setEmailVerified(verified);
 
-    if (claims.email && claims.tenant_id && claims.role) {
+    if (claims.sub && claims.email && claims.role) {
       setUser({
+        id: claims.sub,
         email: claims.email,
         fullName: "User",
-        tenantId: claims.tenant_id,
-        role: claims.role as any,
+        tenantId: claims.tenant_id ?? "",
+        role: claims.role as User["role"],
       });
     }
 

@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
@@ -23,7 +19,7 @@ namespace ApexBooking.Core.Domain.Entities
         public TenantId TenantId { get; private set; } = default!;
         public BookingStatus? PreviousStatus { get; private set; }
         public BookingStatus NewStatus { get; private set; }
-        public Guid? ChangedByUserId { get; private set; }
+        public BookingActor ActorType { get; private set; }
         public string? Reason { get; private set; }
         public DateTime CreatedAt { get; private set; }
 
@@ -34,7 +30,7 @@ namespace ApexBooking.Core.Domain.Entities
             TenantId tenantId,
             BookingStatus? previousStatus,
             BookingStatus newStatus,
-            Guid? changedByUserId,
+            BookingActor actorType,
             string? reason)
         {
             BookingStatusLogId = new BookingStatusLogId(Guid.NewGuid());
@@ -42,7 +38,7 @@ namespace ApexBooking.Core.Domain.Entities
             TenantId = tenantId;
             PreviousStatus = previousStatus;
             NewStatus = newStatus;
-            ChangedByUserId = changedByUserId;
+            ActorType = actorType;
             Reason = reason;
             CreatedAt = DateTime.UtcNow;
         }
@@ -52,7 +48,7 @@ namespace ApexBooking.Core.Domain.Entities
             TenantId tenantId,
             BookingStatus? previousStatus,
             BookingStatus newStatus,
-            Guid? changedByUserId,
+            BookingActor actorType,
             string? reason = null)
         {
             if (bookingId is null)
@@ -61,7 +57,7 @@ namespace ApexBooking.Core.Domain.Entities
             if (tenantId is null)
                 throw new BusinessRuleBrokenException("Tenant is required.");
 
-            return new BookingStatusLog(bookingId, tenantId, previousStatus, newStatus, changedByUserId, reason);
+            return new BookingStatusLog(bookingId, tenantId, previousStatus, newStatus, actorType, reason);
         }
     }
 }

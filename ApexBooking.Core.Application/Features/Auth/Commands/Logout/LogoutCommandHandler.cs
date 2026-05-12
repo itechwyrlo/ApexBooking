@@ -28,10 +28,12 @@ namespace ApexBooking.Core.Application.Features.Auth.Commands.Logout
             _tokenService = tokenService;
         }
 
-        public async Task Handle(LogoutCommand command, CancellationToken ct)
+        public async Task Handle(LogoutCommand command, CancellationToken cancellationToken)
         {
             var userId = _userContext.GetCurrentUserId();
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+            var user = await _unitOfWork.UserRepository.GetAsync(
+            predicate: u => u.Id == userId,
+            includes: u => u.RefreshTokens);
 
             if (user == null) return;
 
@@ -43,11 +45,11 @@ namespace ApexBooking.Core.Application.Features.Auth.Commands.Logout
             }
 
             var jti = _userContext.GetCurrentJti();
-            await _tokenService.BlacklistJtiAsync(jti, ct);
+            await _tokenService.BlacklistJtiAsync(jti, cancellationToken);
 
             _cookieService.DeleteRefreshTokenCookie();
 
-            await _unitOfWork.CompleteAsync(ct);
+            await _unitOfWork.CompleteAsync(cancellationToken);
         }
     }
 }

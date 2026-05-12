@@ -78,6 +78,13 @@ public class User : IdentityUser<Guid>, IAggregateRoot, ITenantEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void SetInvitationToken(string token, DateTime expiresAt)
+    {
+        InvitationToken = token;
+        InvitationExpiresAt = expiresAt;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void Activate()
     {
         if (Status == UserStatus.Active)

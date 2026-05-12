@@ -8,5 +8,8 @@ using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Auth.Commands.AccountVerification
 {
-    public sealed record AccountVerificationCommand(string token) : ICommand<BaseResponse<AccountVerificationResponseDto>>;
+    public sealed record AccountVerificationCommand(
+        string token,
+        string? ReturnTo = null
+    ) : ICommand<BaseResponse<AccountVerificationResponseDto>>;
 }

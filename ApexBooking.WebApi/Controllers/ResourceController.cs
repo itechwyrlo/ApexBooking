@@ -16,6 +16,7 @@ using ApexBooking.Core.Application.Features.Availability.Commands.RemoveExceptio
 using ApexBooking.Core.Application.Features.Availability.Commands.AddException;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Application.Features.Resources.Queries.GetResourceAvailability;
+using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.WebApi.Controllers;
 
@@ -34,9 +35,9 @@ public class ResourceController : ControllerBase
 
     [HttpGet()]
     [Authorize]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] QueryObjectParams param)
     {
-        var result = await _mediator.Send(new GetResourcesQuery());
+        var result = await _mediator.Send(new GetResourcesQuery(param));
         return Ok(result);
     }
 
@@ -89,9 +90,9 @@ public class ResourceController : ControllerBase
 
     [HttpGet("{resourceId:guid}/exceptions")]
     [Authorize]
-    public async Task<IActionResult> GetExceptions(Guid resourceId)
+    public async Task<IActionResult> GetExceptions([FromQuery] QueryObjectParams param, Guid resourceId)
     {
-        var result = await _mediator.Send(new GetResourceExceptionsQuery(resourceId));
+        var result = await _mediator.Send(new GetResourceExceptionsQuery(param, resourceId));
         return Ok(result);
     }
 

@@ -12,6 +12,7 @@ namespace ApexBooking.Core.Persistence.Repositories
     {
         public ServiceRepository(ApexBookingDbContext context) : base(context) { }
 
+        //unused method
         public async Task<Service?> FindByNameAsync(string name)
         {
             return await Context.Set<Service>()
@@ -24,55 +25,6 @@ namespace ApexBooking.Core.Persistence.Repositories
                 .AnyAsync(s => s.Name == name);
         }
 
-        public async Task<List<Service>> GetActiveServicesAsync()
-        {
-            return await Context.Set<Service>()
-                .Include(s => s.ServiceResources)
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.Name)
-                .ToListAsync();
-        }
-
-        /// <summary>
-        /// Used by public endpoints where the global tenant query filter
-        /// is not applied because no JWT is present. Tenant is filtered
-        /// explicitly via TenantId.
-        /// </summary>
-        public async Task<List<Service>> GetActiveServicesByTenantAsync(
-            TenantId tenantId,
-            CancellationToken cancellationToken = default)
-        {
-            return await Context.Set<Service>()
-                .IgnoreQueryFilters()
-                .Where(s => s.TenantId == tenantId && s.IsActive)
-                .OrderBy(s => s.Name)
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<List<Service>> GetServicesByResourceAsync(ResourceId resourceId)
-        {
-            return await Context.Set<Service>()
-                .Include(s => s.ServiceResources)
-                .Where(s => s.IsActive &&
-                           s.ServiceResources.Any(sr => sr.ResourceId == resourceId))
-                .OrderBy(s => s.Name)
-                .ToListAsync();
-        }
-
-        public async Task<Service?> GetServiceWithResourcesAsync(ServiceId serviceId)
-        {
-            return await Context.Set<Service>()
-                .Include(s => s.ServiceResources)
-                .FirstOrDefaultAsync(s => s.ServiceId == serviceId);
-        }
-
-        public async Task<Service?> FindByIdWithResourcesAsync(
-            ServiceId serviceId,
-            CancellationToken cancellationToken = default)
-        {
-            return await Context.Set<Service>()
-                .Include(s => s.ServiceResources)
-                .FirstOrDefaultAsync(s => s.ServiceId == serviceId, cancellationToken);
-        }
+       
     }
 }

@@ -52,13 +52,29 @@ namespace ApexBooking.Core.Application.Features.Auth.Commands.AccountVerificatio
 
             // Mark email as verified using domain methods
             user.MarkEmailVerified();
-            tenant.MarkAsVerified();
+            if (user.Role == UserRole.TenantAdmin) tenant.MarkAsVerified();
+
 
             await _unitOfWork.CompleteAsync();
 
+            string redirectUrl;
+
+            if (user.Role == UserRole.Customer)
+            {
+                redirectUrl = $"/book/{tenant.Slug}/customer/login?verified=email";
+                if (!string.IsNullOrWhiteSpace(command.ReturnTo))
+                    redirectUrl += $"&returnTo={Uri.EscapeDataString(command.ReturnTo)}";
+            }
+            else
+            {
+                redirectUrl = $"/login?verified=email&tenant={tenant.Slug}";
+                if (!string.IsNullOrWhiteSpace(command.ReturnTo))
+                    redirectUrl += $"&returnTo={Uri.EscapeDataString(command.ReturnTo)}";
+            }
+
             return BaseResponse<AccountVerificationResponseDto>.Success(new AccountVerificationResponseDto
             {
-                Url = $"/login?verified=email&tenant={tenant.Slug}",
+                Url = redirectUrl,
                 TenantSlug = tenant.Slug
             });
         }

@@ -95,7 +95,10 @@ public class TenantProfile
             CountryCode = countryCode;
 
         if (!string.IsNullOrWhiteSpace(timezone))
+        {
+            TimeZoneInfo.FindSystemTimeZoneById(timezone);
             Timezone = timezone;
+        }
 
         if (!string.IsNullOrWhiteSpace(currencyCode) && currencyCode.Length == 3)
             CurrencyCode = currencyCode;

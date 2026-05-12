@@ -12,6 +12,10 @@ namespace ApexBooking.Core.Application.Dtos
         string? ContactPhone,
         string? City,
         string? CountryCode,
-        string? WebsiteUrl
-    );
+    string? WebsiteUrl,
+    int MinAdvanceBookingHours,
+    int MaxAdvanceBookingDays,
+    int CancellationCutoffHours,
+    string Timezone
+);
 }

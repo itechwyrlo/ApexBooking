@@ -1,15 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
+using ApexBooking.Core.Application.Features.Auth.Commands.AcceptInvitation;
 using ApexBooking.Core.Application.Features.Auth.Commands.AccountVerification;
 using ApexBooking.Core.Application.Features.Auth.Commands.ForgotPassword;
 using ApexBooking.Core.Application.Features.Auth.Commands.Login;
+using ApexBooking.Core.Application.Features.Auth.Commands.LoginSuperAdmin;
 using ApexBooking.Core.Application.Features.Auth.Commands.Logout;
 using ApexBooking.Core.Application.Features.Auth.Commands.RefreshToken;
-using ApexBooking.Core.Application.Features.Auth.Commands.Register;
 using ApexBooking.Core.Application.Features.Auth.Commands.ResetPassword;
 using ApexBooking.WebApi.Dtos;
 using MediatR;
@@ -32,28 +28,14 @@ namespace ApexBooking.WebApi.Controllers
             _mediator = mediator;
         }
 
-        [HttpPost("register/admin")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Register(
-             [FromBody] RegisterAdminRequestDto request, CancellationToken ct)
-        {
-            var result = await _mediator.Send(new RegisterAdminCommand(
-                request.FirstName,
-                request.LastName,
-                request.Email,
-                request.Password,
-                request.OrganizationName,
-                request.Industry,
-                request.Phone,
-                request.Country));
-
-            return Ok(result);
-        }
         [HttpGet("verify-account")]
         [AllowAnonymous]
-        public async Task<IActionResult> VerifyAccount(string token, CancellationToken ct)
+        public async Task<IActionResult> VerifyAccount(
+            string token,
+            string? returnTo,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new AccountVerificationCommand(token));
+            var result = await _mediator.Send(new AccountVerificationCommand(token, returnTo));
             return Ok(result);
         }
 
@@ -91,10 +73,32 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("logout")]
+        [Authorize]
         public async Task<IActionResult> Logout()
         {
             await _mediator.Send(new LogoutCommand());
             return NoContent();
+        }
+
+        [HttpPost("accept-invitation")]
+        [AllowAnonymous]
+        public async Task<IActionResult> AcceptInvitation(
+            [FromBody] AcceptInvitationRequestDto request,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(
+                new AcceptInvitationCommand(request.Token, request.NewPassword, request.ConfirmPassword), ct);
+            return Ok(result);
+        }
+
+        [HttpPost("login/superadmin")]
+        [AllowAnonymous]
+        public async Task<IActionResult> LoginSuperAdmin(
+            [FromBody] LoginSuperAdminRequestDto request,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(new LoginSuperAdminCommand(request.Email, request.Password), ct);
+            return Ok(result);
         }
     }
 }

@@ -7,11 +7,11 @@ namespace ApexBooking.Core.Domain.Repositories;
 
 public interface ITenantRepository : IGenericRepository<Tenant>
 {
-    Task<Tenant> GetTenantSettingsById(TenantId tenantId);
     Task<Tenant?> FindBySlugAsync(string slug);
     Task<Tenant?> FindByEmailAsync(string email);
+    //unused method
     Task<bool> SlugExistsAsync(string slug);
+    //unused method
     Task<bool> EmailExistsAsync(string email);
-    Task<TenantSettings?> GetTenantSettingsAsync(TenantId tenantId, CancellationToken cancellationToken = default);
-    Task<TenantProfile?> GetTenantProfileAsync( TenantId tenantId, CancellationToken cancellationToken = default);
+
 }

@@ -14,7 +14,6 @@ namespace ApexBooking.GenericRepository.EntityFramework
     public class GenericRepository<TEntity>(DbContext context) : IGenericRepository<TEntity>
     where TEntity : class, IAggregateRoot
     {
-
         protected readonly DbContext Context = context ?? throw new ArgumentNullException(nameof(context));
         private readonly DbSet<TEntity> _dbSet = context.Set<TEntity>();
 
@@ -23,24 +22,19 @@ namespace ApexBooking.GenericRepository.EntityFramework
         public virtual void Remove(TEntity entity) => _dbSet.Remove(entity);
 
         public async Task<TEntity?> GetByIdAsync(object id) => await _dbSet.FindAsync(id).ConfigureAwait(false);
-
-
-        public virtual async Task<TEntity?> GetAsync(ISpecification<TEntity> spec)
+        public virtual async Task<TEntity?> GetAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        params Expression<Func<TEntity, object>>[] includes)
         {
             IQueryable<TEntity> query = _dbSet;
 
-            // Apply filtering
-            if (spec.Criteria != null)
+            if (includes is { Length: > 0 })
             {
-                query = query.Where(spec.Criteria);
+                query = includes.Aggregate(query, (current, include) => current.Include(include));
             }
 
-            // Apply all type-safe Includes/ThenIncludes
-            query = spec.Includes.Aggregate(query, (current, include) => include(current));
-
-            return await query.FirstOrDefaultAsync().ConfigureAwait(false);
+            return await query.FirstOrDefaultAsync(predicate).ConfigureAwait(false);
         }
-
 
         public async Task<IEnumerable<TEntity>> GetAllAsync() => await _dbSet.AsNoTracking().ToListAsync().ConfigureAwait(false);
 
@@ -49,10 +43,33 @@ namespace ApexBooking.GenericRepository.EntityFramework
             return await _dbSet.Include(include).AsNoTracking().ToListAsync().ConfigureAwait(false);
         }
 
+        // In GenericRepository.cs
+        public async Task<IEnumerable<TEntity>> GetAllAsync(
+            Expression<Func<TEntity, bool>> filter = null,
+            params Expression<Func<TEntity, object>>[] includes)
+        {
+            IQueryable<TEntity> query = _dbSet;
+
+            if (includes is { Length: > 0 })
+            {
+                query = includes.Aggregate(query, (current, include) => current.Include(include));
+            }
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            return await query.AsNoTracking().ToListAsync().ConfigureAwait(false);
+        }
+
+        public async Task<TEntity?> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate) =>
+            await _dbSet.SingleOrDefaultAsync(predicate).ConfigureAwait(false);
+
         public virtual async Task<QueryResult<TEntity>> GetPageAsync(
-        QueryObjectParams queryObjectParams,
-        Expression<Func<TEntity, bool>>? predicate = null,
-        params Expression<Func<TEntity, object>>[] includes)
+            QueryObjectParams queryObjectParams,
+            Expression<Func<TEntity, bool>>? predicate = null,
+            params Expression<Func<TEntity, object>>[] includes)
         {
             IQueryable<TEntity> query = _dbSet;
 
@@ -82,18 +99,5 @@ namespace ApexBooking.GenericRepository.EntityFramework
 
             return new QueryResult<TEntity>(items, totalCount);
         }
-
-        public IQueryable<TEntity> GetQuery(Expression<Func<TEntity, bool>>? predicate = null)
-        {
-            IQueryable<TEntity> query = _dbSet;
-
-            if (predicate != null)
-            {
-                query = query.Where(predicate);
-            }
-
-            return query;
-        }
-
     }
 }

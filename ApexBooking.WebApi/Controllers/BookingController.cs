@@ -2,6 +2,8 @@ using ApexBooking.Core.Application.Features.Bookings.Commands.CancelBooking;
 using ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking;
 using ApexBooking.Core.Application.Features.Bookings.Queries.GetBookingById;
 using ApexBooking.Core.Application.Features.Bookings.Queries.GetBookings;
+using ApexBooking.Core.Application.Features.Payment.Commands.InitiatePayment;
+using ApexBooking.SharedKernel.Models;
 using ApexBooking.WebApi.Dtos;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -22,9 +24,9 @@ public class BookingController : ControllerBase
 
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] QueryObjectParams param)
     {
-        var result = await _mediator.Send(new GetBookingsQuery());
+        var result = await _mediator.Send(new GetBookingsQuery(param));
         return Ok(result);
     }
 
@@ -37,29 +39,41 @@ public class BookingController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<IActionResult> Create([FromBody] CreateBookingRequestDto dto)
     {
         var result = await _mediator.Send(new CreateBookingCommand(
+            dto.TenantSlug,
             dto.ServiceId,
             dto.ResourceId,
             dto.ScheduledDate,
             dto.ScheduledStartTime,
+            dto.GuestFirstName,
+            dto.GuestLastName,
+            dto.GuestEmail,
+            dto.GuestPhone,
             dto.CustomerNotes
         ));
 
-        return CreatedAtAction(nameof(GetById), new { bookingId = result.Data.BookingId }, result);
+        if (!result.IsSuccess)
+            return BadRequest(result);
+
+        return CreatedAtAction(nameof(GetById), new { bookingId = result.Data!.BookingId }, result);
     }
 
     [HttpPost("{bookingId:guid}/cancel")]
     [Authorize]
     public async Task<IActionResult> Cancel(Guid bookingId, [FromBody] CancelBookingRequestDto dto)
     {
-        var result = await _mediator.Send(new CancelBookingCommand(
-            bookingId,
-            dto.Reason
-        ));
+        var result = await _mediator.Send(new CancelBookingCommand(bookingId, dto.Reason));
+        return Ok(result);
+    }
 
+    [HttpPost("{bookingId:guid}/payment")]
+    [AllowAnonymous]
+    public async Task<IActionResult> InitiatePayment(Guid bookingId)
+    {
+        var result = await _mediator.Send(new InitiatePaymentCommand(bookingId));
         return Ok(result);
     }
 }

@@ -1,103 +1,140 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using ApexBooking.Core.Application.Common;
 using ApexBooking.Core.Application.Dtos;
+using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
+using ApexBooking.Core.Domain.Services.Notification;
 using ApexBooking.Core.Domain.Services.Slot;
+using ApexBooking.Core.Domain.Services.TokenService;
 using ApexBooking.Core.Domain.ValueObjects;
+using ApexBooking.SharedKernel.Exceptions;
 using ApexBooking.SharedKernel.Models;
+using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
 {
-    internal sealed class CreateBookingCommandHandler : ICommandHandler<CreateBookingCommand, BaseResponse<BookingDto>>
+    internal sealed class CreateBookingCommandHandler : ICommandHandler<CreateBookingCommand, BaseResponse<BookingDetailDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IUserContextService _userContextService;
         private readonly SlotAvailabilityService _slotAvailabilityService;
+        private readonly INotificationService _notificationService;
+        private readonly ITokenService _tokenService;
+        private readonly IAppUrlService _appUrlService;
 
         public CreateBookingCommandHandler(
             IUnitOfWork unitOfWork,
-            IUserContextService userContextService,
-            SlotAvailabilityService slotAvailabilityService)
+            SlotAvailabilityService slotAvailabilityService,
+            INotificationService notificationService,
+            ITokenService tokenService,
+            IAppUrlService appUrlService)
         {
             _unitOfWork = unitOfWork;
-            _userContextService = userContextService;
             _slotAvailabilityService = slotAvailabilityService;
+            _notificationService = notificationService;
+            _tokenService = tokenService;
+            _appUrlService = appUrlService;
         }
 
-        public async Task<BaseResponse<BookingDto>> Handle(CreateBookingCommand request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<BookingDetailDto>> Handle(CreateBookingCommand request, CancellationToken cancellationToken)
         {
-            var tenantId = _userContextService.GetCurrentTenantId();
-            var userId = _userContextService.GetCurrentUserId();
+            var tenant = await _unitOfWork.TenantRepository.FindBySlugAsync(request.TenantSlug);
 
-            var serviceId = new ServiceId(request.ServiceId);
-            var resourceId = new ResourceId(request.ResourceId);
-
-            var service = await _unitOfWork.ServiceRepository.FindByIdWithResourcesAsync(serviceId, cancellationToken);
-            if (service is null || !service.IsActive)
-                return BaseResponse<BookingDto>.Failure("Service not found");
-
-            if (!service.IsResourceAssigned(resourceId))
-                return BaseResponse<BookingDto>.Failure("Resource not assigned to service");
-
-            var resource = await _unitOfWork.ResourceRepository.FindByIdWithAvailabilityAsync(resourceId, cancellationToken);
-            if (resource is null || !resource.IsActive)
-                return BaseResponse<BookingDto>.Failure("Resource not found");
-
-            var tenant = await _unitOfWork.TenantRepository.GetTenantSettingsById(tenantId);
             if (tenant is null)
-                return BaseResponse<BookingDto>.Failure("Tenant not found");
+                return BaseResponse<BookingDetailDto>.Failure("Tenant not found.");
 
             var settings = tenant.TenantSettings;
             if (settings is null)
-                return BaseResponse<BookingDto>.Failure("Tenant settings not found");
+                return BaseResponse<BookingDetailDto>.Failure("Tenant settings not found.");
+
+            var bookingLimit = PlanLimits.MaxBookingsPerMonth(tenant.Plan);
+            if (bookingLimit.HasValue)
+            {
+                var utcNow = DateTime.UtcNow;
+                var monthCount = await _unitOfWork.BookingRepository.CountBookingsInMonthAsync(
+                    tenant.TenantId, utcNow.Year, utcNow.Month, cancellationToken);
+                if (monthCount >= bookingLimit.Value)
+                    throw new BusinessRuleBrokenException(
+                        $"Your {tenant.Plan} plan allows a maximum of {bookingLimit.Value} bookings per month.");
+            }
+
+            var tenantId = tenant.TenantId;
+            var serviceId = new ServiceId(request.ServiceId);
+
+            var service = await _unitOfWork.ServiceRepository.GetAsync(
+                predicate: s => s.ServiceId == serviceId && s.TenantId == tenantId,
+                s => s.ServiceResources);
+
+            if (service is null || !service.IsActive)
+                return BaseResponse<BookingDetailDto>.Failure("Service not found.");
 
             var minAdvanceHours = service.GetEffectiveMinAdvanceBookingHours(settings.MinAdvanceBookingHours);
             var maxAdvanceDays = service.GetEffectiveMaxAdvanceBookingDays(settings.MaxAdvanceBookingDays);
 
+            // var now = DateTime.UtcNow;
+            // var scheduledDateTime = request.ScheduledDate.ToDateTime(request.ScheduledStartTime);
             var now = DateTime.UtcNow;
-            var scheduledDateTime = request.ScheduledDate.ToDateTime(request.ScheduledStartTime);
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(tenant.TenantProfile.Timezone);
+            var localDateTime = request.ScheduledDate.ToDateTime(request.ScheduledStartTime);
+            var scheduledDateTime = TimeZoneInfo.ConvertTimeToUtc(
+                DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified), tz);
 
             if (scheduledDateTime < now.AddHours(minAdvanceHours))
-                return BaseResponse<BookingDto>.Failure("Booking is too soon");
+                return BaseResponse<BookingDetailDto>.Failure("Booking is too soon.");
 
             if (scheduledDateTime > now.AddDays(maxAdvanceDays))
-                return BaseResponse<BookingDto>.Failure("Booking is too far in advance");
+                return BaseResponse<BookingDetailDto>.Failure("Booking is too far in advance.");
+
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById(tenant.TenantProfile?.Timezone ?? "UTC");
+            var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+
+            // Resolve which resource to use
+            ResourceId resourceId;
+            if (request.ResourceId.HasValue)
+            {
+                resourceId = new ResourceId(request.ResourceId.Value);
+                if (!service.IsResourceAssigned(resourceId))
+                    return BaseResponse<BookingDetailDto>.Failure("Resource not assigned to service.");
+            }
+            else
+            {
+                // Auto-assign: find the first active resource that has the requested slot available
+                resourceId = await ResolveFirstAvailableResourceAsync(
+                    service, request.ScheduledDate, request.ScheduledStartTime, cancellationToken, nowLocal, minAdvanceHours);
+
+                if (resourceId is null)
+                    return BaseResponse<BookingDetailDto>.Failure("Selected time is no longer available.");
+            }
+
+            var resource = await _unitOfWork.ResourceRepository.FindByIdWithAvailabilityAsync(resourceId, cancellationToken);
+            if (resource is null || !resource.IsActive)
+                return BaseResponse<BookingDetailDto>.Failure("Resource not found.");
 
             var activeBookings = await _unitOfWork.BookingRepository
                 .GetActiveBookingsForResourceOnDateAsync(resourceId, request.ScheduledDate, cancellationToken);
 
             var availableSlots = _slotAvailabilityService.ComputeAvailableSlots(
-                service,
-                resource,
-                request.ScheduledDate,
-                activeBookings);
+                service, resource, request.ScheduledDate, activeBookings, nowLocal, minAdvanceHours);
 
-            var requestedSlot = request.ScheduledStartTime.ToString("HH:mm");
-
-            if (!availableSlots.Contains(requestedSlot))
-                return BaseResponse<BookingDto>.Failure("Selected slot is no longer available");
+            if (!availableSlots.Contains(request.ScheduledStartTime.ToString("HH:mm")))
+                return BaseResponse<BookingDetailDto>.Failure("Selected slot is no longer available.");
 
             var year = request.ScheduledDate.Year;
-
-            var existingBookings = _unitOfWork.BookingRepository.GetQuery(b =>
-                b.TenantId == tenantId &&
-                b.ScheduledDate.Year == year);
-
-            var count = existingBookings.Count();
-            var sequence = count + 1;
-
-            var bookingReference = $"BK-{year}-{sequence.ToString("D5")}";
+            var existingBookings = await _unitOfWork.BookingRepository.GetAllAsync(
+                filter: b => b.TenantId == tenantId && b.ScheduledDate.Year == year);
+            var bookingReference = $"BK-{year}-{(existingBookings.Count() + 1):D5}";
 
             var booking = Booking.Create(
                 tenantId,
                 bookingReference,
                 serviceId,
+                service.Name,
                 resourceId,
-                userId,
+                resource.Name,
+                request.GuestFirstName,
+                request.GuestLastName,
+                request.GuestEmail,
+                request.GuestPhone,
                 request.ScheduledDate,
                 request.ScheduledStartTime,
                 service.DurationMinutes,
@@ -106,32 +143,121 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
                 service.CurrencyCode,
                 request.CustomerNotes);
 
+            var rawToken = _tokenService.GenerateRefreshTokenRaw();
+            var tokenHash = _tokenService.HashToken(rawToken);
+
+            var tokenExpiresAt = scheduledDateTime.AddHours(-settings.CancellationCutoffHours);
+            var cancellationToken_ = GuestCancellationToken.Create(
+                booking.Guest.GuestId,
+                tenantId,
+                tokenHash,
+                tokenExpiresAt);
+
             _unitOfWork.BookingRepository.Add(booking);
+            _unitOfWork.GuestCancellationTokenRepository.Add(cancellationToken_);
 
             await _unitOfWork.CompleteAsync(cancellationToken);
 
-            var dto = new BookingDto(
-                booking.BookingId.Value,
-                booking.BookingReference,
-                booking.ServiceId.Value,
-                service.Name,
-                booking.ResourceId.Value,
-                resource.Name,
-                booking.UserId,
-                booking.ScheduledDate,
-                booking.ScheduledStartTime,
-                booking.ScheduledEndTime,
-                booking.DurationMinutes,
-                booking.Status,
-                booking.ConfirmationMode,
-                booking.PriceSnapshot,
-                booking.CurrencyCode,
-                booking.CustomerNotes,
-                booking.CancellationReason,
-                booking.CancelledAt,
-                booking.CreatedAt);
+            var cancellationUrl = _appUrlService.GetGuestCancellationUrl(request.TenantSlug, rawToken);
 
-            return BaseResponse<BookingDto>.Success(dto);
+            await SendConfirmationEmailAsync(booking, tenant.BusinessName, cancellationUrl, settings.CancellationCutoffHours, cancellationToken);
+
+            var dto = booking.ToDetailDto(service.Name, resource.Name);
+            return BaseResponse<BookingDetailDto>.Success(dto);
+        }
+
+        private async Task<ResourceId?> ResolveFirstAvailableResourceAsync(
+            Domain.Entities.Service service,
+            DateOnly date,
+            TimeOnly startTime,
+            CancellationToken cancellationToken,
+            DateTime nowLocal,
+            int minHours)
+        {
+            var requestedSlot = startTime.ToString("HH:mm");
+
+            foreach (var sr in service.ServiceResources)
+            {
+                var resource = await _unitOfWork.ResourceRepository
+                    .FindByIdWithAvailabilityAsync(sr.ResourceId, cancellationToken);
+
+                if (resource is null || !resource.IsActive)
+                    continue;
+
+                var activeBookings = await _unitOfWork.BookingRepository
+                    .GetActiveBookingsForResourceOnDateAsync(sr.ResourceId, date, cancellationToken);
+
+                var slots = _slotAvailabilityService.ComputeAvailableSlots(service, resource, date, activeBookings, nowLocal, minHours);
+
+                if (slots.Contains(requestedSlot))
+                    return sr.ResourceId;
+            }
+
+            return null;
+        }
+
+        private async Task SendConfirmationEmailAsync(
+            Booking booking,
+            string businessName,
+            string cancellationUrl,
+            int cancellationCutoffHours,
+            CancellationToken ct)
+        {
+            var guest = booking.Guest;
+            var scheduledDisplay = $"{booking.ScheduledDate:dddd, MMMM d, yyyy} at {booking.ScheduledStartTime:h:mm tt}";
+
+            var body = $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset=""utf-8""></head>
+<body style=""font-family: Arial, sans-serif; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 24px;"">
+  <h2 style=""color: #2d2d2d;"">Your booking is confirmed</h2>
+  <p>Hi {guest.FirstName},</p>
+  <p>Your appointment with <strong>{businessName}</strong> has been confirmed.</p>
+
+  <table style=""width: 100%; border-collapse: collapse; margin: 24px 0;"">
+    <tr>
+      <td style=""padding: 8px 0; color: #666; width: 40%;"">Booking reference</td>
+      <td style=""padding: 8px 0; font-weight: bold;"">{booking.BookingReference}</td>
+    </tr>
+    <tr>
+      <td style=""padding: 8px 0; color: #666;"">Service</td>
+      <td style=""padding: 8px 0;"">{booking.ServiceName}</td>
+    </tr>
+    <tr>
+      <td style=""padding: 8px 0; color: #666;"">Staff</td>
+      <td style=""padding: 8px 0;"">{booking.ResourceName}</td>
+    </tr>
+    <tr>
+      <td style=""padding: 8px 0; color: #666;"">Date &amp; time</td>
+      <td style=""padding: 8px 0;"">{scheduledDisplay}</td>
+    </tr>
+    <tr>
+      <td style=""padding: 8px 0; color: #666;"">Duration</td>
+      <td style=""padding: 8px 0;"">{booking.DurationMinutes} minutes</td>
+    </tr>
+  </table>
+
+  <p style=""margin-top: 32px; color: #555;"">Need to cancel? Use the button below. This link expires {cancellationCutoffHours} hours before your appointment.</p>
+
+  <a href=""{cancellationUrl}""
+     style=""display: inline-block; margin-top: 8px; padding: 12px 24px;
+            background-color: #dc2626; color: #ffffff; text-decoration: none;
+            border-radius: 6px; font-weight: bold;"">
+    Cancel booking
+  </a>
+
+  <p style=""margin-top: 32px; font-size: 12px; color: #999;"">
+    If the button does not work, copy and paste this link into your browser:<br>
+    {cancellationUrl}
+  </p>
+</body>
+</html>";
+
+            await _notificationService.SendEmailAsync(
+                guest.Email,
+                $"Booking confirmed — {booking.BookingReference}",
+                body);
         }
     }
 }

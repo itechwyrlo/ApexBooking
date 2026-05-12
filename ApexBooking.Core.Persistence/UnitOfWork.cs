@@ -20,20 +20,30 @@ namespace ApexBooking.Core.Persistence
         private readonly Lazy<IServiceRepository> _serviceRepository;
         private readonly Lazy<IResourceRepository> _resourceRepository;
         private readonly Lazy<IBookingRepository> _bookingRepository;
+        private readonly Lazy<IPaymentTransactionRepository> _paymentTransactionRepository;
+        private readonly Lazy<IPlatformPaymentGatewayRepository> _platformPaymentGatewayRepository;
+        private readonly Lazy<IGuestCancellationTokenRepository> _guestCancellationTokenRepository;
+        private readonly Lazy<ITenantRequestRepository> _tenantRequestRepository;
 
         public IResourceRepository ResourceRepository => _resourceRepository.Value;
         public IBookingRepository BookingRepository => _bookingRepository.Value;
-
         public ITenantRepository TenantRepository => _tenantRepository.Value;
         public IUserRepository UserRepository => _userRepository.Value;
         public ISuperAdminRepository SuperAdminRepository => _superAdminRepository.Value;
         public IServiceRepository ServiceRepository => _serviceRepository.Value;
-        
-        // Identity managers
+        public IPaymentTransactionRepository PaymentTransactionRepository => _paymentTransactionRepository.Value;
+        public IPlatformPaymentGatewayRepository PlatformPaymentGatewayRepository => _platformPaymentGatewayRepository.Value;
+        public IGuestCancellationTokenRepository GuestCancellationTokenRepository => _guestCancellationTokenRepository.Value;
+        public ITenantRequestRepository TenantRequestRepository => _tenantRequestRepository.Value;
+
         public UserManager<User> UserManager { get; }
         public RoleManager<IdentityRole<Guid>> RoleManager { get; }
 
-        public UnitOfWork(ApexBookingDbContext context, IServiceProvider serviceProvider, UserManager<User> userManager, RoleManager<IdentityRole<Guid>> roleManager)
+        public UnitOfWork(
+            ApexBookingDbContext context,
+            IServiceProvider serviceProvider,
+            UserManager<User> userManager,
+            RoleManager<IdentityRole<Guid>> roleManager)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
@@ -46,6 +56,14 @@ namespace ApexBooking.Core.Persistence
             _serviceRepository = new Lazy<IServiceRepository>(() => new ServiceRepository(_context));
             _resourceRepository = new Lazy<IResourceRepository>(() => new ResourceRepository(_context));
             _bookingRepository = new Lazy<IBookingRepository>(() => new BookingRepository(_context));
+            _paymentTransactionRepository = new Lazy<IPaymentTransactionRepository>(
+                () => new PaymentTransactionRepository(_context));
+            _platformPaymentGatewayRepository = new Lazy<IPlatformPaymentGatewayRepository>(
+                () => new PlatformPaymentGatewayRepository(_context));
+            _guestCancellationTokenRepository = new Lazy<IGuestCancellationTokenRepository>(
+                () => new GuestCancellationTokenRepository(_context));
+            _tenantRequestRepository = new Lazy<ITenantRequestRepository>(
+                () => new TenantRequestRepository(_context));
         }
 
         public async Task<int> CompleteAsync()

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Application.Services.Mappings;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
@@ -27,9 +28,9 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.UpdateService
             var tenantId = _contextService.GetCurrentTenantId();
             var serviceId = new ServiceId(command.ServiceId);
 
-            var service = await _unitOfWork.ServiceRepository
-                .FindByIdWithResourcesAsync(serviceId, ct)
-                .ConfigureAwait(false);
+            var service = await _unitOfWork.ServiceRepository.GetAsync(
+                predicate: s => s.ServiceId == serviceId,
+                includes: s => s.ServiceResources).ConfigureAwait(false);
 
             if (service is null || service.TenantId != tenantId)
                 return BaseResponse<ServiceDto>.Failure("Service not found.");
@@ -52,25 +53,7 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.UpdateService
             _unitOfWork.ServiceRepository.Update(service);
             await _unitOfWork.CompleteAsync(ct);
 
-            return BaseResponse<ServiceDto>.Success(MapToDto(service));
+            return BaseResponse<ServiceDto>.Success(service.ToServiceDto());
         }
-
-        private static ServiceDto MapToDto(Core.Domain.Entities.Service service) => new()
-        {
-            Id = service.ServiceId.Value,
-            Name = service.Name,
-            Description = service.Description,
-            DurationMinutes = service.DurationMinutes,
-            BufferBeforeMinutes = service.BufferBeforeMinutes,
-            BufferAfterMinutes = service.BufferAfterMinutes,
-            Price = service.Price,
-            CurrencyCode = service.CurrencyCode,
-            MinAdvanceBookingHours = service.MinAdvanceBookingHours,
-            MaxAdvanceBookingDays = service.MaxAdvanceBookingDays,
-            IsActive = service.IsActive,
-            ResourceIds = service.ServiceResources.Select(sr => sr.ResourceId.Value).ToList(),
-            CreatedAt = service.CreatedAt,
-            UpdatedAt = service.UpdatedAt
-        };
     }
 }

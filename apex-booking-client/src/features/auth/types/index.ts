@@ -1,33 +1,6 @@
 // Auth request and response types matching backend endpoints
 
-// Base Response Interface
-export interface BaseResponse<T = any> {
-  isSuccess: boolean;
-  data: T | null;
-  errors?: {
-    code?: string;
-    message: string;
-    details?: any[];
-  }[];
-}
-
-export interface Error {
-  code?: string;
-  message: string;
-  details?: any[];
-}
-
-// Register Admin Request
-export interface RegisterAdminRequest {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  organizationName: string;
-  industry: string;
-  phone: string;
-  country: string;
-}
+import type { BaseResponse } from "../../../types";
 
 export interface AuthResponseData {
   accessToken: string;

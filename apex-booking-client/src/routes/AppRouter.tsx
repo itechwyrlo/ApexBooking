@@ -1,22 +1,41 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "../context/AuthContext";
 import { ProtectedRoute } from "./ProtectedRoute";
+// import { CustomerProtectedRoute } from "./CustomerProtectedRoute";
+import { SuperAdminProtectedRoute } from "./SuperAdminProtectedRoute";
 
 import LoginPage from "../features/auth/pages/LoginPage";
-import RegisterPage from "../features/auth/pages/RegisterPage";
 import EmailVerificationPage from "../features/auth/pages/EmailVerificationPage";
 import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage";
 import ResetPasswordPage from "../features/auth/pages/ResetPasswordPage";
 import VerifyEmailNoticePage from "../features/auth/pages/VerifyEmailNoticePage";
+// import CustomerProfilePage from "../features/auth/pages/CustomerProfilePage";
 import { MainLayout } from "../components/layout/MainLayout";
+// import { CustomerLayout } from "../components/layout/CustomerLayout";
+import { SuperAdminLayout } from "../components/layout/SuperAdminLayout";
 import TenantDashboardPage from "../features/dashboard/TenantDashboardPage";
 import ResourcesPage from "../features/resources/pages/ResourcesPage";
 import ResourceAvailabilityPage from "../features/resources/pages/ResourceAvailabilityPage";
 import ServicesPage from "../features/service/pages/ServicesPage";
 import BookingsPage from "../features/bookings/pages/BookingsPage";
-import PublicTenantPage from "../features/bookings/pages/PublicTenantPage";
+// import CustomerBookingsPage from "../features/bookings/pages/CustomerBookingsPage";
+// import PublicTenantPage from "../features/bookings/pages/PublicTenantPage";
 import CustomerBookingWizardPage from "../features/bookings/pages/CustomerBookingWizardPage";
+import CustomerRegisterPage from "../features/bookings/pages/CustomerRegisterPage";
+import SettingsPage from "../features/settings/pages/SettingsPage";
+import PaymentSuccessPage from "../features/bookings/pages/PaymentSuccessPage";
+import CancelBookingPage from "../features/bookings/pages/CancelBookingPage";
+import LandingPage from "../features/public/pages/landingpage";
+import PricingPage from "../features/public/pages/PricingPage";
+import RequestAccessPage from "../features/public/pages/RequestAccessPage";
+import SuperAdminLoginPage from "../features/superadmin/pages/SuperAdminLoginPage";
+import SuperAdminPaymentGatewayPage from "../features/superadmin/pages/SuperAdminPaymentGatewayPage";
+import SuperAdminOverviewPage from "../features/superadmin/pages/SuperAdminOverviewPage";
+import NewOrganizationPage from "../features/superadmin/pages/NewOrganizationPage";
+import OrganizationDetailPage from "../features/superadmin/pages/OrganizationDetailPage";
+import SetupAccountPage from "../features/superadmin/pages/SetupAccountPage";
+import TenantRequestsPage from "../features/superadmin/pages/TenantRequestsPage";
 
 export const AppRouter: React.FC = () => {
   return (
@@ -25,15 +44,34 @@ export const AppRouter: React.FC = () => {
         <Routes>
           {/* Public auth routes */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-account" element={<EmailVerificationPage />} />
           <Route path="/verify-email-notice" element={<VerifyEmailNoticePage />} />
+          <Route path="/setup-account" element={<SetupAccountPage />} />
 
-          {/* Public customer portal — TR-1.4, TR-9.3, UC-3.2.1 */}
-          <Route path="/book/:tenant" element={<PublicTenantPage />} />
+          {/* Public marketing routes */}
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/request-access" element={<RequestAccessPage />} />
+
+          {/* Super admin — public login */}
+          <Route path="/superadmin/login" element={<SuperAdminLoginPage />} />
+
+          {/* Public customer portal */}
+          {/* <Route path="/book/:tenant" element={<PublicTenantPage />} /> */}
           <Route path="/book/:tenant/new" element={<CustomerBookingWizardPage />} />
+          <Route path="/book/:tenant/customer/login" element={<LoginPage />} />
+          <Route path="/book/:tenant/customer/register" element={<CustomerRegisterPage />} />
+          <Route path="/book/:tenant/payment/success" element={<PaymentSuccessPage />} />
+          <Route path="/book/:tenant/cancel-booking" element={<CancelBookingPage />} />
+
+          {/* Protected customer routes */}
+          {/* <Route element={<CustomerProtectedRoute />}>
+            <Route element={<CustomerLayout />}>
+              <Route path="/book/:tenant/customer/bookings" element={<CustomerBookingsPage />} />
+              <Route path="/book/:tenant/customer/profile" element={<CustomerProfilePage />} />
+            </Route>
+          </Route> */}
 
           {/* Protected tenant admin routes */}
           <Route element={<ProtectedRoute />}>
@@ -43,75 +81,25 @@ export const AppRouter: React.FC = () => {
               <Route path="/t/:tenant/resources/:id/availability" element={<ResourceAvailabilityPage />} />
               <Route path="/t/:tenant/services" element={<ServicesPage />} />
               <Route path="/t/:tenant/bookings" element={<BookingsPage />} />
+              <Route path="/t/:tenant/settings" element={<SettingsPage />} />
             </Route>
           </Route>
 
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Protected super admin routes */}
+          <Route element={<SuperAdminProtectedRoute />}>
+            <Route element={<SuperAdminLayout />}>
+              <Route path="/superadmin" element={<SuperAdminOverviewPage />} />
+              <Route path="/superadmin/organizations" element={<SuperAdminOverviewPage />} />
+              <Route path="/superadmin/organizations/new" element={<NewOrganizationPage />} />
+              <Route path="/superadmin/organizations/:slug" element={<OrganizationDetailPage />} />
+              <Route path="/superadmin/requests" element={<TenantRequestsPage />} />
+              <Route path="/superadmin/payment-gateway" element={<SuperAdminPaymentGatewayPage />} />
+            </Route>
+          </Route>
+
+          <Route path="/" element={<LandingPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
   );
 };
-// import React from "react";
-// import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-// import { AuthProvider } from "../context/AuthContext";
-// import { ProtectedRoute } from "./ProtectedRoute";
-
-// import LoginPage from "../features/auth/pages/LoginPage";
-// import RegisterPage from "../features/auth/pages/RegisterPage";
-// import EmailVerificationPage from "../features/auth/pages/EmailVerificationPage";
-// import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage";
-// import ResetPasswordPage from "../features/auth/pages/ResetPasswordPage";
-// import VerifyEmailNoticePage from "../features/auth/pages/VerifyEmailNoticePage";
-// import { MainLayout } from "../components/layout/MainLayout";
-// import TenantDashboardPage from "../features/dashboard/TenantDashboardPage";
-// import ResourcesPage from "../features/resources/pages/ResourcesPage";
-// import ResourceAvailabilityPage from "../features/resources/pages/ResourceAvailabilityPage";
-// import ServicesPage from "../features/service/pages/ServicesPage";
-// import BookingsPage from "../features/bookings/pages/BookingsPage";
-
-
-// export const AppRouter: React.FC = () => {
-//   return (
-//     <BrowserRouter>
-//       <AuthProvider>
-//         <Routes>
-//           <Route path="/login" element={<LoginPage />} />
-//           <Route path="/register" element={<RegisterPage />} />
-//           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-//           <Route path="/reset-password" element={<ResetPasswordPage />} />
-//           <Route path="/verify-account" element={<EmailVerificationPage />} />
-
-//           <Route
-//             path="/verify-email-notice"
-//             element={<VerifyEmailNoticePage />}
-//           />
-
-//           <Route element={<ProtectedRoute />}>
-//             <Route element={<MainLayout />}>
-//               <Route
-//                 path="/t/:tenant/dashboard"
-//                 element={<TenantDashboardPage />}
-//               />
-
-//               <Route path="/t/:tenant/resources" element={<ResourcesPage />} />
-//               <Route path="/t/:tenant/bookings" element={<BookingsPage />} />
-//               {/* <Route
-//                 path="/t/:tenant/resources/:id"
-//                 element={<ResourceDetailPage />}
-//               /> */}
-//               <Route
-//                 path="/t/:tenant/resources/:id/availability"
-//                 element={<ResourceAvailabilityPage />}
-//               />
-
-//               <Route path="/t/:tenant/services" element={<ServicesPage />} />
-//             </Route>
-//           </Route>
-
-//           <Route path="/" element={<Navigate to="/login" replace />} />
-//         </Routes>
-//       </AuthProvider>
-//     </BrowserRouter>
-//   );
-// };

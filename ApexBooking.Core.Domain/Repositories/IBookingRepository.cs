@@ -21,5 +21,18 @@ namespace ApexBooking.Core.Domain.Repositories
             ResourceId resourceId,
             DateOnly date,
             CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<Booking>> GetActiveBookingsForResourcesInDateRangeAsync(
+            TenantId tenantId,
+            IEnumerable<ResourceId> resourceIds,
+            DateOnly startDate,
+            DateOnly endDate,
+            CancellationToken cancellationToken = default);
+
+        Task<int> CountBookingsInMonthAsync(
+            TenantId tenantId,
+            int year,
+            int month,
+            CancellationToken cancellationToken = default);
     }
 }

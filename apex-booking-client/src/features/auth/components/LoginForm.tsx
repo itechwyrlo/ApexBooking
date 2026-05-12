@@ -6,11 +6,14 @@ import { Input } from "../../../components/ui/Input";
 import { Alert } from "../../../components/ui/Alert";
 import type { ValidationErrors } from "../../../utils/validation"
 import { validateForm, validationRules,  } from "../../../utils/validation";
+import { CustomerRegisterLink } from "./CustomerRegisterLink";
 
 interface LoginFormData {
   email: string;
   password: string;
 }
+
+
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -48,7 +51,7 @@ const LoginForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
-    
+
     // Validate form
     const errors = validateForm({ email, password }, {
       email: validationRules.email,
@@ -62,6 +65,13 @@ const LoginForm: React.FC = () => {
 
     await login(email, password);
   };
+
+  // Clear password on error
+  useEffect(() => {
+    if (error) {
+      setPassword('');
+    }
+  }, [error]);
 
   const handleInputChange = (field: keyof LoginFormData, value: string) => {
     if (field === 'email') setEmail(value);
@@ -84,12 +94,13 @@ const LoginForm: React.FC = () => {
                 {successMessage}
               </Alert>
             )}
-            <p className="text-muted small">
+            <CustomerRegisterLink searchParams={searchParams} />
+            {/* <p className="text-muted small">
               Or{" "}
               <Link to="/register" className="text-decoration-none">
                 create a new account
               </Link>
-            </p>
+            </p> */}
           </div>
 
           <form onSubmit={handleSubmit}>

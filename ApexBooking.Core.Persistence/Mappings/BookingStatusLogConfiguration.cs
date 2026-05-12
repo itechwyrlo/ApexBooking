@@ -37,8 +37,10 @@ namespace ApexBooking.Core.Persistence.Mappings
                 .HasColumnName("new_status")
                 .IsRequired();
 
-            builder.Property(bsl => bsl.ChangedByUserId)
-                .HasColumnName("changed_by_user_id");
+            builder.Property(bsl => bsl.ActorType)
+                .HasConversion<string>()
+                .HasColumnName("actor_type")
+                .IsRequired();
 
             builder.Property(bsl => bsl.Reason)
                 .HasColumnName("change_reason")

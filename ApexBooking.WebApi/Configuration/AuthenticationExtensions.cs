@@ -91,6 +91,7 @@ namespace ApexBooking.WebApi.Extensions
                 opts.AddPolicy("StaffAndAbove", p => p.RequireRole("staff", "manager", "tenantadmin"));
                 opts.AddPolicy("ManagerAndAbove", p => p.RequireRole("manager", "tenantadmin"));
                 opts.AddPolicy("AdminOnly", p => p.RequireRole("tenantadmin"));
+                opts.AddPolicy("SuperAdminOnly", p => p.RequireRole("superadmin"));
                 opts.AddPolicy("Authenticated", p => p.RequireAuthenticatedUser());
             });
 

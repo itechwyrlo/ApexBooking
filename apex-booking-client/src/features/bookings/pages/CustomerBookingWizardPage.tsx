@@ -1,474 +1,681 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Alert } from '../../../components/ui/Alert';
-import { Button } from '../../../components/ui/Button';
-import { useSlots } from '../hooks/useSlots';
-import { useAuth } from '../../../context/AuthContext';
-import type { CreateBookingRequest, PublicService, PublicResource } from '../types';
-import axiosInstance from '../../../services/axiosInstance';
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
+import axiosInstance from "../../../services/axiosInstance";
+import type {
+  PublicService,
+  PublicResource,
+  CreateBookingRequest,
+  BookingResult,
+  PublicTenant,
+} from "../types";
+import { useSlots } from "../hooks/useSlots";
+import { useMonthlyAvailability } from "../hooks/useMonthlyAvailability";
+import { useInitiatePayment } from "../hooks/useInitiatePayment";
+import { formatTo12Hour } from "../../../utils/timeFormat";
+import BookingCalendar from "../components/BookingCalendar";
+import TimeSlotGrid from "../components/TimeSlotGrid";
+import StaffCard from "../components/StaffCard";
+import StaffInfoDrawer from "../components/StaffInfoDrawer";
+import WizardProgressBar from "../components/WizardProgressBar";
+import WizardSelectionChips from "../components/WizardSelectionChips";
+import { Alert } from "../../../components/ui/Alert";
+import { Button } from "../../../components/ui/Button";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
-
-const STEP_LABELS: Record<WizardStep, string> = {
-  1: 'Select Service',
-  2: 'Select Resource',
-  3: 'Select Date',
-  4: 'Select Slot',
-  5: 'Confirm',
-};
+type SelectedResource = PublicResource | null | "unset";
 
 const CustomerBookingWizardPage: React.FC = () => {
   const { tenant } = useParams<{ tenant: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { isAuthenticated, isInitializing } = useAuth();
-
+  // const navigate = useNavigate();
   const [step, setStep] = useState<WizardStep>(1);
+
+  // Data
+  const [tenantData, setTenantData] = useState<PublicTenant | null>(null);
+  const [tenantLoading, setTenantLoading] = useState(true);
   const [services, setServices] = useState<PublicService[]>([]);
-  const [resources, setResources] = useState<PublicResource[]>([]);
   const [servicesLoading, setServicesLoading] = useState(false);
-  const [servicesError, setServicesError] = useState<string | null>(null);
-  const [resourcesLoading, setResourcesLoading] = useState(false);
-  const [resourcesError, setResourcesError] = useState<string | null>(null);
+  const [resources, setResources] = useState<PublicResource[]>([]);
+
+  // Selections
+  const [selectedService, setSelectedService] = useState<PublicService | null>(
+    null,
+  );
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedResource, setSelectedResource] =
+    useState<SelectedResource>("unset");
+
+  // Details
+  const [guestFirstName, setGuestFirstName] = useState("");
+  const [guestLastName, setGuestLastName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [customerNotes, setCustomerNotes] = useState("");
+  const [detailsErrors, setDetailsErrors] = useState<
+    Partial<Record<string, string>>
+  >({});
+
+  // Result & Payment
+  const [bookingResult, setBookingResult] = useState<BookingResult | null>(
+    null,
+  );
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [bookingReference, setBookingReference] = useState<string | null>(null);
+  const [drawerResource, setDrawerResource] = useState<PublicResource | null>(
+    null,
+  );
 
-  const [selectedService, setSelectedService] = useState<PublicService | null>(null);
-  const [selectedResource, setSelectedResource] = useState<PublicResource | null>(null);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [customerNotes, setCustomerNotes] = useState('');
-  const [restoredFromLogin, setRestoredFromLogin] = useState(false);
+  // Hooks
+  const { slots, isLoading: slotsLoading, fetchSlots, clearSlots } = useSlots();
+  const {
+    availableDays,
+    isLoading: isLoadingMonthly,
+    fetchMonth,
+  } = useMonthlyAvailability(tenant || "", selectedService?.serviceId || null);
+  const {
+    initiate,
+    isLoading: paymentLoading,
+    error: paymentError,
+    clearError: clearPaymentError,
+  } = useInitiatePayment();
 
-  const { slots, isLoading: slotsLoading, error: slotsError, clearError: clearSlotsError, fetchSlots } = useSlots();
-
-  const today = new Date().toISOString().split('T')[0];
-
+  // Load Tenant & Services
   useEffect(() => {
-    const load = async () => {
-      setServicesLoading(true);
-      setServicesError(null);
+    const loadTenant = async () => {
+      setTenantLoading(true);
       try {
-        const result = await axiosInstance.get(`/public/${tenant}/services`);
-        if (!result.isSuccess) {
-          setServicesError(result.errors?.[0]?.message ?? 'Failed to load services.');
-          return;
-        }
-        const loaded: PublicService[] = result.data ?? [];
-        setServices(loaded);
-
-        const preselectedServiceId = searchParams.get('serviceId');
-        const preselectedResourceId = searchParams.get('resourceId');
-        const preselectedDate = searchParams.get('date');
-        const preselectedSlot = searchParams.get('slot');
-
-        if (preselectedServiceId) {
-          const matchedService = loaded.find(s => s.serviceId === preselectedServiceId);
-          if (matchedService) {
-            setSelectedService(matchedService);
-            if (preselectedDate) setSelectedDate(preselectedDate);
-            if (preselectedSlot) setSelectedSlot(preselectedSlot);
-
-            if (preselectedResourceId && preselectedDate && preselectedSlot) {
-              setRestoredFromLogin(true);
-              setStep(5);
-            } else {
-              setStep(2);
-            }
-          }
-        }
-      } catch {
-        setServicesError('Failed to load services.');
+        const res = await axiosInstance.get(`/public/${tenant}`);
+        setTenantData(res.data);
+      } catch (err) {
+        console.error("Failed to load tenant", err);
+      } finally {
+        setTenantLoading(false);
+      }
+    };
+    const loadServices = async () => {
+      setServicesLoading(true);
+      try {
+        const res = await axiosInstance.get(`/public/${tenant}/services`);
+        setServices(res.data || []);
+      } catch (err) {
+        console.error("Failed to load services", err);
       } finally {
         setServicesLoading(false);
       }
     };
-    load();
+    if (tenant) {
+      loadTenant();
+      loadServices();
+    }
   }, [tenant]);
 
+  // Load resources when date/time/service are set
   useEffect(() => {
-    if (!selectedService) return;
-
-    const load = async () => {
-      setResourcesLoading(true);
-      setResourcesError(null);
-      setResources([]);
-      try {
-        const result = await axiosInstance.get(
-          `/public/${tenant}/services/${selectedService.serviceId}/resources`
-        );
-        if (!result.isSuccess) {
-          setResourcesError(result.errors?.[0]?.message ?? 'Failed to load resources.');
-          return;
+    if (step === 3 && selectedService && selectedDate && selectedSlot) {
+      const loadResources = async () => {
+        try {
+          const params = { date: selectedDate, time: selectedSlot };
+          const res = await axiosInstance.get(
+            `/public/${tenant}/services/${selectedService.serviceId}/resources`,
+            { params },
+          );
+          setResources(res.data || []);
+        } catch (err) {
+          console.error("Failed to load resources", err);
         }
-        const loaded: PublicResource[] = result.data ?? [];
-        setResources(loaded);
+      };
+      loadResources();
+    }
+  }, [step, tenant, selectedService, selectedDate, selectedSlot]);
 
-        const preselectedResourceId = searchParams.get('resourceId');
-        if (preselectedResourceId) {
-          const matchedResource = loaded.find(r => r.resourceId === preselectedResourceId);
-          if (matchedResource) {
-            setSelectedResource(matchedResource);
-          }
-        }
-      } catch {
-        setResourcesError('Failed to load resources.');
-      } finally {
-        setResourcesLoading(false);
-      }
+  // Fetch slots when date changes
+  useEffect(() => {
+    if (step === 2 && selectedDate && selectedService) {
+      setSelectedSlot(null);
+      fetchSlots(selectedService.serviceId, null, selectedDate, tenant!);
+    }
+  }, [selectedDate, selectedService, tenant, fetchSlots, step]);
+
+  // Compute min/max dates
+  // AFTER:
+  const { minDate, maxDate } = useMemo(() => {
+    if (!tenantData) return { minDate: "", maxDate: "" };
+
+    // Get current time in tenant's timezone
+    const nowUtc = new Date();
+    const tenantNow = new Date(
+      nowUtc.toLocaleString("en-US", { timeZone: tenantData.timezone }),
+    );
+
+    // Calculate boundaries in tenant's local time
+    const minDateTime = new Date(
+      tenantNow.getTime() + tenantData.minAdvanceBookingHours * 60 * 60 * 1000,
+    );
+    const maxDateTime = new Date(
+      tenantNow.getTime() +
+        tenantData.maxAdvanceBookingDays * 24 * 60 * 60 * 1000,
+    );
+
+    // Format as YYYY-MM-DD in tenant's timezone
+    const formatInTenantTz = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     };
-    load();
-  }, [selectedService]);
 
-  useEffect(() => {
-    if (isInitializing) return;
-    if (!isAuthenticated) return;
-    if (!restoredFromLogin) return;
-    if (!selectedService || !selectedResource || !selectedDate || !selectedSlot) return;
-    if (bookingReference) return;
-
-    submitBooking();
-  }, [isAuthenticated, isInitializing, restoredFromLogin, selectedResource]);
+    return {
+      minDate: formatInTenantTz(minDateTime),
+      maxDate: formatInTenantTz(maxDateTime),
+    };
+  }, [tenantData]);
+  // const { minDate, maxDate } = useMemo(() => {
+  //   if (!tenantData) return { minDate: '', maxDate: '' };
+  //   const now = new Date();
+  //   const min = new Date(now.getTime() + tenantData.minAdvanceBookingHours * 60 * 60 * 1000);
+  //   const max = new Date(now.getTime() + tenantData.maxAdvanceBookingDays * 24 * 60 * 60 * 1000);
+  //   const formatDate = (d: Date) => d.toISOString().split('T')[0];
+  //   return { minDate: formatDate(min), maxDate: formatDate(max) };
+  // }, [tenantData]);
 
   const handleSelectService = (service: PublicService) => {
     setSelectedService(service);
-    setSelectedResource(null);
-    setSelectedDate('');
+    setSelectedDate("");
     setSelectedSlot(null);
+    setSelectedResource("unset");
+    clearSlots();
     setStep(2);
   };
 
-  const handleSelectResource = (resource: PublicResource) => {
+  const handleSelectResource = (resource: SelectedResource) => {
     setSelectedResource(resource);
-    setSelectedDate('');
-    setSelectedSlot(null);
-    setStep(3);
-  };
-
-  const handleDateSubmit = () => {
-    if (!selectedDate) return;
-    setSelectedSlot(null);
     setStep(4);
-    fetchSlots(selectedService!.serviceId, selectedResource!.resourceId, selectedDate, tenant!);
   };
 
-  const handleSelectSlot = (slot: string) => {
-    setSelectedSlot(slot);
-    setStep(5);
-  };
-
-  const handleConfirm = () => {
-    if (!selectedService || !selectedResource || !selectedDate || !selectedSlot) return;
-
-    if (!isInitializing && !isAuthenticated) {
-      const params = new URLSearchParams();
-      params.set('serviceId', selectedService.serviceId);
-      params.set('resourceId', selectedResource.resourceId);
-      params.set('date', selectedDate);
-      params.set('slot', selectedSlot);
-      navigate(`/book/${tenant}/login?${params.toString()}`);
-      return;
-    }
-
-    submitBooking();
+  const validateDetails = () => {
+    const errors: Partial<Record<string, string>> = {};
+    if (!guestFirstName.trim())
+      errors.guestFirstName = "First name is required.";
+    if (!guestLastName.trim()) errors.guestLastName = "Last name is required.";
+    if (!guestEmail.trim()) errors.guestEmail = "Email is required.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail))
+      errors.guestEmail = "Enter a valid email address.";
+    setDetailsErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const submitBooking = async () => {
-    if (!selectedService || !selectedResource || !selectedDate || !selectedSlot) return;
+    if (
+      !selectedService ||
+      !selectedDate ||
+      !selectedSlot ||
+      selectedResource === "unset"
+    )
+      return;
     setSubmitLoading(true);
     setSubmitError(null);
     try {
+      const resourceId =
+        selectedResource === null ? null : selectedResource.resourceId;
       const request: CreateBookingRequest = {
+        tenantSlug: tenant!,
         serviceId: selectedService.serviceId,
-        resourceId: selectedResource.resourceId,
+        resourceId,
         scheduledDate: selectedDate,
         scheduledStartTime: selectedSlot,
-        customerNotes: customerNotes || undefined,
+        guestFirstName: guestFirstName.trim(),
+        guestLastName: guestLastName.trim(),
+        guestEmail: guestEmail.trim(),
+        guestPhone: guestPhone.trim() || undefined,
+        customerNotes: customerNotes.trim() || undefined,
       };
-      const result = await axiosInstance.post('/booking', request);
-      if (!result.isSuccess) {
-        setSubmitError(result.errors?.[0]?.message ?? 'Failed to create booking.');
+
+      const res = await axiosInstance.post("/booking", request);
+      if (!res.isSuccess) {
+        setSubmitError(res.errors?.[0]?.message ?? "Failed to create booking.");
         return;
       }
-      setBookingReference(result.data?.bookingReference ?? null);
+
+      setBookingResult({
+        bookingId: res.data.bookingId,
+        bookingReference: res.data.bookingReference,
+        status: res.data.status,
+        priceSnapshot: res.data.priceSnapshot,
+        currencyCode: res.data.currencyCode,
+        serviceName: selectedService.name,
+        resourceName:
+          selectedResource === null ? "Any Available" : selectedResource.name,
+        scheduledDate: selectedDate,
+        scheduledStartTime: selectedSlot,
+      });
     } catch {
-      setSubmitError('Failed to create booking.');
+      setSubmitError("Failed to create booking.");
     } finally {
       setSubmitLoading(false);
     }
   };
 
-  if (bookingReference) {
+  const handleProceedToPayment = async () => {
+    if (!bookingResult) return;
+    const approvalUrl = await initiate(bookingResult.bookingId);
+    if (approvalUrl) window.location.href = approvalUrl;
+  };
+
+  if (tenantLoading || servicesLoading)
+    return <div className="p-5 text-center">Loading...</div>;
+  if (!tenantData)
+    return <div className="p-5 text-center">Business not found.</div>;
+
+  // Render Confirmation
+  if (bookingResult && bookingResult.status === "Confirmed") {
     return (
       <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center p-3">
-        <div className="card border-0 shadow-sm p-4 text-center" style={{ maxWidth: 480, width: '100%' }}>
-          <div className="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3" style={{ width: 64, height: 64 }}>
+        <div
+          className="card border-0 shadow-sm p-4 text-center"
+          style={{ maxWidth: 480, width: "100%" }}
+        >
+          <div
+            className="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3"
+            style={{ width: 64, height: 64 }}
+          >
             <i className="fas fa-check fa-xl text-success" />
           </div>
-          <h5 className="fw-bold mb-2">Booking Confirmed</h5>
-          <p className="text-muted small mb-3">Your booking has been placed. A confirmation email has been sent.</p>
+          <h5 className="fw-bold mb-1">You're all set!</h5>
+          <p className="text-muted small mb-3">
+            A confirmation email has been sent to {guestEmail}.
+          </p>
           <div className="bg-light rounded p-3 mb-3">
             <div className="text-muted small mb-1">Booking Reference</div>
-            <div className="fw-bold fs-5">{bookingReference}</div>
+            <div className="fw-bold fs-5">{bookingResult.bookingReference}</div>
           </div>
           <div className="text-muted small">
-            <div>{selectedService?.name}</div>
-            <div>{selectedResource?.name}</div>
-            <div>{selectedDate} at {selectedSlot}</div>
+            <div>{bookingResult.serviceName}</div>
+            <div>{bookingResult.resourceName}</div>
+            <div>
+              {bookingResult.scheduledDate} at{" "}
+              {formatTo12Hour(bookingResult.scheduledStartTime)}
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center p-3">
-      <div style={{ maxWidth: 600, width: '100%' }}>
-
-        <div className="text-center mb-4">
-          <h4 className="fw-bold mb-1">Book an Appointment</h4>
-          <p className="text-muted small mb-0">{tenant}</p>
-        </div>
-
-        <div className="d-flex justify-content-center gap-2 mb-4 flex-wrap">
-          {([1, 2, 3, 4, 5] as WizardStep[]).map(s => (
-            <div key={s} className="d-flex align-items-center gap-1">
-              <div
-                className="rounded-circle d-flex align-items-center justify-content-center fw-semibold"
-                style={{
-                  width: 28,
-                  height: 28,
-                  fontSize: 12,
-                  background: step === s ? '#0d6efd' : step > s ? '#198754' : '#e9ecef',
-                  color: step >= s ? '#fff' : '#6c757d',
-                }}
-              >
-                {step > s ? <i className="fas fa-check" style={{ fontSize: 10 }} /> : s}
-              </div>
-              <span className="small text-muted d-none d-sm-inline">{STEP_LABELS[s]}</span>
-              {s < 5 && <span className="text-muted small mx-1">›</span>}
+  // Render Payment Pending
+  if (bookingResult && bookingResult.status === "PendingPayment") {
+    return (
+      <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center p-3">
+        <div
+          className="card border-0 shadow-sm p-4 text-center"
+          style={{ maxWidth: 480, width: "100%" }}
+        >
+          <div
+            className="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3"
+            style={{ width: 64, height: 64 }}
+          >
+            <i className="fas fa-credit-card fa-xl text-warning" />
+          </div>
+          <h5 className="fw-bold mb-2">Payment Required</h5>
+          <p className="text-muted small mb-3">
+            Your booking has been reserved. Complete payment to confirm your
+            appointment.
+          </p>
+          <div className="bg-light rounded p-3 mb-3">
+            <div className="text-muted small mb-1">Booking Reference</div>
+            <div className="fw-bold fs-5">{bookingResult.bookingReference}</div>
+            <div className="text-muted small mt-2">Amount Due</div>
+            <div className="fw-bold fs-5">
+              {bookingResult.currencyCode}{" "}
+              {bookingResult.priceSnapshot.toFixed(2)}
             </div>
-          ))}
+          </div>
+          <div className="text-muted small mb-4">
+            <div>{bookingResult.serviceName}</div>
+            <div>{bookingResult.resourceName}</div>
+            <div>
+              {bookingResult.scheduledDate} at{" "}
+              {formatTo12Hour(bookingResult.scheduledStartTime)}
+            </div>
+          </div>
+          {paymentError && (
+            <Alert
+              variant="error"
+              dismissible
+              onDismiss={clearPaymentError}
+              className="mb-3"
+            >
+              {paymentError}
+            </Alert>
+          )}
+          <Button
+            variant="primary"
+            loading={paymentLoading}
+            onClick={handleProceedToPayment}
+            className="w-100"
+          >
+            Proceed to Payment
+          </Button>
         </div>
+      </div>
+    );
+  }
+
+  const chipDate = selectedDate
+    ? new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      })
+    : undefined;
+  const chipStaff =
+    selectedResource === null
+      ? "Any Available"
+      : selectedResource !== "unset"
+        ? selectedResource.name
+        : undefined;
+
+  return (
+    <div className="min-vh-100 bg-light py-4 px-3">
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+        <div className="text-center mb-4">
+          {tenantData.logoUrl && (
+            <img
+              src={tenantData.logoUrl}
+              alt={tenantData.businessName}
+              className="mb-2"
+              style={{ maxHeight: 60 }}
+            />
+          )}
+          <h4 className="mb-1">{tenantData.businessName}</h4>
+          <p className="text-muted small">
+            Book your appointment in few easy steps
+          </p>
+        </div>
+
+        <WizardProgressBar currentStep={step} />
+
+        {(selectedService || selectedDate || selectedSlot || chipStaff) && (
+          <WizardSelectionChips
+            service={
+              selectedService
+                ? `${selectedService.name} — ${selectedService.currencyCode} ${selectedService.price.toFixed(2)}`
+                : undefined
+            }
+            date={chipDate}
+            time={selectedSlot ? formatTo12Hour(selectedSlot) : undefined}
+            staffName={chipStaff}
+          />
+        )}
 
         {step === 1 && (
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white border-bottom py-3">
               <div className="fw-semibold">Select a Service</div>
+              <div className="text-muted small">
+                Choose what you'd like to book.
+              </div>
             </div>
             <div className="card-body p-0">
-              {servicesError && (
-                <div className="p-3">
-                  <Alert variant="error" dismissible onDismiss={() => setServicesError(null)}>{servicesError}</Alert>
-                </div>
-              )}
-              {servicesLoading ? (
-                <div className="p-4 text-center text-muted small">Loading services...</div>
-              ) : services.length === 0 ? (
-                <div className="p-4 text-center text-muted small">No services available.</div>
-              ) : (
-                services.map(service => (
-                  <div
-                    key={service.serviceId}
-                    onClick={() => handleSelectService(service)}
-                    className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center"
-                    style={{ cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#f8f9fa')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '')}
-                  >
-                    <div>
-                      <div className="fw-medium">{service.name}</div>
-                      {service.description && (
-                        <div className="text-muted small">{service.description}</div>
-                      )}
-                      <div className="text-muted small">{service.durationMinutes} min</div>
-                    </div>
-                    <div className="text-end">
-                      <div className="fw-semibold text-primary">
-                        {service.currencyCode} {service.price.toFixed(2)}
-                      </div>
-                      <i className="fas fa-chevron-right text-muted small" />
+              {services.map((service) => (
+                <div
+                  key={service.serviceId}
+                  onClick={() => handleSelectService(service)}
+                  className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center clickable-row"
+                  style={{ cursor: "pointer" }}
+                >
+                  <div>
+                    <div className="fw-medium">{service.name}</div>
+                    <div className="text-muted small">
+                      {service.durationMinutes} min
                     </div>
                   </div>
-                ))
-              )}
+                  <div className="fw-bold text-primary">
+                    {service.currencyCode} {service.price.toFixed(2)}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {step === 2 && selectedService && (
           <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-              <div className="fw-semibold">Select a Resource</div>
-              <button className="btn btn-sm btn-outline-secondary" onClick={() => setStep(1)}>Back</button>
-            </div>
-            <div className="card-body p-0">
-              {resourcesError && (
-                <div className="p-3">
-                  <Alert variant="error" dismissible onDismiss={() => setResourcesError(null)}>{resourcesError}</Alert>
-                </div>
-              )}
-              {resourcesLoading ? (
-                <div className="p-4 text-center text-muted small">Loading resources...</div>
-              ) : resources.length === 0 ? (
-                <div className="p-4 text-center text-muted small">No resources available for this service.</div>
-              ) : (
-                resources.map(resource => (
-                  <div
-                    key={resource.resourceId}
-                    onClick={() => handleSelectResource(resource)}
-                    className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center"
-                    style={{ cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#f8f9fa')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '')}
-                  >
-                    <div>
-                      <div className="fw-medium">{resource.name}</div>
-                      {resource.description && (
-                        <div className="text-muted small">{resource.description}</div>
-                      )}
-                    </div>
-                    <i className="fas fa-chevron-right text-muted small" />
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {step === 3 && selectedService && selectedResource && (
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-              <div className="fw-semibold">Select a Date</div>
-              <button className="btn btn-sm btn-outline-secondary" onClick={() => setStep(2)}>Back</button>
+            <div className="card-header bg-white border-bottom py-3">
+              <div className="fw-semibold">Pick a date and time</div>
             </div>
             <div className="card-body">
-              <div className="mb-3">
-                <label className="form-label small fw-medium mb-1">
-                  Date <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="date"
-                  className="form-control"
-                  min={today}
-                  value={selectedDate}
-                  onChange={e => setSelectedDate(e.target.value)}
-                />
+              <div className="row g-4">
+                <div className="col-md-6">
+                  <BookingCalendar
+                    selectedDate={selectedDate}
+                    onDateSelect={setSelectedDate}
+                    minDate={minDate}
+                    maxDate={maxDate}
+                    availableDays={availableDays}
+                    isLoadingAvailability={isLoadingMonthly}
+                    onMonthChange={fetchMonth}
+                  />
+                </div>
+                <div className="col-md-6">
+                  {selectedDate ? (
+                    <TimeSlotGrid
+                      slots={slots?.availableSlots || []}
+                      selectedSlot={selectedSlot}
+                      onSelect={setSelectedSlot}
+                      isLoading={slotsLoading}
+                    />
+                  ) : (
+                    <div className="text-center py-5 text-muted">
+                      <i className="bi bi-calendar-event display-4 mb-3 d-block"></i>
+                      <p className="small">Please select a date first</p>
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
+            <div className="card-footer bg-white border-top d-flex justify-content-between py-3">
+              <button
+                className="btn btn-outline-secondary"
+                onClick={() => setStep(1)}
+              >
+                Back
+              </button>
               <Button
                 variant="primary"
-                onClick={handleDateSubmit}
-                disabled={!selectedDate}
-                className="w-100"
+                disabled={!selectedDate || !selectedSlot}
+                onClick={() => setStep(3)}
               >
-                Check Availability
+                Continue
               </Button>
             </div>
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && selectedService && (
           <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-              <div>
-                <div className="fw-semibold">Select a Time Slot</div>
-                <div className="text-muted small">{selectedDate}</div>
-              </div>
-              <button className="btn btn-sm btn-outline-secondary" onClick={() => setStep(3)}>Back</button>
+            <div className="card-header bg-white border-bottom py-3">
+              <div className="fw-semibold">Choose your specialist</div>
             </div>
             <div className="card-body">
-              {slotsError && (
-                <Alert variant="error" dismissible onDismiss={clearSlotsError} className="mb-3">
-                  {slotsError}
-                </Alert>
-              )}
-              {slotsLoading ? (
-                <div className="text-center text-muted small py-3">Loading available slots...</div>
-              ) : slots && slots.availableSlots.length === 0 ? (
-                <div className="text-center text-muted small py-3">
-                  No slots available on this date. Please go back and select a different date.
+              <StaffCard
+                resource={null}
+                isSelected={selectedResource === null}
+                onSelect={() => handleSelectResource(null)}
+                onInfoClick={null}
+              />
+              {resources.map((resource) => (
+                <StaffCard
+                  key={resource.resourceId}
+                  resource={resource}
+                  isSelected={
+                    selectedResource !== "unset" &&
+                    selectedResource !== null &&
+                    selectedResource.resourceId === resource.resourceId
+                  }
+                  onSelect={() => handleSelectResource(resource)}
+                  onInfoClick={() => setDrawerResource(resource)}
+                />
+              ))}
+            </div>
+            <div className="card-footer bg-white border-top d-flex py-3">
+              <button
+                className="btn btn-outline-secondary"
+                onClick={() => setStep(2)}
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && selectedService && (
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom py-3">
+              <div className="fw-semibold">Your details</div>
+            </div>
+            <div className="card-body">
+              <div className="row g-3">
+                <div className="col-sm-6">
+                  <label className="form-label small fw-medium">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control ${detailsErrors.guestFirstName ? "is-invalid" : ""}`}
+                    value={guestFirstName}
+                    onChange={(e) => setGuestFirstName(e.target.value)}
+                  />
                 </div>
-              ) : slots ? (
-                <>
-                  <div className="text-muted small mb-3">
-                    {slots.availableSlots.length} slot{slots.availableSlots.length !== 1 ? 's' : ''} available · {slots.durationMinutes} min each
-                  </div>
-                  <div className="d-flex flex-wrap gap-2">
-                    {slots.availableSlots.map(slot => (
-                      <button
-                        key={slot}
-                        onClick={() => handleSelectSlot(slot)}
-                        className="btn btn-outline-primary btn-sm"
-                        style={{ minWidth: 80 }}
-                      >
-                        {slot}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : null}
+                <div className="col-sm-6">
+                  <label className="form-label small fw-medium">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control ${detailsErrors.guestLastName ? "is-invalid" : ""}`}
+                    value={guestLastName}
+                    onChange={(e) => setGuestLastName(e.target.value)}
+                  />
+                </div>
+                <div className="col-12">
+                  <label className="form-label small fw-medium">Email *</label>
+                  <input
+                    type="email"
+                    className={`form-control ${detailsErrors.guestEmail ? "is-invalid" : ""}`}
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                  />
+                </div>
+                <div className="col-12">
+                  <label className="form-label small fw-medium">
+                    Phone (optional)
+                  </label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    value={guestPhone}
+                    onChange={(e) => setGuestPhone(e.target.value)}
+                  />
+                </div>
+                <div className="col-12">
+                  <label className="form-label small fw-medium">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    value={customerNotes}
+                    onChange={(e) => setCustomerNotes(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="card-footer bg-white border-top d-flex justify-content-between py-3">
+              <button
+                className="btn btn-outline-secondary"
+                onClick={() => setStep(3)}
+              >
+                Back
+              </button>
+              <Button
+                variant="primary"
+                onClick={() => validateDetails() && setStep(5)}
+              >
+                Continue
+              </Button>
             </div>
           </div>
         )}
 
-        {step === 5 && selectedService && selectedResource && selectedSlot && (
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-              <div className="fw-semibold">Confirm Booking</div>
-              <button className="btn btn-sm btn-outline-secondary" onClick={() => setStep(4)}>Back</button>
+        {step === 5 &&
+          selectedService &&
+          selectedSlot &&
+          selectedResource !== "unset" && (
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-white border-bottom py-3">
+                <div className="fw-semibold">Confirm Booking</div>
+              </div>
+              <div className="card-body">
+                {submitError && (
+                  <Alert variant="error" className="mb-3">
+                    {submitError}
+                  </Alert>
+                )}
+                <div className="bg-light rounded p-3 mb-4">
+                  {[
+                    ["Service", selectedService.name],
+                    [
+                      "Staff",
+                      selectedResource === null
+                        ? "Any Available"
+                        : selectedResource.name,
+                    ],
+                    ["Date", chipDate],
+                    ["Time", formatTo12Hour(selectedSlot)],
+                    ["Name", `${guestFirstName} ${guestLastName}`],
+                    ["Email", guestEmail],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="d-flex justify-content-between py-2 border-bottom"
+                    >
+                      <span className="text-muted small">{label}</span>
+                      <span className="fw-medium small">{value}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  variant="primary"
+                  loading={submitLoading}
+                  onClick={submitBooking}
+                  className="w-100"
+                >
+                  Confirm Booking
+                </Button>
+              </div>
+              <div className="card-footer bg-white border-top d-flex py-3">
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() => setStep(4)}
+                >
+                  Back
+                </button>
+              </div>
             </div>
-            <div className="card-body">
-              {submitLoading && (
-                <div className="text-center text-muted small py-3">Processing your booking...</div>
-              )}
-              {!submitLoading && (
-                <>
-                  {submitError && (
-                    <Alert variant="error" dismissible onDismiss={() => setSubmitError(null)} className="mb-3">
-                      {submitError}
-                    </Alert>
-                  )}
-                  <div className="bg-light rounded p-3 mb-4">
-                    {[
-                      ['Service', selectedService.name],
-                      ['Resource', selectedResource.name],
-                      ['Date', selectedDate],
-                      ['Time', selectedSlot],
-                      ['Duration', `${selectedService.durationMinutes} min`],
-                      ['Price', `${selectedService.currencyCode} ${selectedService.price.toFixed(2)}`],
-                    ].map(([label, value]) => (
-                      <div key={label} className="d-flex justify-content-between py-2 border-bottom">
-                        <span className="text-muted small">{label}</span>
-                        <span className="fw-medium small">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mb-4">
-                    <label className="form-label small fw-medium mb-1">Notes (optional)</label>
-                    <textarea
-                      className="form-control"
-                      rows={3}
-                      placeholder="Any additional information for the provider..."
-                      value={customerNotes}
-                      onChange={e => setCustomerNotes(e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    variant="primary"
-                    loading={submitLoading}
-                    onClick={handleConfirm}
-                    className="w-100"
-                  >
-                    Confirm Booking
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
+          )}
       </div>
+
+      {drawerResource && (
+        <StaffInfoDrawer
+          resource={drawerResource}
+          open={!!drawerResource}
+          onClose={() => setDrawerResource(null)}
+          onSelect={() => {
+            handleSelectResource(drawerResource);
+            setDrawerResource(null);
+          }}
+        />
+      )}
     </div>
   );
 };

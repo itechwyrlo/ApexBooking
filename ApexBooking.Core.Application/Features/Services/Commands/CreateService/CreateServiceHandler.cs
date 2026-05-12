@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ApexBooking.Core.Application.Common;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Features.service;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
+using ApexBooking.Core.Application.Services.Mappings;
 using ApexBooking.SharedKernel.Exceptions;
 using ApexBooking.SharedKernel.Models;
 
@@ -27,6 +29,19 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.CreateService
         public async Task<BaseResponse<ServiceDto>> Handle(CreateServiceCommand command, CancellationToken ct)
         {
             var tenantId = _contextService.GetCurrentTenantId();
+
+            var tenant = await _unitOfWork.TenantRepository.GetAsync(t => t.TenantId == tenantId);
+            if (tenant is null)
+                return BaseResponse<ServiceDto>.Failure("Tenant not found.");
+
+            var limit = PlanLimits.MaxServices(tenant.Plan);
+            if (limit.HasValue)
+            {
+                var existing = await _unitOfWork.ServiceRepository.GetAllAsync();
+                if (existing.Count() >= limit.Value)
+                    throw new BusinessRuleBrokenException(
+                        $"Your {tenant.Plan} plan allows a maximum of {limit.Value} services.");
+            }
 
             bool nameExists = await _unitOfWork.ServiceRepository.NameExistsAsync(command.Name);
             if (nameExists)
@@ -51,25 +66,7 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.CreateService
             _unitOfWork.ServiceRepository.Add(service);
             await _unitOfWork.CompleteAsync(ct);
 
-            return BaseResponse<ServiceDto>.Success(MapToDto(service));
+            return BaseResponse<ServiceDto>.Success(service.ToServiceDto());
         }
-
-        private static ServiceDto MapToDto(Service service) => new()
-        {
-            Id = service.ServiceId.Value,
-            Name = service.Name,
-            Description = service.Description,
-            DurationMinutes = service.DurationMinutes,
-            BufferBeforeMinutes = service.BufferBeforeMinutes,
-            BufferAfterMinutes = service.BufferAfterMinutes,
-            Price = service.Price,
-            CurrencyCode = service.CurrencyCode,
-            MinAdvanceBookingHours = service.MinAdvanceBookingHours,
-            MaxAdvanceBookingDays = service.MaxAdvanceBookingDays,
-            IsActive = service.IsActive,
-            ResourceIds = service.ServiceResources.Select(sr => sr.ResourceId.Value).ToList(),
-            CreatedAt = service.CreatedAt,
-            UpdatedAt = service.UpdatedAt
-        };
     }
 }

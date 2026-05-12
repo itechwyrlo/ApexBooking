@@ -22,9 +22,13 @@ const EmailVerificationPage: React.FC = () => {
     setError(null);
 
     try {
-      const result = await axiosInstance.get<EmailVerificationResponse>(
-        `/auth/verify-account?token=${token}`
-      );
+      const returnTo = searchParams.get("returnTo");
+      const verifyUrl = returnTo
+        ? `/auth/verify-account?token=${token}&returnTo=${encodeURIComponent(returnTo)}`
+        : `/auth/verify-account?token=${token}`;
+
+      const result =
+        await axiosInstance.get<EmailVerificationResponse>(verifyUrl);
 
       if (!result.isSuccess) {
         setError(result.errors?.[0]?.message || "Verification failed");
@@ -41,8 +45,7 @@ const EmailVerificationPage: React.FC = () => {
       navigate("/login");
     } catch (err: any) {
       setError(
-        err?.response?.data?.errors?.[0]?.message ||
-          "Verification failed"
+        err?.response?.data?.errors?.[0]?.message || "Verification failed",
       );
     } finally {
       setIsLoading(false);

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Application.Resources.Mappings;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
@@ -38,36 +39,7 @@ namespace ApexBooking.Core.Application.Features.Resources.Queries.GetResourceAva
             if (resource is null || resource.TenantId != tenantId)
                 return BaseResponse<ResourceAvailabilityDto>.Failure("Resource not found.");
 
-            var schedules = resource.AvailabilitySchedules
-                .OrderBy(s => s.DayOfWeek)
-                .Select(s => new DayScheduleDto
-                {
-                    DayOfWeek = (int)s.DayOfWeek,
-                    IsAvailable = s.IsAvailable,
-                    StartTime = s.StartTime.HasValue
-                        ? s.StartTime.Value.ToString("HH:mm")
-                        : null,
-                    EndTime = s.EndTime.HasValue
-                        ? s.EndTime.Value.ToString("HH:mm")
-                        : null,
-                    Breaks = s.BreakPeriods
-                        .Select(b => new BreakPeriodDto
-                        {
-                            BreakStartTime = b.BreakStartTime.ToString("HH:mm"),
-                            BreakEndTime = b.BreakEndTime.ToString("HH:mm"),
-                            Label = b.Label
-                        })
-                        .ToList()
-                })
-                .ToList();
-
-            var dto = new ResourceAvailabilityDto
-            {
-                ResourceId = resource.ResourceId.Value,
-                Schedules = schedules
-            };
-
-            return BaseResponse<ResourceAvailabilityDto>.Success(dto);
+            return BaseResponse<ResourceAvailabilityDto>.Success(resource.ToAvailabilityDto());
         }
     }
 }

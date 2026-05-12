@@ -1,5 +1,6 @@
 using ApexBooking.Core.Application.Dependency;
 using ApexBooking.Core.Persistence.Dependencies;
+using ApexBooking.Core.Persistence.Seeders;
 using ApexBooking.Infrastructure.Dependency;
 using ApexBooking.Infrastructure.Configuration;
 using ApexBooking.WebApi.Dependency;
@@ -11,13 +12,39 @@ using ApexBooking.WebApi.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure logging
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddJsonConsole(options =>
+    {
+        options.IncludeScopes = true;
+        options.UseUtcTimestamp = true;
+    });
+    builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+}
+
+// Configure logging
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddJsonConsole(options =>
+    {
+        options.IncludeScopes = true;
+        options.UseUtcTimestamp = true;
+    });
+    builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+}
+
 // --- 1. SERVICES REGISTRATION ---
 
 // Add configuration validation (must be before any service that uses configuration)
 builder.Services.AddConfigurationValidation(builder.Configuration, builder.Environment);
 
 // Controllers
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 
 // Exception Handling
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -44,6 +71,8 @@ builder.Services.AddInfrastructureService(builder.Configuration);
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+await SuperAdminSeeder.SeedAsync(app.Services);
 
 // Get security options from DI for use in middleware
 var securityOptions = app.Services.GetRequiredService<IOptions<SecurityOptions>>().Value;

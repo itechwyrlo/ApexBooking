@@ -11,10 +11,26 @@ namespace ApexBooking.Core.Domain.Services.Slot
             Service service,
             Resource resource,
             DateOnly date,
-            IReadOnlyList<Booking> activeBookings)
+            IReadOnlyList<Booking> activeBookings,
+            DateTime? now = null,
+            int? minAdvanceBookingHours = null)
         {
             if (service.DurationMinutes <= 0)
                 return [];
+
+            var results = new List<string>();
+
+            // If we have 'now', filter out slots that are in the past or too soon
+            TimeOnly? minTime = null;
+            if (now.HasValue && date == DateOnly.FromDateTime(now.Value))
+            {
+                var minDateTime = now.Value.AddHours(minAdvanceBookingHours ?? 0);
+                minTime = TimeOnly.FromDateTime(minDateTime);
+
+                // Special case: if minDateTime is already on the next day, return empty
+                if (DateOnly.FromDateTime(minDateTime) > date)
+                    return [];
+            }
 
             var exception = resource.AvailabilityExceptions
                 .FirstOrDefault(e => e.ExceptionDate == date);
@@ -68,8 +84,6 @@ namespace ApexBooking.Core.Domain.Services.Slot
             var bufferBefore = TimeSpan.FromMinutes(service.BufferBeforeMinutes);
             var bufferAfter = TimeSpan.FromMinutes(service.BufferAfterMinutes);
 
-            var results = new List<string>();
-
             foreach (var range in availableRanges)
             {
                 var cursor = range.Start;
@@ -77,6 +91,14 @@ namespace ApexBooking.Core.Domain.Services.Slot
                 while (cursor < range.End)
                 {
                     var slotStart = cursor;
+
+                    // Apply time-of-day filter if it's "today"
+                    if (minTime.HasValue && slotStart < minTime.Value)
+                    {
+                        cursor = cursor.Add(slotDuration);
+                        continue;
+                    }
+
                     var slotEnd = slotStart.Add(slotDuration);
 
                     var effectiveStart = slotStart.Add(-bufferBefore);

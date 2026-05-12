@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ApexBooking.Core.Domain\ApexBooking.Core.Domain.csproj" />
+    <ProjectReference Include="..\ApexBooking.Core.Application\ApexBooking.Core.Application.csproj" />
   </ItemGroup>
 
 

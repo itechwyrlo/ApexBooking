@@ -5,6 +5,7 @@ using ApexBooking.Core.Application.Features.Services.Commands.DeactivateService;
 using ApexBooking.Core.Application.Features.Services.Commands.UpdateService;
 using ApexBooking.Core.Application.Features.Services.Queries.GetServiceById;
 using ApexBooking.Core.Application.Features.Services.Queries.GetServices;
+using ApexBooking.SharedKernel.Models;
 using ApexBooking.WebApi.Dtos;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -25,9 +26,9 @@ public class ServiceController : ControllerBase
 
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] QueryObjectParams param)
     {
-        var result = await _mediator.Send(new GetServicesQuery());
+        var result = await _mediator.Send(new GetServicesQuery(param));
         return Ok(result);
     }
 

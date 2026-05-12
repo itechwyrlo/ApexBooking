@@ -1,53 +1,41 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Application.Resources.Mappings;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
-using ApexBooking.SharedKernel.Exceptions;
 using ApexBooking.SharedKernel.Models;
 
-namespace ApexBooking.Core.Application.Features.Resources.Queries.GetResourceExceptions
+namespace ApexBooking.Core.Application.Features.Resources.Queries.GetResourceExceptions;
+
+internal sealed class GetResourceExceptionsQueryHandler
+    : IQueryHandler<GetResourceExceptionsQuery, PagedResult<ResourceAvailabilityExceptionDto>>
 {
-    internal sealed class GetResourceExceptionsQueryHandler
-     : IQueryHandler<GetResourceExceptionsQuery, BaseResponse<List<ResourceAvailabilityExceptionDto>>>
+    private readonly IUnitOfWork _unitOfWork;
+
+    public GetResourceExceptionsQueryHandler(IUnitOfWork unitOfWork)
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IUserContextService _contextService;
+        _unitOfWork = unitOfWork;
+    }
 
-        public GetResourceExceptionsQueryHandler(IUnitOfWork unitOfWork, IUserContextService contextService)
-        {
-            _unitOfWork = unitOfWork;
-            _contextService = contextService;
-        }
+    public async Task<PagedResult<ResourceAvailabilityExceptionDto>> Handle(
+        GetResourceExceptionsQuery query,
+        CancellationToken cancellationToken)
+    {
 
-        public async Task<BaseResponse<List<ResourceAvailabilityExceptionDto>>> Handle(
-            GetResourceExceptionsQuery query,
-            CancellationToken cancellationToken)
-        {
-            var tenantId = _contextService.GetCurrentTenantId();
-            var resourceId = new ResourceId(query.ResourceId);
+        var pagedResources = await _unitOfWork.ResourceRepository.GetPageAsync(
+        query.param,
+        predicate: r => r.ResourceId == new ResourceId(query.ResourceId),
+        includes: r => r.AvailabilityExceptions);
 
-            var resource = await _unitOfWork.ResourceRepository
-                .FindByIdWithAvailabilityAsync(resourceId, cancellationToken)
-                .ConfigureAwait(false);
+        var allExceptions = pagedResources.data
+            .SelectMany(r => r.AvailabilityExceptions)
+            .ToList();
 
-            if (resource is null || resource.TenantId != tenantId)
-                return BaseResponse<List<ResourceAvailabilityExceptionDto>>.Failure("Resource not found.");
+        var dtos = allExceptions
+            .Select(ex => ex.ToExceptionDto())
+            .ToList();
 
-            var dtos = resource.AvailabilityExceptions.Select(e => new ResourceAvailabilityExceptionDto
-            {
-                Id = e.ResourceAvailabilityExceptionId.Value,
-                ExceptionDate = e.ExceptionDate,
-                ExceptionType = e.ExceptionType.ToString(),
-                StartTime = e.StartTime,
-                EndTime = e.EndTime,
-                Note = e.Note
-            }).ToList();
+        return new PagedResult<ResourceAvailabilityExceptionDto>(dtos, allExceptions.Count);
 
-            return BaseResponse<List<ResourceAvailabilityExceptionDto>>.Success(dtos);
-        }
     }
 }

@@ -1,7 +1,7 @@
+using ApexBooking.Core.Domain.Entities;
+using ApexBooking.Core.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ApexBooking.Core.Domain.ValueObjects;
-using ApexBooking.Core.Domain.Entities;
 using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Persistence.Mappings
@@ -27,9 +27,16 @@ namespace ApexBooking.Core.Persistence.Mappings
                 .HasConversion<string>()
                 .HasColumnName("status");
 
+            builder.Property(t => t.Plan)
+                .HasConversion<string>()
+                .HasColumnName("plan");
+
             builder.Property(t => t.CreatedAt).HasColumnName("created_at");
             builder.Property(t => t.UpdatedAt).HasColumnName("updated_at");
             builder.Property(t => t.DeactivatedAt).HasColumnName("deactivated_at");
+            builder.Property(t => t.TrialStartedAt).HasColumnName("trial_started_at");
+            builder.Property(t => t.TrialEndsAt).HasColumnName("trial_ends_at");
+            builder.Property(t => t.TrialReminderSentAt).HasColumnName("trial_reminder_sent_at");
 
             // User->Tenant relationship is configured in DbContext to prevent shadow property
 
@@ -48,6 +55,10 @@ namespace ApexBooking.Core.Persistence.Mappings
                 .WithOne(s => s.Tenant)
                 .HasForeignKey<TenantSettings>(s => s.TenantId)
                 .IsRequired();
+
+            builder.HasOne(t => t.TenantPaymentPolicy)
+                .WithOne(p => p.Tenant)
+                .HasForeignKey<TenantPaymentPolicy>(p => p.TenantId);
 
             builder.HasIndex(t => t.Slug).IsUnique();
         }

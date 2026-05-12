@@ -4,10 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Application.Dtos;
 using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Resources.Queries.GetResourceExceptions
 {
-    public sealed record GetResourceExceptionsQuery(Guid ResourceId)
-     : IQuery<BaseResponse<List<ResourceAvailabilityExceptionDto>>>;
+    public sealed record GetResourceExceptionsQuery(QueryObjectParams param, Guid ResourceId)
+    : IQuery<PagedResult<ResourceAvailabilityExceptionDto>>;
 }

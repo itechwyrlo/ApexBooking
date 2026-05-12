@@ -345,6 +345,82 @@ export function FieldRenderer<T>({
       );
     }
 
+    case "phone": {
+      const [countryCode, setCountryCode] = useState("+1");
+      const [phoneNumber, setPhoneNumber] = useState("");
+
+      const countryCodes = [
+        { label: "+1 (US/CA)", value: "+1" },
+        { label: "+44 (UK)", value: "+44" },
+        { label: "+61 (AU)", value: "+61" },
+        { label: "+86 (CN)", value: "+86" },
+        { label: "+91 (IN)", value: "+91" },
+        { label: "+81 (JP)", value: "+81" },
+        { label: "+49 (DE)", value: "+49" },
+        { label: "+33 (FR)", value: "+33" },
+        { label: "+39 (IT)", value: "+39" },
+        { label: "+34 (ES)", value: "+34" },
+        { label: "+55 (BR)", value: "+55" },
+        { label: "+52 (MX)", value: "+52" },
+        { label: "+7 (RU)", value: "+7" },
+        { label: "+82 (KR)", value: "+82" },
+        { label: "+65 (SG)", value: "+65" },
+        { label: "+64 (NZ)", value: "+64" },
+        { label: "+353 (IE)", value: "+353" },
+        { label: "+31 (NL)", value: "+31" },
+        { label: "+46 (SE)", value: "+46" },
+        { label: "+47 (NO)", value: "+47" },
+      ];
+
+      useEffect(() => {
+        if (value) {
+          const match = value.match(/^(\+\d+)(.*)$/);
+          if (match) {
+            setCountryCode(match[1]);
+            setPhoneNumber(match[2]);
+          } else {
+            setPhoneNumber(value);
+          }
+        }
+      }, [value]);
+
+      const handlePhoneChange = (newCountryCode: string, newPhoneNumber: string) => {
+        setCountryCode(newCountryCode);
+        setPhoneNumber(newPhoneNumber);
+        onChange(`${newCountryCode}${newPhoneNumber}`);
+      };
+
+      return (
+        <div>
+          <label style={labelStyle}>{field.label}</label>
+          <div className="d-flex gap-2">
+            <select
+              className="form-control bg-white border rounded-3"
+              style={{ width: "140px" }}
+              value={countryCode}
+              disabled={disabled}
+              onChange={(e) => handlePhoneChange(e.target.value, phoneNumber)}
+            >
+              {countryCodes.map((code) => (
+                <option key={code.value} value={code.value}>
+                  {code.label}
+                </option>
+              ))}
+            </select>
+            <input
+              className={baseInput}
+              style={{ flex: 1 }}
+              type="tel"
+              placeholder="Phone number"
+              value={phoneNumber}
+              disabled={disabled}
+              onChange={(e) => handlePhoneChange(countryCode, e.target.value)}
+            />
+          </div>
+        </div>
+      );
+    }
+
     case "boolean":
       return (
         <div className="d-flex justify-content-between align-items-center">

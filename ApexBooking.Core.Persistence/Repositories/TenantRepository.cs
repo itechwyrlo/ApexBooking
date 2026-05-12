@@ -28,36 +28,19 @@ public class TenantRepository : GenericRepository<Tenant>, ITenantRepository
             .FirstOrDefaultAsync(t => t.OwnerEmail == email);
     }
 
+    //unused method
     public async Task<bool> SlugExistsAsync(string slug)
     {
         return await Context.Set<Tenant>()
             .AnyAsync(t => t.Slug == slug.ToLowerInvariant());
     }
 
+    //unused method
     public async Task<bool> EmailExistsAsync(string email)
     {
         return await Context.Set<Tenant>()
             .AnyAsync(t => t.OwnerEmail == email);
     }
 
-    public async Task<TenantSettings?> GetTenantSettingsAsync(
-        TenantId tenantId,
-        CancellationToken cancellationToken = default)
-    {
-        return await Context.Set<TenantSettings>()
-            .FirstOrDefaultAsync(s => s.TenantId == tenantId, cancellationToken);
-    }
 
-    public async Task<TenantProfile?> GetTenantProfileAsync(
-        TenantId tenantId,
-        CancellationToken cancellationToken = default)
-    {
-        return await Context.Set<TenantProfile>()
-            .FirstOrDefaultAsync(s => s.TenantId == tenantId, cancellationToken);
-    }
-
-    public async Task<Tenant> GetTenantSettingsById(TenantId tenantId)
-    {
-        return await Context.Set<Tenant>().Include(t => t.TenantSettings).FirstOrDefaultAsync(t => t.TenantId == tenantId);
-    }
 }

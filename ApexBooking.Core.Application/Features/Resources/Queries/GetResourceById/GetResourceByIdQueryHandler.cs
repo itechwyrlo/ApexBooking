@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
 using ApexBooking.SharedKernel.Models;
+using ApexBooking.Core.Application.Resources.Mappings;
 
 namespace ApexBooking.Core.Application.Features.Resources.Queries.GetResourceById
 {
@@ -37,19 +39,9 @@ namespace ApexBooking.Core.Application.Features.Resources.Queries.GetResourceByI
             if (resource is null || resource.TenantId != tenantId)
                 return BaseResponse<ResourceDto>.Failure("Resource not found.");
 
-            var dto = new ResourceDto
-            {
-                Id = resource.ResourceId.Value,
-                Name = resource.Name,
-                Description = resource.Description,
-                ResourceType = resource.ResourceType.ToString(),
-                Capacity = resource.Capacity,
-                IsActive = resource.IsActive,
-                CreatedAt = resource.CreatedAt,
-                UpdatedAt = resource.UpdatedAt
-            };
+            
 
-            return BaseResponse<ResourceDto>.Success(dto);
+            return BaseResponse<ResourceDto>.Success(resource.ToResourceDto());
         }
     }
 }

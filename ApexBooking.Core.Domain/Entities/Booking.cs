@@ -13,12 +13,9 @@ public class Booking : IAggregateRoot, ITenantEntity
     public TenantId TenantId { get; private set; } = default!;
     public string BookingReference { get; private set; } = string.Empty;
     public ServiceId ServiceId { get; private set; } = default!;
+    public string ServiceName { get; private set; } = string.Empty;
     public ResourceId ResourceId { get; private set; } = default!;
-
-    /// <summary>
-    /// Null when guest booking. MVP: always populated.
-    /// </summary>
-    public Guid? UserId { get; private set; }
+    public string ResourceName { get; private set; } = string.Empty;
 
     public DateOnly ScheduledDate { get; private set; }
     public TimeOnly ScheduledStartTime { get; private set; }
@@ -55,6 +52,7 @@ public class Booking : IAggregateRoot, ITenantEntity
     // Children
     private readonly List<BookingStatusLog> _statusLogs = new();
     public IReadOnlyCollection<BookingStatusLog> StatusLogs => _statusLogs.AsReadOnly();
+    public Guest Guest { get; private set; } = default!;
 
     protected Booking() { }
 
@@ -62,8 +60,9 @@ public class Booking : IAggregateRoot, ITenantEntity
         TenantId tenantId,
         string bookingReference,
         ServiceId serviceId,
+        string serviceName,
         ResourceId resourceId,
-        Guid userId,
+        string resourceName,
         DateOnly scheduledDate,
         TimeOnly scheduledStartTime,
         TimeOnly scheduledEndTime,
@@ -77,8 +76,9 @@ public class Booking : IAggregateRoot, ITenantEntity
         TenantId = tenantId;
         BookingReference = bookingReference;
         ServiceId = serviceId;
+        ServiceName = serviceName;
         ResourceId = resourceId;
-        UserId = userId;
+        ResourceName = resourceName;
         ScheduledDate = scheduledDate;
         ScheduledStartTime = scheduledStartTime;
         ScheduledEndTime = scheduledEndTime;
@@ -95,8 +95,13 @@ public class Booking : IAggregateRoot, ITenantEntity
         TenantId tenantId,
         string bookingReference,
         ServiceId serviceId,
+        string serviceName,
         ResourceId resourceId,
-        Guid userId,
+        string resourceName,
+        string guestFirstName,
+        string guestLastName,
+        string guestEmail,
+        string? guestPhone,
         DateOnly scheduledDate,
         TimeOnly scheduledStartTime,
         int durationMinutes,
@@ -117,9 +122,6 @@ public class Booking : IAggregateRoot, ITenantEntity
         if (resourceId is null)
             throw new BusinessRuleBrokenException("Resource is required.");
 
-        if (userId == Guid.Empty)
-            throw new BusinessRuleBrokenException("User is required.");
-
         if (durationMinutes <= 0)
             throw new BusinessRuleBrokenException("Duration must be greater than zero.");
 
@@ -135,8 +137,9 @@ public class Booking : IAggregateRoot, ITenantEntity
             tenantId,
             bookingReference,
             serviceId,
+            serviceName,
             resourceId,
-            userId,
+            resourceName,
             scheduledDate,
             scheduledStartTime,
             scheduledEndTime,
@@ -159,12 +162,14 @@ public class Booking : IAggregateRoot, ITenantEntity
                 : BookingStatus.Pending;
         }
 
+        booking.Guest = Guest.Create(tenantId, booking.BookingId, guestFirstName, guestLastName, guestEmail, guestPhone);
+
         booking._statusLogs.Add(BookingStatusLog.Create(
             booking.BookingId,
             booking.TenantId,
             previousStatus: null,
             newStatus: booking.Status,
-            changedByUserId: userId,
+            actorType: BookingActor.GuestCustomer,
             reason: "Booking created."));
 
         return booking;
@@ -180,7 +185,7 @@ public class Booking : IAggregateRoot, ITenantEntity
         UpdatedAt = DateTime.UtcNow;
 
         _statusLogs.Add(BookingStatusLog.Create(
-            BookingId, TenantId, previous, Status, confirmedByUserId, "Booking confirmed."));
+            BookingId, TenantId, previous, Status, BookingActor.TenantAdmin, "Booking confirmed."));
     }
 
     public void Cancel(Guid cancelledByUserId, string? reason = null)
@@ -202,7 +207,29 @@ public class Booking : IAggregateRoot, ITenantEntity
         UpdatedAt = DateTime.UtcNow;
 
         _statusLogs.Add(BookingStatusLog.Create(
-            BookingId, TenantId, previous, Status, cancelledByUserId, reason ?? "Booking cancelled."));
+            BookingId, TenantId, previous, Status, BookingActor.TenantAdmin, reason ?? "Booking cancelled."));
+    }
+
+    public void GuestCancel(string? reason = null)
+    {
+        if (Status == BookingStatus.Cancelled)
+            throw new BusinessRuleBrokenException("Booking is already cancelled.");
+
+        if (Status == BookingStatus.Completed)
+            throw new BusinessRuleBrokenException("Completed bookings cannot be cancelled.");
+
+        if (Status == BookingStatus.NoShow)
+            throw new BusinessRuleBrokenException("No-show bookings cannot be cancelled.");
+
+        var previous = Status;
+        Status = BookingStatus.Cancelled;
+        CancellationReason = reason;
+        CancelledAt = DateTime.UtcNow;
+        CancelledByUserId = null;
+        UpdatedAt = DateTime.UtcNow;
+
+        _statusLogs.Add(BookingStatusLog.Create(
+            BookingId, TenantId, previous, Status, BookingActor.GuestCustomer, reason ?? "Cancelled by guest."));
     }
 
     public void MarkAsCompleted(Guid completedByUserId)
@@ -215,7 +242,7 @@ public class Booking : IAggregateRoot, ITenantEntity
         UpdatedAt = DateTime.UtcNow;
 
         _statusLogs.Add(BookingStatusLog.Create(
-            BookingId, TenantId, previous, Status, completedByUserId, "Booking completed."));
+            BookingId, TenantId, previous, Status, BookingActor.TenantAdmin, "Booking completed."));
     }
 
     public void MarkAsNoShow(Guid markedByUserId)
@@ -228,10 +255,10 @@ public class Booking : IAggregateRoot, ITenantEntity
         UpdatedAt = DateTime.UtcNow;
 
         _statusLogs.Add(BookingStatusLog.Create(
-            BookingId, TenantId, previous, Status, markedByUserId, "Customer did not show up."));
+            BookingId, TenantId, previous, Status, BookingActor.TenantAdmin, "Customer did not show up."));
     }
 
-    public void MarkPaymentCaptured(Guid systemUserId)
+    public void MarkPaymentCaptured()
     {
         if (Status != BookingStatus.PendingPayment)
             throw new BusinessRuleBrokenException("Booking is not awaiting payment.");
@@ -244,7 +271,6 @@ public class Booking : IAggregateRoot, ITenantEntity
         UpdatedAt = DateTime.UtcNow;
 
         _statusLogs.Add(BookingStatusLog.Create(
-            BookingId, TenantId, previous, Status, systemUserId, "Payment captured."));
+            BookingId, TenantId, previous, Status, BookingActor.PaymentGateway, "Payment captured."));
     }
 }
-

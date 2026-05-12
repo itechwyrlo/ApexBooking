@@ -23,12 +23,11 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.SetResourc
 
         public async Task Handle(SetResourceAvailabilityCommand command, CancellationToken ct)
         {
-            var tenantId = _contextService.GetCurrentTenantId();
-
+            
             var resource = await _unitOfWork.ResourceRepository
                 .FindByIdWithAvailabilityAsync(new ResourceId(command.ResourceId), ct);
 
-            if (resource is null || resource.TenantId != tenantId)
+            if (resource is null)
                 throw new BusinessRuleBrokenException("Resource not found.");
 
             var scheduleEntities = new List<ResourceAvailabilitySchedule>();

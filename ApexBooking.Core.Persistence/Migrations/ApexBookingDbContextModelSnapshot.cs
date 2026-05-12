@@ -87,6 +87,10 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("resource_id");
 
+                    b.Property<string>("ResourceName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateOnly>("ScheduledDate")
                         .HasColumnType("date")
                         .HasColumnName("scheduled_date");
@@ -103,6 +107,10 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("service_id");
 
+                    b.Property<string>("ServiceName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)")
@@ -118,18 +126,12 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("user_id");
-
                     b.HasKey("BookingId");
 
                     b.HasIndex("BookingReference")
                         .IsUnique();
 
                     b.HasIndex("TenantId", "ScheduledDate");
-
-                    b.HasIndex("TenantId", "UserId");
 
                     b.HasIndex("TenantId", "ResourceId", "ScheduledDate", "Status");
 
@@ -142,13 +144,14 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("actor_type");
+
                     b.Property<Guid>("BookingId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("booking_id");
-
-                    b.Property<Guid?>("ChangedByUserId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("changed_by_user_id");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -183,6 +186,253 @@ namespace ApexBooking.Core.Persistence.Migrations
                     b.HasIndex("BookingId", "CreatedAt");
 
                     b.ToTable("booking_status_logs", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Guest", b =>
+                {
+                    b.Property<Guid>("GuestId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("booking_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("phone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("GuestId");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "Email");
+
+                    b.ToTable("guests", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.GuestCancellationToken", b =>
+                {
+                    b.Property<Guid>("TokenId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("GuestId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("guest_id");
+
+                    b.Property<bool>("IsUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_used");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("token_hash");
+
+                    b.HasKey("TokenId");
+
+                    b.HasIndex("GuestId")
+                        .IsUnique();
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("guest_cancellation_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.PaymentTransaction", b =>
+                {
+                    b.Property<Guid>("PaymentTransactionId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("booking_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nchar(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<string>("GatewayProvider")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("gateway_provider");
+
+                    b.Property<string>("GatewayTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("gateway_transaction_id");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("paid_at");
+
+                    b.Property<string>("PaymentMethodLast4")
+                        .HasMaxLength(4)
+                        .HasColumnType("nchar(4)")
+                        .HasColumnName("payment_method_last4")
+                        .IsFixedLength();
+
+                    b.Property<string>("PaymentMethodType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("payment_method_type");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("PaymentTransactionId");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique();
+
+                    b.HasIndex("GatewayTransactionId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("payment_transactions", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.PlatformPaymentGateway", b =>
+                {
+                    b.Property<Guid>("PlatformPaymentGatewayId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("client_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("GatewayProvider")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("gateway_provider");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("mode");
+
+                    b.Property<string>("SecretKeyEncrypted")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("secret_key_encrypted");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<DateTime?>("ValidatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("validated_at");
+
+                    b.Property<string>("WebhookId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("webhook_id");
+
+                    b.HasKey("PlatformPaymentGatewayId");
+
+                    b.HasIndex("IsActive")
+                        .IsUnique()
+                        .HasFilter("[is_active] = 1");
+
+                    b.ToTable("platform_payment_gateways", (string)null);
                 });
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.RefreshToken", b =>
@@ -595,6 +845,12 @@ namespace ApexBooking.Core.Persistence.Migrations
                     b.Property<Guid>("SuperAdminId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("created_at");
@@ -604,10 +860,16 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("email");
 
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("full_name");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
@@ -616,14 +878,41 @@ namespace ApexBooking.Core.Persistence.Migrations
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("password_hash");
 
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("updated_at");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("SuperAdminId");
 
@@ -669,6 +958,11 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("owner_phone");
 
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("plan");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)")
@@ -678,6 +972,18 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
+
+                    b.Property<DateTime?>("TrialEndsAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("trial_ends_at");
+
+                    b.Property<DateTime?>("TrialReminderSentAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("trial_reminder_sent_at");
+
+                    b.Property<DateTime?>("TrialStartedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("trial_started_at");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2")
@@ -689,6 +995,51 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("tenant", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.TenantPaymentPolicy", b =>
+                {
+                    b.Property<Guid>("TenantPaymentPolicyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("DepositOnly")
+                        .HasColumnType("bit")
+                        .HasColumnName("deposit_only");
+
+                    b.Property<string>("DepositType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("deposit_type");
+
+                    b.Property<decimal>("DepositValue")
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("deposit_value");
+
+                    b.Property<bool>("PaymentRequired")
+                        .HasColumnType("bit")
+                        .HasColumnName("payment_required");
+
+                    b.Property<decimal>("RefundPercent")
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("refund_percent");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("TenantPaymentPolicyId");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique();
+
+                    b.ToTable("tenant_payment_policy", (string)null);
                 });
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.TenantProfile", b =>
@@ -764,6 +1115,71 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("tenant_profile", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.TenantRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BusinessName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("business_name");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("message");
+
+                    b.Property<string>("OwnerEmail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("owner_email");
+
+                    b.Property<string>("OwnerFullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("owner_full_name");
+
+                    b.Property<string>("OwnerPhone")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("owner_phone");
+
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("plan");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerEmail");
+
+                    b.ToTable("tenant_requests", (string)null);
                 });
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.TenantSettings", b =>
@@ -1127,6 +1543,28 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Guest", b =>
+                {
+                    b.HasOne("ApexBooking.Core.Domain.Entities.Booking", "Booking")
+                        .WithOne("Guest")
+                        .HasForeignKey("ApexBooking.Core.Domain.Entities.Guest", "BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.GuestCancellationToken", b =>
+                {
+                    b.HasOne("ApexBooking.Core.Domain.Entities.Guest", "Guest")
+                        .WithOne("CancellationToken")
+                        .HasForeignKey("ApexBooking.Core.Domain.Entities.GuestCancellationToken", "GuestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Guest");
+                });
+
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.RefreshToken", b =>
                 {
                     b.HasOne("ApexBooking.Core.Domain.Entities.User", null)
@@ -1170,6 +1608,17 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.TenantPaymentPolicy", b =>
+                {
+                    b.HasOne("ApexBooking.Core.Domain.Entities.Tenant", "Tenant")
+                        .WithOne("TenantPaymentPolicy")
+                        .HasForeignKey("ApexBooking.Core.Domain.Entities.TenantPaymentPolicy", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.TenantProfile", b =>
@@ -1265,7 +1714,15 @@ namespace ApexBooking.Core.Persistence.Migrations
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Booking", b =>
                 {
+                    b.Navigation("Guest")
+                        .IsRequired();
+
                     b.Navigation("StatusLogs");
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Guest", b =>
+                {
+                    b.Navigation("CancellationToken");
                 });
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Resource", b =>
@@ -1287,6 +1744,8 @@ namespace ApexBooking.Core.Persistence.Migrations
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Tenant", b =>
                 {
+                    b.Navigation("TenantPaymentPolicy");
+
                     b.Navigation("TenantProfile");
 
                     b.Navigation("TenantSettings");

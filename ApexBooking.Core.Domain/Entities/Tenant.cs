@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
 using ApexBooking.SharedKernel.Models;
@@ -15,18 +16,28 @@ public class Tenant : IAggregateRoot
     public string OwnerEmail { get; private set; } = string.Empty;
     public string OwnerPhone { get; private set; } = string.Empty;
     public TenantStatus Status { get; private set; }
+    public TenantPlan Plan { get; private set; }
     public DateTime? EmailVerifiedAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public DateTime? DeactivatedAt { get; private set; }
+    public DateTime? TrialStartedAt { get; private set; }
+    public DateTime? TrialEndsAt { get; private set; }
+    public DateTime? TrialReminderSentAt { get; private set; }
+
+    public bool IsTrialActive =>
+        Status == TenantStatus.Trial &&
+        TrialEndsAt.HasValue &&
+        TrialEndsAt.Value > DateTime.UtcNow;
 
     // Navigation properties
     private readonly List<User> _users = new();
     public IReadOnlyCollection<User> Users => _users.AsReadOnly();
-    
+
     // 1:1 relationships
     public TenantProfile? TenantProfile { get; private set; }
     public TenantSettings? TenantSettings { get; private set; }
+    public TenantPaymentPolicy? TenantPaymentPolicy { get; private set; }
 
     protected Tenant() { }
 
@@ -34,7 +45,7 @@ public class Tenant : IAggregateRoot
     public Tenant(string slug, string businessName, string ownerFullName, string ownerEmail, string ownerPhone)
     {
         TenantId = new TenantId(Guid.NewGuid());
-        Slug = slug.ToLowerInvariant(); // Store lowercase for case-insensitive uniqueness
+        Slug = slug.ToLowerInvariant();
         BusinessName = businessName;
         OwnerFullName = ownerFullName;
         OwnerEmail = ownerEmail;
@@ -77,10 +88,28 @@ public class Tenant : IAggregateRoot
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void ActivateWithTrial(TenantPlan plan, int trialDays)
+    {
+        Plan = plan;
+        Status = TenantStatus.Trial;
+        TrialStartedAt = DateTime.UtcNow;
+        TrialEndsAt = DateTime.UtcNow.AddDays(trialDays);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkTrialReminderSent()
+    {
+        TrialReminderSentAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void Suspend()
     {
-        if (Status != TenantStatus.Active)
-            throw new BusinessRuleBrokenException("Only active tenants can be suspended.");
+        if (Status == TenantStatus.Suspended)
+            throw new BusinessRuleBrokenException("Tenant is already suspended.");
+
+        if (Status == TenantStatus.Deactivated)
+            throw new BusinessRuleBrokenException("Deactivated tenants cannot be suspended.");
 
         Status = TenantStatus.Suspended;
         UpdatedAt = DateTime.UtcNow;
@@ -134,12 +163,23 @@ public class Tenant : IAggregateRoot
         TenantSettings = TenantSettings.Create(TenantId);
         UpdatedAt = DateTime.UtcNow;
     }
-}
+
+    public void CreateTenantPaymentPolicy()
+    {
+        if (TenantPaymentPolicy != null)
+            throw new BusinessRuleBrokenException("Tenant payment policy already exists.");
+
+        TenantPaymentPolicy = TenantPaymentPolicy.Create(TenantId);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    }
 
 public enum TenantStatus
 {
     Pending,
     Active,
+    Trial,
     Suspended,
     Deactivated
 }

@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ApexBooking.Core.Application.Interfaces;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.Services.Cookie;
 using ApexBooking.Core.Domain.Services.Notification;
 using ApexBooking.Core.Domain.Services.TokenService;
+using ApexBooking.Infrastructure.BackgroundJobs;
 using ApexBooking.Infrastructure.Configuration;
+using ApexBooking.Infrastructure.ExternalServices;
 using ApexBooking.Infrastructure.ExternalServices.Brevo;
 using ApexBooking.Infrastructure.ExternalServices.Context;
 using ApexBooking.Infrastructure.ExternalServices.Cookie;
@@ -25,15 +28,22 @@ namespace ApexBooking.Infrastructure.Dependency
             service.AddScoped<IUserContextService, UserContextService>();
             service.AddScoped<ITokenService, JwtTokenService>();
             service.AddScoped<INotificationService, BrevoSmtpService>();
-             service.AddScoped<ICookieService, CookieService>();
-            
-            // Register configuration options
+            service.AddScoped<ICookieService, CookieService>();
+            service.AddScoped<IAppUrlService, AppUrlService>();
+
+            service.Configure<AppSettings>(config.GetSection("AppSettings"));
             service.Configure<EmailSettings>(config.GetSection("EmailSettings"));
             service.Configure<JwtOptions>(config.GetSection("Jwt"));
-            
-            // Add HttpClient for Brevo service
+            service.AddScoped<IPayPalWebhookValidator, PayPalWebhookValidator>();
+
             service.AddHttpClient();
-            
+
+            // Background jobs
+            service.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+            service.AddScoped<TrialExpiryJob>();
+            service.AddHostedService<BackgroundWorker>();
+            service.AddHostedService<TrialExpiryWorker>();
+
             return service;
         }
     }
