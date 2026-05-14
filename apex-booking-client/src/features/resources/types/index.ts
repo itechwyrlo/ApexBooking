@@ -21,12 +21,14 @@ export type ExceptionType =
  * Resource as returned from the API.
  * UC-3.1.1, TR-7.1
  */
-export interface Resource {
+export interface Staff {
   id: string;
   tenantId: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;          // Updated to be nullable for minimal admin creation
+  contactNumber: string | null;  // Updated to be nullable for minimal admin creation
   description: string | null;
-  resourceType: ResourceType;
   capacity: number;
   isActive: boolean;
   createdAt: string;
@@ -39,8 +41,10 @@ export interface Resource {
  * Optional: description. location_id ignored in MVP.
  */
 export interface CreateResourceRequest {
-  name: string;
-  resourceType: ResourceType;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  contactNumber: string | null;
   capacity: number;
   description?: string;
 }
@@ -50,8 +54,10 @@ export interface CreateResourceRequest {
  * TR-7.2: All fields optional. Partial update.
  */
 export interface UpdateResourceRequest {
-  name?: string;
-  resourceType?: ResourceType;
+  firstName?: string;
+  lastName?: string;
+  email: string | null;
+  contactNumber: string | null;
   capacity?: number;
   description?: string;
 }
@@ -99,7 +105,7 @@ export interface SetAvailabilityRequest {
  */
 export interface AvailabilityException {
   id: string;
-  resourceId: string;
+  staffId: string;
   exceptionDate: string;    // YYYY-MM-DD
   exceptionType: ExceptionType;
   startTime: string | null; // HH:mm, null when UnavailableAllDay

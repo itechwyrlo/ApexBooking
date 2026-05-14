@@ -16,7 +16,7 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.UpdateService
         int DurationMinutes,
         decimal Price,
         string CurrencyCode,
-        List<Guid> ResourceIds,
+        List<Guid> StaffIds,
         int BufferBeforeMinutes,
         int BufferAfterMinutes,
         int? MinAdvanceBookingHours,

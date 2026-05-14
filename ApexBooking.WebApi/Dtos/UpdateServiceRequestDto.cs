@@ -12,7 +12,7 @@ namespace ApexBooking.WebApi.Dtos
         public int DurationMinutes { get; set; }
         public decimal Price { get; set; }
         public string CurrencyCode { get; set; } = string.Empty;
-        public List<Guid> ResourceIds { get; set; } = new();
+        public List<Guid> StaffIds { get; set; } = new();
         public int BufferBeforeMinutes { get; set; }
         public int BufferAfterMinutes { get; set; }
         public int? MinAdvanceBookingHours { get; set; }

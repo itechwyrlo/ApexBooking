@@ -83,10 +83,6 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("rescheduled_from_booking_id");
 
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("resource_id");
-
                     b.Property<string>("ResourceName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -111,6 +107,10 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("staff_id");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)")
@@ -133,7 +133,7 @@ namespace ApexBooking.Core.Persistence.Migrations
 
                     b.HasIndex("TenantId", "ScheduledDate");
 
-                    b.HasIndex("TenantId", "ResourceId", "ScheduledDate", "Status");
+                    b.HasIndex("TenantId", "StaffId", "ScheduledDate", "Status");
 
                     b.ToTable("bookings", (string)null);
                 });
@@ -483,233 +483,6 @@ namespace ApexBooking.Core.Persistence.Migrations
                     b.ToTable("refresh_token", (string)null);
                 });
 
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Resource", b =>
-                {
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<int>("Capacity")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(1)
-                        .HasColumnName("capacity");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("ResourceType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("resource_type");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.HasKey("ResourceId");
-
-                    b.HasIndex("ResourceType");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("TenantId", "IsActive");
-
-                    b.ToTable("resources", (string)null);
-                });
-
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ResourceAvailabilityException", b =>
-                {
-                    b.Property<Guid>("ResourceAvailabilityExceptionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<TimeOnly?>("EndTime")
-                        .HasColumnType("time")
-                        .HasColumnName("end_time");
-
-                    b.Property<DateOnly>("ExceptionDate")
-                        .HasColumnType("date")
-                        .HasColumnName("exception_date");
-
-                    b.Property<string>("ExceptionType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("type");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("note");
-
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("resource_id");
-
-                    b.Property<TimeOnly?>("StartTime")
-                        .HasColumnType("time")
-                        .HasColumnName("start_time");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.HasKey("ResourceAvailabilityExceptionId");
-
-                    b.HasIndex("ExceptionDate");
-
-                    b.HasIndex("ResourceId");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("ResourceId", "ExceptionDate", "ExceptionType")
-                        .IsUnique();
-
-                    b.ToTable("resource_availability_exceptions", (string)null);
-                });
-
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ResourceAvailabilitySchedule", b =>
-                {
-                    b.Property<Guid>("ResourceAvailabilityScheduleId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<int>("DayOfWeek")
-                        .HasColumnType("int")
-                        .HasColumnName("day_of_week");
-
-                    b.Property<TimeOnly?>("EndTime")
-                        .HasColumnType("time")
-                        .HasColumnName("end_time");
-
-                    b.Property<bool>("IsAvailable")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_available");
-
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("resource_id");
-
-                    b.Property<TimeOnly?>("StartTime")
-                        .HasColumnType("time")
-                        .HasColumnName("start_time");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.HasKey("ResourceAvailabilityScheduleId");
-
-                    b.HasIndex("ResourceId");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("ResourceId", "DayOfWeek")
-                        .IsUnique();
-
-                    b.ToTable("resource_availability_schedules", (string)null);
-                });
-
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ResourceBreakPeriod", b =>
-                {
-                    b.Property<Guid>("ResourceBreakPeriodId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<TimeOnly>("BreakEndTime")
-                        .HasColumnType("time")
-                        .HasColumnName("break_end");
-
-                    b.Property<TimeOnly>("BreakStartTime")
-                        .HasColumnType("time")
-                        .HasColumnName("break_start");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("Label")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("label");
-
-                    b.Property<Guid>("ResourceAvailabilityScheduleId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("resource_availability_schedule_id");
-
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("resource_id");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("ResourceBreakPeriodId");
-
-                    b.HasIndex("ResourceAvailabilityScheduleId");
-
-                    b.HasIndex("ResourceId");
-
-                    b.HasIndex("TenantId");
-
-                    b.ToTable("resource_break_periods", (string)null);
-                });
-
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Service", b =>
                 {
                     b.Property<Guid>("ServiceId")
@@ -802,9 +575,9 @@ namespace ApexBooking.Core.Persistence.Migrations
                     b.ToTable("services", (string)null);
                 });
 
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ServiceResource", b =>
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ServiceStaff", b =>
                 {
-                    b.Property<Guid>("ServiceResourceId")
+                    b.Property<Guid>("ServiceStaffId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
@@ -814,30 +587,267 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("resource_id");
-
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("service_id");
+
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("staff_id");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("tenant_id");
 
-                    b.HasKey("ServiceResourceId");
-
-                    b.HasIndex("ResourceId");
+                    b.HasKey("ServiceStaffId");
 
                     b.HasIndex("ServiceId");
 
+                    b.HasIndex("StaffId");
+
                     b.HasIndex("TenantId");
 
-                    b.HasIndex("ServiceId", "ResourceId")
+                    b.HasIndex("ServiceId", "StaffId")
                         .IsUnique();
 
-                    b.ToTable("service_resources", (string)null);
+                    b.ToTable("service_staffs", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Staff", b =>
+                {
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Capacity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1)
+                        .HasColumnName("capacity");
+
+                    b.Property<string>("ContactNumber")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("contact_number");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("first_name");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("last_name");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("StaffId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "IsActive");
+
+                    b.ToTable("Staffs", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.StaffAvailabilityException", b =>
+                {
+                    b.Property<Guid>("StaffAvailabilityExceptionId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time")
+                        .HasColumnName("end_time");
+
+                    b.Property<DateOnly>("ExceptionDate")
+                        .HasColumnType("date")
+                        .HasColumnName("exception_date");
+
+                    b.Property<string>("ExceptionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("type");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("staff_id");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time")
+                        .HasColumnName("start_time");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("StaffAvailabilityExceptionId");
+
+                    b.HasIndex("ExceptionDate");
+
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("StaffId", "ExceptionDate", "ExceptionType")
+                        .IsUnique();
+
+                    b.ToTable("staff_availability_exceptions", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.StaffAvailabilitySchedule", b =>
+                {
+                    b.Property<Guid>("StaffAvailabilityScheduleId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("int")
+                        .HasColumnName("day_of_week");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time")
+                        .HasColumnName("end_time");
+
+                    b.Property<bool>("IsAvailable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_available");
+
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("staff_id");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time")
+                        .HasColumnName("start_time");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("StaffAvailabilityScheduleId");
+
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("StaffId", "DayOfWeek")
+                        .IsUnique();
+
+                    b.ToTable("staff_availability_schedules", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.StaffBreakPeriod", b =>
+                {
+                    b.Property<Guid>("StaffBreakPeriodId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<TimeOnly>("BreakEndTime")
+                        .HasColumnType("time")
+                        .HasColumnName("break_end");
+
+                    b.Property<TimeOnly>("BreakStartTime")
+                        .HasColumnType("time")
+                        .HasColumnName("break_start");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("label");
+
+                    b.Property<Guid>("StaffAvailabilityScheduleId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("staff_availability_schedule_id");
+
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("resource_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("StaffBreakPeriodId");
+
+                    b.HasIndex("StaffAvailabilityScheduleId");
+
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("staff_break_periods", (string)null);
                 });
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.SuperAdmin", b =>
@@ -1574,38 +1584,38 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ResourceAvailabilityException", b =>
-                {
-                    b.HasOne("ApexBooking.Core.Domain.Entities.Resource", null)
-                        .WithMany("AvailabilityExceptions")
-                        .HasForeignKey("ResourceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ResourceAvailabilitySchedule", b =>
-                {
-                    b.HasOne("ApexBooking.Core.Domain.Entities.Resource", null)
-                        .WithMany("AvailabilitySchedules")
-                        .HasForeignKey("ResourceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ResourceBreakPeriod", b =>
-                {
-                    b.HasOne("ApexBooking.Core.Domain.Entities.ResourceAvailabilitySchedule", null)
-                        .WithMany("BreakPeriods")
-                        .HasForeignKey("ResourceAvailabilityScheduleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ServiceResource", b =>
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ServiceStaff", b =>
                 {
                     b.HasOne("ApexBooking.Core.Domain.Entities.Service", null)
-                        .WithMany("ServiceResources")
+                        .WithMany("ServiceStaffs")
                         .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.StaffAvailabilityException", b =>
+                {
+                    b.HasOne("ApexBooking.Core.Domain.Entities.Staff", null)
+                        .WithMany("AvailabilityExceptions")
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.StaffAvailabilitySchedule", b =>
+                {
+                    b.HasOne("ApexBooking.Core.Domain.Entities.Staff", null)
+                        .WithMany("AvailabilitySchedules")
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.StaffBreakPeriod", b =>
+                {
+                    b.HasOne("ApexBooking.Core.Domain.Entities.StaffAvailabilitySchedule", null)
+                        .WithMany("BreakPeriods")
+                        .HasForeignKey("StaffAvailabilityScheduleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -1725,21 +1735,21 @@ namespace ApexBooking.Core.Persistence.Migrations
                     b.Navigation("CancellationToken");
                 });
 
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Resource", b =>
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Service", b =>
+                {
+                    b.Navigation("ServiceStaffs");
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Staff", b =>
                 {
                     b.Navigation("AvailabilityExceptions");
 
                     b.Navigation("AvailabilitySchedules");
                 });
 
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.ResourceAvailabilitySchedule", b =>
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.StaffAvailabilitySchedule", b =>
                 {
                     b.Navigation("BreakPeriods");
-                });
-
-            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Service", b =>
-                {
-                    b.Navigation("ServiceResources");
                 });
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Tenant", b =>

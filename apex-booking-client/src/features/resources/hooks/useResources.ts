@@ -2,22 +2,15 @@ import { useState, useCallback } from 'react';
 import axiosInstance from '../../../services/axiosInstance';
 import { useAuth } from '../../../context/AuthContext';
 import type {
-  Resource,
+  Staff,
   CreateResourceRequest,
   UpdateResourceRequest,
-  ResourceType,
 } from '../types';
 
-const resourceTypeToInt: Record<ResourceType, number> = {
-  Person: 0,
-  Room: 1,
-  Equipment: 2,
-  SlotBased: 3,
-};
 
 export const useResources = () => {
   const { tenantSlug } = useAuth();
-  const [resources, setResources] = useState<Resource[]>([]);
+  const [resources, setResources] = useState<Staff[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,14 +21,14 @@ export const useResources = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.get('/resource', {
+      const result = await axiosInstance.get('/staff', {
         headers,
         params: { pageNumber, pageSize },
       });
       setResources(result.data ?? []);
       setTotal(result.total ?? 0);
     } catch {
-      setError('Failed to load resources.');
+      setError('Failed to load Staff.');
     } finally {
       setIsLoading(false);
     }
@@ -46,30 +39,32 @@ export const useResources = () => {
     setError(null);
     try {
       const payload = {
-        name: request.name,
-        resourceType: resourceTypeToInt[request.resourceType],
+        firstName: request.firstName,
+        lastName: request.lastName,
+        email: request.email,
+        contactNumber: request.contactNumber,
         capacity: request.capacity,
         description: request.description,
       };
-      const result = await axiosInstance.post('/resource', payload, { headers });
+      const result = await axiosInstance.post('/staff', payload, { headers });
       if (result && !result.isSuccess) {
         setError(result.errors?.[0]?.message ?? 'Failed to create resource.');
         return false;
       }
       return true;
     } catch {
-      setError('Failed to create resource.');
+      setError('Failed to create Staff.');
       return false;
     } finally {
       setIsLoading(false);
     }
   }, [tenantSlug]);
 
-  const update = useCallback(async (resourceId: string, request: UpdateResourceRequest): Promise<boolean> => {
+  const update = useCallback(async (staffId: string, request: UpdateResourceRequest): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.patch(`/resource/${resourceId}`, request, { headers });
+      const result = await axiosInstance.patch(`/staff/${staffId}`, request, { headers });
       if (result && !result.isSuccess) {
         setError(result.errors?.[0]?.message ?? 'Failed to update resource.');
         return false;
@@ -83,11 +78,11 @@ export const useResources = () => {
     }
   }, [tenantSlug]);
 
-  const deactivate = useCallback(async (resourceId: string): Promise<boolean> => {
+  const deactivate = useCallback(async (staffId: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.patch(`/resource/${resourceId}/status`, {}, { headers });
+      const result = await axiosInstance.patch(`/staff/${staffId}/status`, {}, { headers });
       if (result && !result.isSuccess) {
         setError(result.errors?.[0]?.message ?? 'Failed to deactivate resource.');
         return false;

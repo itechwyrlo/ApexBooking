@@ -24,19 +24,19 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.RemoveExce
         public async Task<BaseResponse<bool>> Handle(RemoveExceptionCommand command, CancellationToken ct)
         {
             var tenantId = _contextService.GetCurrentTenantId();
-            var resourceId = new ResourceId(command.ResourceId);
+            var staffId = new StaffId(command.StaffId);
 
-            var resource = await _unitOfWork.ResourceRepository
-                .FindByIdWithAvailabilityAsync(resourceId, ct)
+            var staff = await _unitOfWork.StaffRepository
+                .FindByIdWithAvailabilityAsync(staffId, ct)
                 .ConfigureAwait(false);
 
-            if (resource is null || resource.TenantId != tenantId)
-                throw new BusinessRuleBrokenException("Resource not found.");
+            if (staffId is null || staff.TenantId != tenantId)
+                throw new BusinessRuleBrokenException("StaffId not found.");
 
-            var exceptionId = new ResourceAvailabilityExceptionId(command.ExceptionId);
-            resource.RemoveException(exceptionId);
+            var exceptionId = new StaffAvailabilityExceptionId(command.ExceptionId);
+            staff.RemoveException(exceptionId);
 
-            _unitOfWork.ResourceRepository.Update(resource);
+            _unitOfWork.StaffRepository.Update(staff);
             await _unitOfWork.CompleteAsync(ct);
 
             return BaseResponse<bool>.Success(true);

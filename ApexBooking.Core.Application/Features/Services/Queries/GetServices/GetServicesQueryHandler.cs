@@ -33,7 +33,7 @@ namespace ApexBooking.Core.Application.Features.Services.Queries.GetServices
             var pagedResult = await _unitOfWork.ServiceRepository.GetPageAsync(
                 query.param,
                 predicate: s => s.TenantId == tenantId,
-                includes: s => s.ServiceResources)
+                includes: s => s.ServiceStaffs)
                 .ConfigureAwait(false);
 
             var dtos = pagedResult.data

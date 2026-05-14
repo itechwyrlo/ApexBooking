@@ -13,7 +13,7 @@ namespace ApexBooking.Core.Application.Dtos
         public int? MinAdvanceBookingHours { get; init; }
         public int? MaxAdvanceBookingDays { get; init; }
         public bool IsActive { get; init; }
-        public List<Guid> ResourceIds { get; init; } = new();
+        public List<Guid> StaffIds { get; init; } = new();
         public DateTime CreatedAt { get; init; }
         public DateTime UpdatedAt { get; init; }
     }

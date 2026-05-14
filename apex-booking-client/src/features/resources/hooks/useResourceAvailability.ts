@@ -8,7 +8,7 @@ import type {
   DaySchedule,
 } from '../types';
 
-export const useResourceAvailability = (resourceId: string) => {
+export const useResourceAvailability = (staffId: string) => {
   const { tenantSlug } = useAuth();
   const [schedule, setScheduleState] = useState<DaySchedule[] | null>(null);
   const [exceptions, setExceptions] = useState<AvailabilityException[]>([]);
@@ -22,7 +22,7 @@ export const useResourceAvailability = (resourceId: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await axiosInstance.get(`/resource/${resourceId}/availability`, { headers });
+      const res = await axiosInstance.get(`/staff/${staffId}/availability`, { headers });
       if (res && !res.isSuccess) {
         setError(res.errors?.[0]?.message ?? 'Failed to load schedule.');
         return;
@@ -33,13 +33,13 @@ export const useResourceAvailability = (resourceId: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [resourceId, tenantSlug]);
+  }, [staffId, tenantSlug]);
 
   const getExceptions = useCallback(async (pageNumber = 1, pageSize = 10) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await axiosInstance.get(`/resource/${resourceId}/exceptions`, 
+      const res = await axiosInstance.get(`/staff/${staffId}/exceptions`, 
         { headers,
           params: { pageNumber, pageSize }
         });
@@ -50,7 +50,7 @@ export const useResourceAvailability = (resourceId: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [resourceId, tenantSlug]);
+  }, [staffId, tenantSlug]);
 
   const setSchedule = useCallback(async (request: SetAvailabilityRequest): Promise<boolean> => {
     setIsLoading(true);
@@ -58,7 +58,7 @@ export const useResourceAvailability = (resourceId: string) => {
     setSuccess(null);
     try {
       const res = await axiosInstance.put(
-        `/resource/${resourceId}/availability`,
+        `/staff/${staffId}/availability`,
         request,
         { headers }
       );
@@ -74,7 +74,7 @@ export const useResourceAvailability = (resourceId: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [resourceId, tenantSlug]);
+  }, [staffId, tenantSlug]);
 
   const addException = useCallback(async (request: CreateExceptionRequest): Promise<boolean> => {
     setIsLoading(true);
@@ -82,7 +82,7 @@ export const useResourceAvailability = (resourceId: string) => {
     setSuccess(null);
     try {
       const res = await axiosInstance.post(
-        `/resource/${resourceId}/exceptions`,
+        `/staff/${staffId}/exceptions`,
         request,
         { headers }
       );
@@ -99,7 +99,7 @@ export const useResourceAvailability = (resourceId: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [resourceId, tenantSlug, getExceptions]);
+  }, [staffId, tenantSlug, getExceptions]);
 
   const removeException = useCallback(async (exceptionId: string): Promise<boolean> => {
     setIsLoading(true);
@@ -107,7 +107,7 @@ export const useResourceAvailability = (resourceId: string) => {
     setSuccess(null);
     try {
       const res = await axiosInstance.delete(
-        `/resource/${resourceId}/exceptions/${exceptionId}`,
+        `/staff/${staffId}/exceptions/${exceptionId}`,
         { headers }
       );
       if (res && !res.isSuccess) {
@@ -123,7 +123,7 @@ export const useResourceAvailability = (resourceId: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [resourceId, tenantSlug, getExceptions]);
+  }, [staffId, tenantSlug, getExceptions]);
 
   return {
     schedule,

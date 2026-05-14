@@ -12,7 +12,7 @@ namespace ApexBooking.Core.Application.Features.Availability.Queries
     public sealed record GetAvailableSlotsQuery(
          string Slug,
          Guid ServiceId,
-         Guid? ResourceId,
+         Guid? StaffId,
          DateOnly Date
      ) : IQuery<BaseResponse<AvailableSlotsDto>>;
 }

@@ -24,16 +24,16 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.AddExcepti
         public async Task<BaseResponse<bool>> Handle(AddExceptionCommand command, CancellationToken ct)
         {
             var tenantId = _contextService.GetCurrentTenantId();
-            var resourceId = new ResourceId(command.ResourceId);
+            var staffId = new StaffId(command.ResourceId);
 
-            var resource = await _unitOfWork.ResourceRepository
-                .FindByIdWithAvailabilityAsync(resourceId, ct)
+            var staff = await _unitOfWork.StaffRepository
+                .FindByIdWithAvailabilityAsync(staffId, ct)
                 .ConfigureAwait(false);
 
-            if (resource is null || resource.TenantId != tenantId)
+            if (staff is null || staff.TenantId != tenantId)
                 return BaseResponse<bool>.Failure("Resource not found.");
 
-            resource.AddException(
+            staff.AddException(
                 command.ExceptionDate,
                 command.ExceptionType,
                 command.StartTime,
@@ -41,7 +41,7 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.AddExcepti
                 command.Note
             );
 
-            _unitOfWork.ResourceRepository.Update(resource);
+            _unitOfWork.StaffRepository.Update(staff);
             await _unitOfWork.CompleteAsync(ct);
 
             return BaseResponse<bool>.Success(true);

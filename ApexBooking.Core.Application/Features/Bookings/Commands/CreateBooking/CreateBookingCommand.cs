@@ -7,7 +7,7 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
     public sealed record CreateBookingCommand(
         string TenantSlug,
         Guid ServiceId,
-        Guid? ResourceId,
+        Guid? StaffId,
         DateOnly ScheduledDate,
         TimeOnly ScheduledStartTime,
         string GuestFirstName,

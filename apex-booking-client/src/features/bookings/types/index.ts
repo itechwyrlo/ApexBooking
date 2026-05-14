@@ -91,7 +91,7 @@ export interface PublicService {
 }
 
 export interface PublicResource {
-  resourceId: string;
+  staffId: string;
   name: string;
   description: string | null;
   availabilitySchedule: ResourceScheduleDto[];

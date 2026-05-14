@@ -216,7 +216,7 @@ const CustomerBookingWizardPage: React.FC = () => {
     setSubmitError(null);
     try {
       const resourceId =
-        selectedResource === null ? null : selectedResource.resourceId;
+        selectedResource === null ? null : selectedResource.staffId;
       const request: CreateBookingRequest = {
         tenantSlug: tenant!,
         serviceId: selectedService.serviceId,
@@ -505,12 +505,12 @@ const CustomerBookingWizardPage: React.FC = () => {
               />
               {resources.map((resource) => (
                 <StaffCard
-                  key={resource.resourceId}
+                  key={resource.staffId}
                   resource={resource}
                   isSelected={
                     selectedResource !== "unset" &&
                     selectedResource !== null &&
-                    selectedResource.resourceId === resource.resourceId
+                    selectedResource.staffId === resource.staffId
                   }
                   onSelect={() => handleSelectResource(resource)}
                   onInfoClick={() => setDrawerResource(resource)}

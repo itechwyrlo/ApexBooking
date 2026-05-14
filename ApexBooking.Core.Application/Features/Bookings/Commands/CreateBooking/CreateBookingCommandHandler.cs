@@ -63,7 +63,7 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
 
             var service = await _unitOfWork.ServiceRepository.GetAsync(
                 predicate: s => s.ServiceId == serviceId && s.TenantId == tenantId,
-                s => s.ServiceResources);
+                s => s.ServiceStaffs);
 
             if (service is null || !service.IsActive)
                 return BaseResponse<BookingDetailDto>.Failure("Service not found.");
@@ -89,32 +89,32 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
             var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
 
             // Resolve which resource to use
-            ResourceId resourceId;
-            if (request.ResourceId.HasValue)
+            StaffId staffId;
+            if (request.StaffId.HasValue)
             {
-                resourceId = new ResourceId(request.ResourceId.Value);
-                if (!service.IsResourceAssigned(resourceId))
+                staffId = new StaffId(request.StaffId.Value);
+                if (!service.IsStaffAssigned(staffId))
                     return BaseResponse<BookingDetailDto>.Failure("Resource not assigned to service.");
             }
             else
             {
                 // Auto-assign: find the first active resource that has the requested slot available
-                resourceId = await ResolveFirstAvailableResourceAsync(
+                staffId = await ResolveFirstAvailableResourceAsync(
                     service, request.ScheduledDate, request.ScheduledStartTime, cancellationToken, nowLocal, minAdvanceHours);
 
-                if (resourceId is null)
+                if (staffId is null)
                     return BaseResponse<BookingDetailDto>.Failure("Selected time is no longer available.");
             }
 
-            var resource = await _unitOfWork.ResourceRepository.FindByIdWithAvailabilityAsync(resourceId, cancellationToken);
-            if (resource is null || !resource.IsActive)
-                return BaseResponse<BookingDetailDto>.Failure("Resource not found.");
+            var staff = await _unitOfWork.StaffRepository.FindByIdWithAvailabilityAsync(staffId, cancellationToken);
+            if (staff is null || !staff.IsActive)
+                return BaseResponse<BookingDetailDto>.Failure("Staff not found.");
 
             var activeBookings = await _unitOfWork.BookingRepository
-                .GetActiveBookingsForResourceOnDateAsync(resourceId, request.ScheduledDate, cancellationToken);
+                .GetActiveBookingsForStaffOnDateAsync(staffId, request.ScheduledDate, cancellationToken);
 
             var availableSlots = _slotAvailabilityService.ComputeAvailableSlots(
-                service, resource, request.ScheduledDate, activeBookings, nowLocal, minAdvanceHours);
+                service, staff, request.ScheduledDate, activeBookings, nowLocal, minAdvanceHours);
 
             if (!availableSlots.Contains(request.ScheduledStartTime.ToString("HH:mm")))
                 return BaseResponse<BookingDetailDto>.Failure("Selected slot is no longer available.");
@@ -129,8 +129,8 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
                 bookingReference,
                 serviceId,
                 service.Name,
-                resourceId,
-                resource.Name,
+                staffId,
+                staff.FirstName + staff.LastName,
                 request.GuestFirstName,
                 request.GuestLastName,
                 request.GuestEmail,
@@ -162,12 +162,12 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
 
             await SendConfirmationEmailAsync(booking, tenant.BusinessName, cancellationUrl, settings.CancellationCutoffHours, cancellationToken);
 
-            var dto = booking.ToDetailDto(service.Name, resource.Name);
+            var dto = booking.ToDetailDto(service.Name, staff.FirstName);
             return BaseResponse<BookingDetailDto>.Success(dto);
         }
 
-        private async Task<ResourceId?> ResolveFirstAvailableResourceAsync(
-            Domain.Entities.Service service,
+        private async Task<StaffId?> ResolveFirstAvailableResourceAsync(
+            Service service,
             DateOnly date,
             TimeOnly startTime,
             CancellationToken cancellationToken,
@@ -176,21 +176,21 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
         {
             var requestedSlot = startTime.ToString("HH:mm");
 
-            foreach (var sr in service.ServiceResources)
+            foreach (var sr in service.ServiceStaffs)
             {
-                var resource = await _unitOfWork.ResourceRepository
-                    .FindByIdWithAvailabilityAsync(sr.ResourceId, cancellationToken);
+                var resource = await _unitOfWork.StaffRepository
+                    .FindByIdWithAvailabilityAsync(sr.StaffId, cancellationToken);
 
                 if (resource is null || !resource.IsActive)
                     continue;
 
                 var activeBookings = await _unitOfWork.BookingRepository
-                    .GetActiveBookingsForResourceOnDateAsync(sr.ResourceId, date, cancellationToken);
+                    .GetActiveBookingsForStaffOnDateAsync(sr.StaffId, date, cancellationToken);
 
                 var slots = _slotAvailabilityService.ComputeAvailableSlots(service, resource, date, activeBookings, nowLocal, minHours);
 
                 if (slots.Contains(requestedSlot))
-                    return sr.ResourceId;
+                    return sr.StaffId;
             }
 
             return null;

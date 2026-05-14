@@ -55,8 +55,8 @@ public class Service : IAggregateRoot, ITenantEntity
     public DateTime UpdatedAt { get; private set; }
 
     // Children: resource assignments for this service
-    private readonly List<ServiceResource> _serviceResources = new();
-    public IReadOnlyCollection<ServiceResource> ServiceResources => _serviceResources.AsReadOnly();
+    private readonly List<ServiceStaff> _serviceStaffs = new();
+    public IReadOnlyCollection<ServiceStaff> ServiceStaffs => _serviceStaffs.AsReadOnly();
 
     protected Service() { }
 
@@ -94,7 +94,7 @@ public class Service : IAggregateRoot, ITenantEntity
         int durationMinutes,
         decimal price,
         string currencyCode,
-        IEnumerable<ResourceId> resourceIds,
+        IEnumerable<StaffId> staffIds,
         string? description = null,
         int bufferBeforeMinutes = 0,
         int bufferAfterMinutes = 0,
@@ -122,7 +122,7 @@ public class Service : IAggregateRoot, ITenantEntity
         if (bufferAfterMinutes < 0)
             throw new BusinessRuleBrokenException("Buffer after cannot be negative.");
 
-        var resourceList = resourceIds.ToList();
+        var resourceList = staffIds.ToList();
         if (resourceList.Count == 0)
             throw new BusinessRuleBrokenException("At least one resource must be assigned to the service.");
 
@@ -191,17 +191,17 @@ public class Service : IAggregateRoot, ITenantEntity
     /// TR-8.1: all resource_ids must belong to the same tenant.
     /// Duplicate assignments are silently ignored.
     /// </summary>
-    public void AddResource(ResourceId resourceId)
+    public void AddResource(StaffId staffId)
     {
-        if (resourceId is null)
+        if (staffId is null)
             throw new BusinessRuleBrokenException("Resource is required.");
 
-        bool alreadyAssigned = _serviceResources.Any(sr => sr.ResourceId == resourceId);
+        bool alreadyAssigned = _serviceStaffs.Any(sr => sr.StaffId == staffId);
         if (alreadyAssigned)
             return;
 
-        var serviceResource = ServiceResource.Create(ServiceId, resourceId, TenantId);
-        _serviceResources.Add(serviceResource);
+        var serviceResource = ServiceStaff.Create(ServiceId, staffId, TenantId);
+        _serviceStaffs.Add(serviceResource);
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -209,39 +209,39 @@ public class Service : IAggregateRoot, ITenantEntity
     /// Replaces the full set of resource assignments.
     /// TR-8.2: when resource_ids is provided on update, it replaces the full set.
     /// </summary>
-    public void ReplaceResources(IEnumerable<ResourceId> resourceIds)
+    public void ReplaceResources(IEnumerable<StaffId> staffIds)
     {
-        var list = resourceIds.ToList();
+        var list = staffIds.ToList();
 
         if (list.Count == 0)
             throw new BusinessRuleBrokenException("At least one resource must be assigned to the service.");
 
-        _serviceResources.Clear();
+        _serviceStaffs.Clear();
 
-        foreach (var resourceId in list)
-            AddResource(resourceId);
+        foreach (var staffId in list)
+            AddResource(staffId);
 
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void RemoveResource(ResourceId resourceId)
+    public void RemoveResource(StaffId staffId)
     {
-        var serviceResource = _serviceResources.FirstOrDefault(sr => sr.ResourceId == resourceId);
+        var serviceResource = _serviceStaffs.FirstOrDefault(sr => sr.StaffId == staffId);
         if (serviceResource is null)
             throw new BusinessRuleBrokenException("Resource is not assigned to this service.");
 
-        if (_serviceResources.Count == 1)
+        if (_serviceStaffs.Count == 1)
             throw new BusinessRuleBrokenException("A service must have at least one resource assigned.");
 
-        _serviceResources.Remove(serviceResource);
+        _serviceStaffs.Remove(serviceResource);
         UpdatedAt = DateTime.UtcNow;
     }
 
     /// <summary>
     /// TR-9.1 Step 3: check whether a specific resource is linked to this service.
     /// </summary>
-    public bool IsResourceAssigned(ResourceId resourceId)
-        => _serviceResources.Any(sr => sr.ResourceId == resourceId);
+    public bool IsStaffAssigned(StaffId staffId)
+        => _serviceStaffs.Any(sr => sr.StaffId == staffId);
 
     /// <summary>
     /// Returns the effective minimum advance booking hours for slot validation.

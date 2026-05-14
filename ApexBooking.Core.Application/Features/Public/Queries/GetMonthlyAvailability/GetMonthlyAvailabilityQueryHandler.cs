@@ -37,17 +37,17 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetMonthlyAvailab
             // Query 2: Load service with its resources
             var service = await _unitOfWork.ServiceRepository.GetAsync(
                 s => s.ServiceId == new ServiceId(query.ServiceId) && s.TenantId == tenant.TenantId,
-                s => s.ServiceResources);
+                s => s.ServiceStaffs);
 
             if (service is null || !service.IsActive)
                 return BaseResponse<MonthlyAvailabilityDto>.Failure("Service not found.");
 
-            var resourceIds = service.ServiceResources.Select(sr => sr.ResourceId).ToList();
+            var resourceIds = service.ServiceStaffs.Select(sr => sr.StaffId).ToList();
             if (!resourceIds.Any())
                 return BaseResponse<MonthlyAvailabilityDto>.Success(new MonthlyAvailabilityDto(query.Year, query.Month, []));
 
             // Query 3: Bulk load all active resources for this service with their availability schedules
-            var resources = (await _unitOfWork.ResourceRepository.FindByIdsWithAvailabilityAsync(resourceIds, cancellationToken))
+            var resources = (await _unitOfWork.StaffRepository.FindByIdsWithAvailabilityAsync(resourceIds, cancellationToken))
                 .Where(r => r.IsActive)
                 .ToList();
 
@@ -58,9 +58,9 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetMonthlyAvailab
             var firstDay = new DateOnly(query.Year, query.Month, 1);
             var lastDay = firstDay.AddMonths(1).AddDays(-1);
 
-            var bookings = await _unitOfWork.BookingRepository.GetActiveBookingsForResourcesInDateRangeAsync(
+            var bookings = await _unitOfWork.BookingRepository.GetActiveBookingsForStaffsInDateRangeAsync(
                 tenant.TenantId,
-                resources.Select(r => r.ResourceId),
+                resources.Select(r => r.StaffId),
                 firstDay,
                 lastDay,
                 cancellationToken);
@@ -91,7 +91,7 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetMonthlyAvailab
                         if (schedule == null || !schedule.IsAvailable) continue;
 
                         var bookingsForDay = bookings
-                            .Where(b => b.ResourceId == resource.ResourceId && b.ScheduledDate == d)
+                            .Where(b => b.StaffId == resource.StaffId && b.ScheduledDate == d)
                             .ToList();
 
                         var slots = _slotService.ComputeAvailableSlots(

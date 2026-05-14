@@ -80,7 +80,7 @@ const BookingsPage: React.FC = () => {
     if (!formValue.serviceId) return [];
     const selectedService = services.find(s => s.id === formValue.serviceId);
     if (!selectedService) return [];
-    return resources.filter(r => selectedService.resourceIds.includes(r.id));
+    return resources.filter(r => selectedService.staffIds.includes(r.id));
   }, [services, resources, formValue.serviceId]);
 
   const bookingFormSchema = useMemo(
@@ -106,7 +106,7 @@ const BookingsPage: React.FC = () => {
         dataSource: {
           mode: 'static',
           options: filteredResources.map((r) => ({
-            label: r.name,
+            label: r.firstName,
             value: r.id,
           })),
         },

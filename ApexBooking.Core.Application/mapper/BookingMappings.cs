@@ -16,13 +16,13 @@ namespace ApexBooking.Core.Application.mapper
         public static BookingDetailDto ToDetailDto(
             this Booking booking,
             string serviceName,
-            string resourceName) => new(
+            string staffName) => new(
                 booking.BookingId.Value,
                 booking.BookingReference,
                 booking.ServiceId.Value,
                 serviceName,
-                booking.ResourceId.Value,
-                resourceName,
+                booking.StaffId.Value,
+                staffName,
                 booking.Guest.ToGuestDto(),
                 booking.ScheduledDate,
                 booking.ScheduledStartTime,
@@ -62,7 +62,7 @@ namespace ApexBooking.Core.Application.mapper
             booking.BookingReference,
             booking.ServiceId.Value,
             booking.ServiceName,
-            booking.ResourceId.Value,
+            booking.StaffId.Value,
             booking.ResourceName,
             booking.Guest.ToGuestDto(),
             booking.ScheduledDate,

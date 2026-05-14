@@ -10,7 +10,7 @@ export interface Service {
     minAdvanceBookingHours?: number;
     maxAdvanceBookingDays?: number;
     isActive: boolean;
-    resourceIds: string[];
+    staffIds: string[];
     createdAt: string;
     updatedAt: string;
   }
@@ -21,7 +21,7 @@ export interface Service {
     durationMinutes: number;
     price: number;
     currencyCode: string;
-    resourceIds: string[];
+    staffIds: string[];
     bufferBeforeMinutes: number;
     bufferAfterMinutes: number;
     minAdvanceBookingHours?: number;
@@ -34,7 +34,7 @@ export interface Service {
     durationMinutes: number;
     price: number;
     currencyCode: string;
-    resourceIds: string[];
+    staffIds: string[];
     bufferBeforeMinutes: number;
     bufferAfterMinutes: number;
     minAdvanceBookingHours?: number;

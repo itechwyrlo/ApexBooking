@@ -10,7 +10,7 @@ public interface IUnitOfWork
     IUserRepository UserRepository { get; }
     ISuperAdminRepository SuperAdminRepository { get; }
     IServiceRepository ServiceRepository { get; }
-    IResourceRepository ResourceRepository { get; }
+    IStaffRepository StaffRepository { get; }
     IBookingRepository BookingRepository { get; }
     IPaymentTransactionRepository PaymentTransactionRepository { get; }
     IPlatformPaymentGatewayRepository PlatformPaymentGatewayRepository { get; }

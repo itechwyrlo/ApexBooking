@@ -17,14 +17,14 @@ namespace ApexBooking.Core.Domain.Repositories
         /// Hits the index: (tenant_id, resource_id, scheduled_date, status)
         /// TR-9.1 Step 7, TR-2.5
         /// </summary>
-        Task<IReadOnlyList<Booking>> GetActiveBookingsForResourceOnDateAsync(
-            ResourceId resourceId,
+        Task<IReadOnlyList<Booking>> GetActiveBookingsForStaffOnDateAsync(
+            StaffId staffId,
             DateOnly date,
             CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<Booking>> GetActiveBookingsForResourcesInDateRangeAsync(
+        Task<IReadOnlyList<Booking>> GetActiveBookingsForStaffsInDateRangeAsync(
             TenantId tenantId,
-            IEnumerable<ResourceId> resourceIds,
+            IEnumerable<StaffId> staffIds,
             DateOnly startDate,
             DateOnly endDate,
             CancellationToken cancellationToken = default);

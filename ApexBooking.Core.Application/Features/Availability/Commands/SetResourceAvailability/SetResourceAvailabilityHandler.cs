@@ -24,13 +24,13 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.SetResourc
         public async Task Handle(SetResourceAvailabilityCommand command, CancellationToken ct)
         {
             
-            var resource = await _unitOfWork.ResourceRepository
-                .FindByIdWithAvailabilityAsync(new ResourceId(command.ResourceId), ct);
+            var staff = await _unitOfWork.StaffRepository
+                .FindByIdWithAvailabilityAsync(new StaffId(command.StaffId), ct);
 
-            if (resource is null)
-                throw new BusinessRuleBrokenException("Resource not found.");
+            if (staff is null)
+                throw new BusinessRuleBrokenException("Staff not found.");
 
-            var scheduleEntities = new List<ResourceAvailabilitySchedule>();
+            var scheduleEntities = new List<StaffAvailabilitySchedule>();
 
             foreach (var dto in command.Schedules)
             {
@@ -42,9 +42,9 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.SetResourc
                     ? TimeOnly.ParseExact(dto.EndTime, "HH:mm")
                     : null;
 
-                var schedule = ResourceAvailabilitySchedule.Create(
-                    resource.ResourceId,
-                    resource.TenantId,
+                var schedule = StaffAvailabilitySchedule.Create(
+                    staff.StaffId,
+                    staff.TenantId,
                     (DayOfWeek)dto.DayOfWeek,
                     dto.IsAvailable,
                     startTime,
@@ -61,9 +61,9 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.SetResourc
                 scheduleEntities.Add(schedule);
             }
 
-            resource.SetWeeklySchedule(scheduleEntities);
+            staff.SetWeeklySchedule(scheduleEntities);
 
-            _unitOfWork.ResourceRepository.Update(resource);
+            _unitOfWork.StaffRepository.Update(staff);
             await _unitOfWork.CompleteAsync(ct);
         }
     }

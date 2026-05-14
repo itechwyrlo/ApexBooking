@@ -47,7 +47,7 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.CreateService
             if (nameExists)
                 return BaseResponse<ServiceDto>.Failure("A service with this name already exists.");
 
-            var resourceIds = command.ResourceIds.Select(id => new ResourceId(id)).ToList();
+            var staffIds = command.StaffIds.Select(id => new StaffId(id)).ToList();
 
             var service = Service.Create(
                 tenantId,
@@ -55,7 +55,7 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.CreateService
                 command.DurationMinutes,
                 command.Price,
                 command.CurrencyCode,
-                resourceIds,
+                staffIds,
                 command.Description,
                 command.BufferBeforeMinutes,
                 command.BufferAfterMinutes,

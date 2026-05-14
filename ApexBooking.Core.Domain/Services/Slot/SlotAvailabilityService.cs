@@ -9,7 +9,7 @@ namespace ApexBooking.Core.Domain.Services.Slot
     {
         public IReadOnlyList<string> ComputeAvailableSlots(
             Service service,
-            Resource resource,
+            Staff staff,
             DateOnly date,
             IReadOnlyList<Booking> activeBookings,
             DateTime? now = null,
@@ -32,13 +32,13 @@ namespace ApexBooking.Core.Domain.Services.Slot
                     return [];
             }
 
-            var exception = resource.AvailabilityExceptions
+            var exception = staff.AvailabilityExceptions
                 .FirstOrDefault(e => e.ExceptionDate == date);
 
             if (exception?.ExceptionType == ExceptionType.UnavailableAllDay)
                 return [];
 
-            var schedule = resource.GetScheduleForDay(date.DayOfWeek);
+            var schedule = staff.GetScheduleForDay(date.DayOfWeek);
 
             if (schedule is null || !schedule.IsAvailable)
                 return [];
@@ -132,7 +132,7 @@ namespace ApexBooking.Core.Domain.Services.Slot
         }
 
         private static List<(TimeOnly Start, TimeOnly End)> BuildWorkingRanges(
-            ResourceAvailabilitySchedule schedule)
+            StaffAvailabilitySchedule schedule)
         {
             var ranges = new List<(TimeOnly Start, TimeOnly End)>
             {

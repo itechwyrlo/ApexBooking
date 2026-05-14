@@ -1,6 +1,6 @@
 namespace ApexBooking.Core.Application.Dtos
 {
-    public record ResourceScheduleDto(
+    public record StaffScheduleDto(
         string DayOfWeek,
         string StartTime,
         string EndTime

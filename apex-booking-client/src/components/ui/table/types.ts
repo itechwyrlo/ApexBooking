@@ -72,10 +72,11 @@ export type ModelSchema<T> = {
  */
 
 export type DataColumn<T> = {
-  key: keyof T;
+  key: keyof T | (string & {}); 
   header: string;
   render?: (value: any, row: T) => React.ReactNode;
 };
+
 
 export type ActionColumn<T> = {
   type: "button";

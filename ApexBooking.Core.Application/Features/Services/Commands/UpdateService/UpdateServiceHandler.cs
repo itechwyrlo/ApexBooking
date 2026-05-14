@@ -30,7 +30,7 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.UpdateService
 
             var service = await _unitOfWork.ServiceRepository.GetAsync(
                 predicate: s => s.ServiceId == serviceId,
-                includes: s => s.ServiceResources).ConfigureAwait(false);
+                includes: s => s.ServiceStaffs).ConfigureAwait(false);
 
             if (service is null || service.TenantId != tenantId)
                 return BaseResponse<ServiceDto>.Failure("Service not found.");
@@ -47,8 +47,8 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.UpdateService
                 command.MaxAdvanceBookingDays
             );
 
-            var resourceIds = command.ResourceIds.Select(id => new ResourceId(id)).ToList();
-            service.ReplaceResources(resourceIds);
+            var staffIds = command.StaffIds.Select(id => new StaffId(id)).ToList();
+            if(staffIds.Count > 0) service.ReplaceResources(staffIds);
 
             _unitOfWork.ServiceRepository.Update(service);
             await _unitOfWork.CompleteAsync(ct);

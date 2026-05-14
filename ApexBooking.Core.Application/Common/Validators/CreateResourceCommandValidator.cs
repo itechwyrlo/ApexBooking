@@ -1,29 +1,31 @@
 using FluentValidation;
-using ApexBooking.Core.Application.Features.Availability.Commands.CreateResource;
 using ApexBooking.Core.Domain.Enums;
+using ApexBooking.Core.Application.Features.Staffs.Commands.CreateStaff;
 
 namespace ApexBooking.Core.Application.Common.Validators;
 
 /// <summary>
 /// Validator for CreateResourceCommand - validates resource data
 /// </summary>
-public class CreateResourceCommandValidator : AbstractValidator<CreateResourceCommand>
+public class CreateResourceCommandValidator : AbstractValidator<CreateStaffCommand>
 {
     public CreateResourceCommandValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Resource name is required")
+         RuleFor(x => x.FirstName)
+            .NotEmpty().WithMessage("FirstName name is required")
             .MaximumLength(256).WithMessage("Resource name cannot exceed 256 characters")
-            .Matches(@"^[a-zA-Z0-9\s\-()&.]*$").WithMessage("Resource name contains invalid characters");
+            .Matches(@"^[a-zA-Z0-9\s\-()&.]*$").WithMessage("FirstName name contains invalid characters");
+
+        RuleFor(x => x.LastName)
+            .NotEmpty().WithMessage("LastName name is required")
+            .MaximumLength(256).WithMessage("Resource name cannot exceed 256 characters")
+            .Matches(@"^[a-zA-Z0-9\s\-()&.]*$").WithMessage("LastName name contains invalid characters");
 
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters")
             .Must(desc => string.IsNullOrEmpty(desc) || !ContainsScriptTags(desc))
                 .WithMessage("Description contains invalid characters");
 
-        RuleFor(x => x.ResourceType)
-            .IsInEnum()
-            .WithMessage("Please select a valid resource type.");
 
         RuleFor(x => x.Capacity)
             .GreaterThan(0).WithMessage("Capacity must be greater than 0");

@@ -82,7 +82,7 @@ namespace ApexBooking.Core.Persistence.Mappings
                 .IsRequired();
 
             // Relationships
-            builder.HasMany(s => s.ServiceResources)
+            builder.HasMany(s => s.ServiceStaffs)
                 .WithOne()
                 .HasForeignKey(sr => sr.ServiceId)
                 .IsRequired()

@@ -23,15 +23,15 @@ namespace ApexBooking.Core.Domain.ValueObjects
     [NotMapped]
     public record ResourceId(Guid Value);
     [NotMapped]
-    public record ResourceAvailabilityScheduleId(Guid Value);
+    public record StaffAvailabilityScheduleId(Guid Value);
     [NotMapped]
-    public record ResourceBreakPeriodId(Guid Value);
+    public record StaffBreakPeriodId(Guid Value);
     [NotMapped]
-    public record ResourceAvailabilityExceptionId(Guid Value);
+    public record StaffAvailabilityExceptionId(Guid Value);
     [NotMapped]
     public record ServiceId(Guid Value);
     [NotMapped]
-    public record ServiceResourceId(Guid Value);
+    public record ServiceStaffId(Guid Value);
     [NotMapped]
     public record BookingId(Guid Value);
     [NotMapped]
@@ -64,4 +64,6 @@ namespace ApexBooking.Core.Domain.ValueObjects
     public record GuestCancellationTokenId(Guid Value);
     [NotMapped]
     public record TenantRequestId(Guid Value);
+    [NotMapped]
+    public record StaffId(Guid Value);
 }

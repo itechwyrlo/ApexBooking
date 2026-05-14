@@ -1,10 +1,10 @@
 namespace ApexBooking.Core.Application.Dtos
 {
-    public record PublicResourceDto(
-        Guid ResourceId,
+    public record PublicStaffDto(
+        Guid StaffId,
         string Name,
         string? Description,
-        List<ResourceScheduleDto> AvailabilitySchedule,
+        List<StaffScheduleDto> AvailabilitySchedule,
         List<PublicServiceDto> ServicesOffered
     );
 }

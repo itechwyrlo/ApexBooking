@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ModelSchema, Option } from "../table/types";
+import { PhoneField } from "../PhoneField";
 
 type Props<T> = {
   field: ModelSchema<T>;
@@ -155,6 +156,18 @@ export function FieldRenderer<T>({
           />
         </div>
       );
+
+      case "phone":
+        return (
+          <PhoneField
+            label={field.label}
+            value={value ?? ""}
+            disabled={disabled}
+            onChange={onChange}
+            required={field.required} 
+            error={(field as any).error} 
+          />
+        );
 
     case "select": {
       const selectedOption = options.find((o) => o.value === value);

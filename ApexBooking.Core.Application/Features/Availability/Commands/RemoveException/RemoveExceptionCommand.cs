@@ -8,7 +8,7 @@ using ApexBooking.SharedKernel.Models;
 namespace ApexBooking.Core.Application.Features.Availability.Commands.RemoveException
 {
     public sealed record RemoveExceptionCommand(
-        Guid ResourceId,
+        Guid StaffId,
         Guid ExceptionId
     ) : ICommand<BaseResponse<bool>>;
 }

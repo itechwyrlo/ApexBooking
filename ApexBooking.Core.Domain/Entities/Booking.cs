@@ -14,7 +14,7 @@ public class Booking : IAggregateRoot, ITenantEntity
     public string BookingReference { get; private set; } = string.Empty;
     public ServiceId ServiceId { get; private set; } = default!;
     public string ServiceName { get; private set; } = string.Empty;
-    public ResourceId ResourceId { get; private set; } = default!;
+    public StaffId StaffId { get; private set; } = default!;
     public string ResourceName { get; private set; } = string.Empty;
 
     public DateOnly ScheduledDate { get; private set; }
@@ -61,7 +61,7 @@ public class Booking : IAggregateRoot, ITenantEntity
         string bookingReference,
         ServiceId serviceId,
         string serviceName,
-        ResourceId resourceId,
+        StaffId staffId,
         string resourceName,
         DateOnly scheduledDate,
         TimeOnly scheduledStartTime,
@@ -77,7 +77,7 @@ public class Booking : IAggregateRoot, ITenantEntity
         BookingReference = bookingReference;
         ServiceId = serviceId;
         ServiceName = serviceName;
-        ResourceId = resourceId;
+        StaffId = staffId;
         ResourceName = resourceName;
         ScheduledDate = scheduledDate;
         ScheduledStartTime = scheduledStartTime;
@@ -96,8 +96,8 @@ public class Booking : IAggregateRoot, ITenantEntity
         string bookingReference,
         ServiceId serviceId,
         string serviceName,
-        ResourceId resourceId,
-        string resourceName,
+        StaffId staffId,
+        string staffName,
         string guestFirstName,
         string guestLastName,
         string guestEmail,
@@ -119,8 +119,8 @@ public class Booking : IAggregateRoot, ITenantEntity
         if (serviceId is null)
             throw new BusinessRuleBrokenException("Service is required.");
 
-        if (resourceId is null)
-            throw new BusinessRuleBrokenException("Resource is required.");
+        if (staffId is null)
+            throw new BusinessRuleBrokenException("Staff is required.");
 
         if (durationMinutes <= 0)
             throw new BusinessRuleBrokenException("Duration must be greater than zero.");
@@ -138,8 +138,8 @@ public class Booking : IAggregateRoot, ITenantEntity
             bookingReference,
             serviceId,
             serviceName,
-            resourceId,
-            resourceName,
+            staffId,
+            staffName,
             scheduledDate,
             scheduledStartTime,
             scheduledEndTime,

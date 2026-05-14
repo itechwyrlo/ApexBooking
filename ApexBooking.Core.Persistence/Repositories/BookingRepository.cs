@@ -13,29 +13,29 @@ namespace ApexBooking.Core.Persistence.Repositories
     {
         public BookingRepository(ApexBookingDbContext context) : base(context) { }
 
-        public async Task<IReadOnlyList<Booking>> GetActiveBookingsForResourceOnDateAsync(
-            ResourceId resourceId,
+        public async Task<IReadOnlyList<Booking>> GetActiveBookingsForStaffOnDateAsync(
+            StaffId staffId,
             DateOnly date,
             CancellationToken cancellationToken = default)
         {
             return await Context.Set<Booking>()
                 .Where(b =>
-                    b.ResourceId == resourceId &&
+                    b.StaffId == staffId &&
                     b.ScheduledDate == date &&
                     (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Pending))
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<Booking>> GetActiveBookingsForResourcesInDateRangeAsync(
+        public async Task<IReadOnlyList<Booking>> GetActiveBookingsForStaffsInDateRangeAsync(
             TenantId tenantId,
-            IEnumerable<ResourceId> resourceIds,
+            IEnumerable<StaffId> staffIds,
             DateOnly startDate,
             DateOnly endDate,
             CancellationToken cancellationToken = default)
         {
             return await Context.Set<Booking>()
                 .Where(b => b.TenantId == tenantId &&
-                            resourceIds.Contains(b.ResourceId) &&
+                            staffIds.Contains(b.StaffId) &&
                             b.ScheduledDate >= startDate &&
                             b.ScheduledDate <= endDate &&
                             (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Pending))

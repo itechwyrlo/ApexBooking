@@ -7,7 +7,7 @@ namespace ApexBooking.Core.Application.Dtos
 {
     public sealed record AvailableSlotsDto(
     Guid ServiceId,
-    Guid? ResourceId,
+    Guid? StaffId,
     DateOnly Date,
     int DurationMinutes,
     IReadOnlyList<string> AvailableSlots

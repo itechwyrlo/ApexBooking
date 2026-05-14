@@ -33,9 +33,9 @@ namespace ApexBooking.Core.Persistence.Mappings
                 .HasColumnName("service_id")
                 .IsRequired();
 
-            builder.Property(b => b.ResourceId)
-                .HasConversion(id => id.Value, v => new ResourceId(v))
-                .HasColumnName("resource_id")
+            builder.Property(b => b.StaffId)
+                .HasConversion(id => id.Value, v => new StaffId(v))
+                .HasColumnName("staff_id")
                 .IsRequired();
 
             builder.Property(b => b.ScheduledDate)
@@ -112,7 +112,7 @@ namespace ApexBooking.Core.Persistence.Mappings
 
             // Indexes per ERD
             // Index: (tenant_id, resource_id, scheduled_date, status) for slot availability queries
-            builder.HasIndex(b => new { b.TenantId, b.ResourceId, b.ScheduledDate, b.Status });
+            builder.HasIndex(b => new { b.TenantId, b.StaffId, b.ScheduledDate, b.Status });
 
             // Index: (tenant_id, scheduled_date) for calendar queries
             builder.HasIndex(b => new { b.TenantId, b.ScheduledDate });

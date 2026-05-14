@@ -27,13 +27,13 @@ namespace ApexBooking.Core.Persistence.Data
 
         // Service entities
         public DbSet<Service> Services => Set<Service>();
-        public DbSet<ServiceResource> ServiceResources => Set<ServiceResource>();
+        public DbSet<ServiceStaff> ServiceStaffs => Set<ServiceStaff>();
 
         // Resource entities
-        public DbSet<Resource> Resources => Set<Resource>();
-        public DbSet<ResourceAvailabilitySchedule> ResourceAvailabilitySchedules => Set<ResourceAvailabilitySchedule>();
-        public DbSet<ResourceBreakPeriod> ResourceBreakPeriods => Set<ResourceBreakPeriod>();
-        public DbSet<ResourceAvailabilityException> ResourceAvailabilityExceptions => Set<ResourceAvailabilityException>();
+        public DbSet<Staff> Staffs => Set<Staff>();
+        public DbSet<StaffAvailabilitySchedule> StaffAvailabilitySchedules => Set<StaffAvailabilitySchedule>();
+        public DbSet<StaffBreakPeriod> StaffBreakPeriods => Set<StaffBreakPeriod>();
+        public DbSet<StaffAvailabilityException> StaffAvailabilityExceptions => Set<StaffAvailabilityException>();
 
         // Booking entities
         public DbSet<Booking> Bookings => Set<Booking>();

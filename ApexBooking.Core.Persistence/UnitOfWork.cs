@@ -18,14 +18,14 @@ namespace ApexBooking.Core.Persistence
         private readonly Lazy<IUserRepository> _userRepository;
         private readonly Lazy<ISuperAdminRepository> _superAdminRepository;
         private readonly Lazy<IServiceRepository> _serviceRepository;
-        private readonly Lazy<IResourceRepository> _resourceRepository;
+        private readonly Lazy<IStaffRepository> _staffRepository;
         private readonly Lazy<IBookingRepository> _bookingRepository;
         private readonly Lazy<IPaymentTransactionRepository> _paymentTransactionRepository;
         private readonly Lazy<IPlatformPaymentGatewayRepository> _platformPaymentGatewayRepository;
         private readonly Lazy<IGuestCancellationTokenRepository> _guestCancellationTokenRepository;
         private readonly Lazy<ITenantRequestRepository> _tenantRequestRepository;
 
-        public IResourceRepository ResourceRepository => _resourceRepository.Value;
+        public IStaffRepository StaffRepository => _staffRepository.Value;
         public IBookingRepository BookingRepository => _bookingRepository.Value;
         public ITenantRepository TenantRepository => _tenantRepository.Value;
         public IUserRepository UserRepository => _userRepository.Value;
@@ -54,7 +54,7 @@ namespace ApexBooking.Core.Persistence
             _userRepository = new Lazy<IUserRepository>(() => new UserRepository(_context, UserManager));
             _superAdminRepository = new Lazy<ISuperAdminRepository>(() => new SuperAdminRepository(_context));
             _serviceRepository = new Lazy<IServiceRepository>(() => new ServiceRepository(_context));
-            _resourceRepository = new Lazy<IResourceRepository>(() => new ResourceRepository(_context));
+            _staffRepository = new Lazy<IStaffRepository>(() => new StaffRepository(_context));
             _bookingRepository = new Lazy<IBookingRepository>(() => new BookingRepository(_context));
             _paymentTransactionRepository = new Lazy<IPaymentTransactionRepository>(
                 () => new PaymentTransactionRepository(_context));

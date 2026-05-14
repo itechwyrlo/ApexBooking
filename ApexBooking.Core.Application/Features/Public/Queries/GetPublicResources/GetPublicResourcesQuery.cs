@@ -13,5 +13,5 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetPublicResource
         Guid ServiceId,
         DateOnly? Date = null,
         TimeOnly? Time = null)
-        : IQuery<BaseResponse<List<PublicResourceDto>>>;
+        : IQuery<BaseResponse<List<PublicStaffDto>>>;
 }

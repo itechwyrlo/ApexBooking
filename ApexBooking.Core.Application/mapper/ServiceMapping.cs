@@ -18,8 +18,8 @@ public static class ServiceMappings
         MinAdvanceBookingHours = service.MinAdvanceBookingHours,
         MaxAdvanceBookingDays = service.MaxAdvanceBookingDays,
         IsActive = service.IsActive,
-        ResourceIds = service.ServiceResources
-            .Select(sr => sr.ResourceId.Value)
+        StaffIds = service.ServiceStaffs
+            .Select(sr => sr.StaffId.Value)
             .ToList(),
         CreatedAt = service.CreatedAt,
         UpdatedAt = service.UpdatedAt

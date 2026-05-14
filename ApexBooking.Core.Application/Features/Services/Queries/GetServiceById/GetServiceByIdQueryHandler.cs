@@ -29,7 +29,7 @@ namespace ApexBooking.Core.Application.Features.Services.Queries.GetServiceById
             var service = await _unitOfWork.ServiceRepository
                 .GetAsync(
                     predicate:  s => s.ServiceId == new ServiceId(query.ServiceId),
-                    includes: t => t.ServiceResources);
+                    includes: t => t.ServiceStaffs);
                     
             return BaseResponse<ServiceDto>.Success(service.ToServiceDto());
         }
