@@ -1,6 +1,7 @@
 using ApexBooking.Core.Domain.Entities;
+using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.Core.Domain.Services.Notification;
+using ApexBooking.Core.Domain.Services.EmailNotification;
 using Microsoft.Extensions.Logging;
 
 namespace ApexBooking.Infrastructure.BackgroundJobs;
@@ -61,10 +62,43 @@ public class TrialExpiryJob
                     tenant.OwnerEmail,
                     "Your ApexBooking trial has ended",
                     emailBody);
+
+                var superAdmins = await _unitOfWork.SuperAdminRepository.GetAllAsync(sa => sa.IsActive);
+                foreach (var sa in superAdmins)
+                {
+                    _unitOfWork.NotificationRepository.Add(Notification.Create(
+                        sa.SuperAdminId.Value,
+                        NotificationRecipientType.SuperAdmin,
+                        null,
+                        NotificationEventType.TrialExpiredSuspended,
+                        "Trial Expired",
+                        $"Tenant {tenant.BusinessName} trial has expired and has been suspended."));
+                }
+                await _unitOfWork.CompleteAsync(cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to suspend tenant {TenantId} after trial expiry.", tenant.TenantId.Value);
+
+                try
+                {
+                    var superAdmins = await _unitOfWork.SuperAdminRepository.GetAllAsync(sa => sa.IsActive);
+                    foreach (var sa in superAdmins)
+                    {
+                        _unitOfWork.NotificationRepository.Add(Notification.Create(
+                            sa.SuperAdminId.Value,
+                            NotificationRecipientType.SuperAdmin,
+                            null,
+                            NotificationEventType.BackgroundJobFailed,
+                            "Background Job Failed",
+                            "Background job failed: TrialExpiryJob encountered an error."));
+                    }
+                    await _unitOfWork.CompleteAsync(cancellationToken);
+                }
+                catch (Exception notifEx)
+                {
+                    _logger.LogError(notifEx, "Failed to write failure notification for TrialExpiryJob.");
+                }
             }
         }
     }
@@ -107,10 +141,43 @@ public class TrialExpiryJob
                 tenant.MarkTrialReminderSent();
                 _unitOfWork.TenantRepository.Update(tenant);
                 await _unitOfWork.CompleteAsync(cancellationToken);
+
+                var superAdmins = await _unitOfWork.SuperAdminRepository.GetAllAsync(sa => sa.IsActive);
+                foreach (var sa in superAdmins)
+                {
+                    _unitOfWork.NotificationRepository.Add(Notification.Create(
+                        sa.SuperAdminId.Value,
+                        NotificationRecipientType.SuperAdmin,
+                        null,
+                        NotificationEventType.TrialReminderSent,
+                        "Trial Expiring Soon",
+                        $"Tenant {tenant.BusinessName} trial expires in 3 days. Reminder sent."));
+                }
+                await _unitOfWork.CompleteAsync(cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send trial reminder to tenant {TenantId}.", tenant.TenantId.Value);
+
+                try
+                {
+                    var superAdmins = await _unitOfWork.SuperAdminRepository.GetAllAsync(sa => sa.IsActive);
+                    foreach (var sa in superAdmins)
+                    {
+                        _unitOfWork.NotificationRepository.Add(Notification.Create(
+                            sa.SuperAdminId.Value,
+                            NotificationRecipientType.SuperAdmin,
+                            null,
+                            NotificationEventType.BackgroundJobFailed,
+                            "Background Job Failed",
+                            "Background job failed: TrialExpiryJob encountered an error."));
+                    }
+                    await _unitOfWork.CompleteAsync(cancellationToken);
+                }
+                catch (Exception notifEx)
+                {
+                    _logger.LogError(notifEx, "Failed to write failure notification for TrialExpiryJob.");
+                }
             }
         }
     }

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import axiosInstance from '../../../services/axiosInstance';
 import type { CreateOrganizationRequest, OrganizationSummaryDto } from '../types';
-import type { BaseResponse } from '../../../types';
 
 export const useCreateOrganization = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,17 +12,13 @@ export const useCreateOrganization = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.post<BaseResponse<OrganizationSummaryDto>>(
+      const result = await axiosInstance.post<OrganizationSummaryDto>(
         '/superadmin/organizations',
         request
       );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to create organization.');
-        return null;
-      }
-      return result.data ?? null;
-    } catch {
-      setError('Failed to create organization.');
+      return result ?? null;
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create organization.');
       return null;
     } finally {
       setIsLoading(false);

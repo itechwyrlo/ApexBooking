@@ -10,6 +10,8 @@ public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordComm
 {
     public ResetPasswordCommandValidator()
     {
+        RuleFor(x => x.ConfirmPassword).Equal(x => x.NewPassword).WithMessage("Passwords do not match.");
+        
         RuleFor(x => x.Token)
             .NotEmpty().WithMessage("Token is required")
             .MaximumLength(1000).WithMessage("Token is too long");

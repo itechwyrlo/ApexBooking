@@ -1,0 +1,50 @@
+.wizard-step-wrapper {
+  min-width: 64px;
+}
+
+.wizard-step-circle {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  background: var(--bs-gray-200);
+  color: var(--bs-gray-500);
+  flex-shrink: 0;
+}
+
+.wizard-step-circle--active,
+.wizard-step-circle--done {
+  background: var(--bs-primary);
+  color: #fff;
+}
+
+.wizard-step-check {
+  font-size: 11px;
+}
+
+.wizard-step-label {
+  font-size: 11px;
+  color: var(--bs-gray-500);
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.wizard-step-label--active {
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.wizard-step-label--done {
+  color: var(--bs-gray-700);
+}
+
+.wizard-step-connector {
+  flex: 1;
+  height: 2px;
+  margin-bottom: 18px;
+  background: var(--bs-gray-200);
+  max-width: 40px;
+}
+
+.wizard-step-connector--done {
+  background: var(--bs-primary);
+}

@@ -17,6 +17,7 @@ public class TenantRepository : GenericRepository<Tenant>, ITenantRepository
         return await Context.Set<Tenant>()
             .Include(t => t.TenantProfile)
             .Include(t => t.TenantSettings)
+            .Include(t => t.TenantPaymentPolicy)
             .FirstOrDefaultAsync(t => t.Slug == slug.ToLowerInvariant());
     }
 

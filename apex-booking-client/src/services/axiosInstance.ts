@@ -1,7 +1,6 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
-import type { RefreshTokenResponse } from '../features/auth/types';
-import type { BaseResponse } from '../types';
+import type { RefreshTokenResponseData } from '../features/auth/types';
 
 // Define the shape of the error object your catch blocks will receive
 export interface ApiError {
@@ -41,11 +40,12 @@ const axiosInstance = axios.create({
 (axiosInstance as any).interceptors.response.use(
   // Success path: Unwraps axios envelope
   (response: any) => response.data,
-  
+
   // Error path: Handles refreshes and extracts server error messages
   async (error: any) => {
     const originalRequest = error.config;
     const isAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true';
+    const isSuperAdmin = sessionStorage.getItem('user_type') === 'superadmin';
     const isAuthEndpoint =
       originalRequest.url?.includes('/auth/login') ||
       originalRequest.url?.includes('/auth/refresh') ||
@@ -60,19 +60,21 @@ const axiosInstance = axios.create({
     ) {
       originalRequest._retry = true;
 
-      try {
-        const refreshResponse = await axiosInstance.post<RefreshTokenResponse>('/auth/refresh');
+      const refreshUrl = isSuperAdmin ? '/auth/refresh/superadmin' : '/auth/refresh';
 
-        if (refreshResponse.isSuccess && refreshResponse.data?.accessToken) {
-          sessionStorage.setItem('access_token', refreshResponse.data.accessToken);
+      try {
+        const refreshResponse = await axiosInstance.post<RefreshTokenResponseData>(refreshUrl);
+
+        if (refreshResponse.accessToken) {
+          sessionStorage.setItem('access_token', refreshResponse.accessToken);
 
           window.dispatchEvent(
             new CustomEvent('auth_token_refreshed', {
-              detail: refreshResponse.data.accessToken,
+              detail: refreshResponse.accessToken,
             })
           );
 
-          originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${refreshResponse.accessToken}`;
 
           return (axiosInstance as any)(originalRequest);
         }
@@ -84,11 +86,10 @@ const axiosInstance = axios.create({
     }
 
     // 2. Extract and Format Error for the Page
-    // This looks for the error message in your BaseResponse structure
-    const serverData = error.response?.data as BaseResponse | undefined;
-    
+    const serverData = error.response?.data as { message?: string } | undefined;
+
     const formattedError: ApiError = {
-      message: serverData?.errors?.[0]?.message || error.message || 'An unexpected error occurred.',
+      message: serverData?.message || error.message || 'An unexpected error occurred.',
       status: error.response?.status,
       data: serverData
     };

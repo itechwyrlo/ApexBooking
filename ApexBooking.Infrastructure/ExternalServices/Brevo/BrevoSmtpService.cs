@@ -5,7 +5,7 @@ using System.Net.Mail;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using ApexBooking.Core.Domain.Services.Notification;
+using ApexBooking.Core.Domain.Services.EmailNotification;
 using ApexBooking.Infrastructure.Configuration;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
@@ -77,7 +77,11 @@ namespace ApexBooking.Infrastructure.ExternalServices.Brevo
 
             var response = await client.PostAsync("https://api.brevo.com/v3/smtp/email", stringContent);
 
-            var error = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException($"Brevo API error ({(int)response.StatusCode}): {error}");
+            }
         }
     }
 }

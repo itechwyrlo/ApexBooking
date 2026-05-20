@@ -3,12 +3,12 @@ using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.SuperAdmin.Queries.GetOrganizationDetail;
 
 internal sealed class GetOrganizationDetailQueryHandler
-    : IQueryHandler<GetOrganizationDetailQuery, BaseResponse<OrganizationDetailDto>>
+    : IQueryHandler<GetOrganizationDetailQuery, OrganizationDetailDto>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -17,13 +17,13 @@ internal sealed class GetOrganizationDetailQueryHandler
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<BaseResponse<OrganizationDetailDto>> Handle(
+    public async Task<OrganizationDetailDto> Handle(
         GetOrganizationDetailQuery query,
         CancellationToken ct)
     {
         var tenant = await _unitOfWork.TenantRepository.FindBySlugAsync(query.Slug);
         if (tenant is null)
-            return BaseResponse<OrganizationDetailDto>.Failure("Organization not found.");
+            throw new NotFoundException("Organization not found.");
 
         var users = await _unitOfWork.UserRepository.GetAllByTenantAsync(tenant.TenantId);
         var bookings = await _unitOfWork.BookingRepository.GetAllAsync(t => t.TenantId == tenant.TenantId);
@@ -34,12 +34,11 @@ internal sealed class GetOrganizationDetailQueryHandler
 
         var userDtos = users.Select(u => u.ToTenantUserDto()).ToList();
 
-        return BaseResponse<OrganizationDetailDto>.Success(
-            tenant.ToOrganizationDetailDto(
-                bookingCount: bookings.Count(),
-                serviceCount: services.Count(),
-                staffCount: staffCount,
-                clientCount: clientCount,
-                users: userDtos));
+        return tenant.ToOrganizationDetailDto(
+            bookingCount: bookings.Count(),
+            serviceCount: services.Count(),
+            staffCount: staffCount,
+            clientCount: clientCount,
+            users: userDtos);
     }
 }

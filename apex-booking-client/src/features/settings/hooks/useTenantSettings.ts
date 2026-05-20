@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import axiosInstance from '../../../services/axiosInstance';
-import type { BaseResponse } from '../../../types';
 import type { TenantSettingsDto, UpdateTenantSettingsRequest } from '../types';
 
 export const useTenantSettings = () => {
@@ -12,16 +11,10 @@ export const useTenantSettings = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.get<BaseResponse<TenantSettingsDto>>(
-        '/settings/tenant'
-      );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to load settings.');
-        return;
-      }
-      setSettings(result.data ?? null);
-    } catch {
-      setError('Failed to load settings.');
+      const result = await axiosInstance.get<TenantSettingsDto>('/settings/tenant');
+      setSettings(result ?? null);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load settings.');
     } finally {
       setIsLoading(false);
     }
@@ -31,18 +24,11 @@ export const useTenantSettings = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.patch<BaseResponse<TenantSettingsDto>>(
-        '/settings/tenant',
-        request
-      );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to update settings.');
-        return false;
-      }
-      setSettings(result.data ?? null);
+      const result = await axiosInstance.patch<TenantSettingsDto>('/settings/tenant', request);
+      setSettings(result ?? null);
       return true;
-    } catch {
-      setError('Failed to update settings.');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to update settings.');
       return false;
     } finally {
       setIsLoading(false);

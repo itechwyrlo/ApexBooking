@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import axiosInstance from '../../../services/axiosInstance';
 import type { TenantPaymentGatewayStatusDto } from '../types';
-import type { BaseResponse } from '../../../types';
 
 export const usePaymentGateway = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,16 +11,10 @@ export const usePaymentGateway = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.get<BaseResponse<TenantPaymentGatewayStatusDto>>(
-        '/settings/payment-gateway'
-      );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to load gateway settings.');
-        return;
-      }
-      setGatewayStatus(result.data ?? null);
-    } catch {
-      setError('Failed to load gateway settings.');
+      const result = await axiosInstance.get<TenantPaymentGatewayStatusDto>('/settings/payment-gateway');
+      setGatewayStatus(result ?? null);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load gateway settings.');
     } finally {
       setIsLoading(false);
     }

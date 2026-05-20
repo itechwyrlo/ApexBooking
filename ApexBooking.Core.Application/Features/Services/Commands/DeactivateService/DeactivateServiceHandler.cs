@@ -1,16 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
-using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Services.Commands.DeactivateService
 {
-    internal sealed class DeactivateServiceHandler : ICommandHandler<DeactivateServiceCommand, BaseResponse<bool>>
+    internal sealed class DeactivateServiceHandler : ICommandHandler<DeactivateServiceCommand>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _contextService;
@@ -21,7 +16,7 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.DeactivateServ
             _contextService = contextService;
         }
 
-        public async Task<BaseResponse<bool>> Handle(DeactivateServiceCommand command, CancellationToken ct)
+        public async Task Handle(DeactivateServiceCommand command, CancellationToken ct)
         {
             var tenantId = _contextService.GetCurrentTenantId();
             var serviceId = new ServiceId(command.ServiceId);
@@ -31,14 +26,12 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.DeactivateServ
                 .ConfigureAwait(false);
 
             if (service is null || service.TenantId != tenantId)
-                return BaseResponse<bool>.Failure("Service not found.");
+                throw new NotFoundException("Service not found.");
 
             service.Deactivate();
 
             _unitOfWork.ServiceRepository.Update(service);
             await _unitOfWork.CompleteAsync(ct);
-
-            return BaseResponse<bool>.Success(true);
         }
     }
 }

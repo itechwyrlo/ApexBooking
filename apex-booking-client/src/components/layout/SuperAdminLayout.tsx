@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { faTachometerAlt, faBuilding, faCreditCard, faBars, faBell, faBellSlash, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { useLogout } from '../../features/auth/hooks/useLogout';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../features/notifications/hooks/useNotifications';
+import { NotificationItem } from '../../features/notifications/components/NotificationItem';
 
-const NAV_ITEMS = [
-  { path: '/superadmin', label: 'Overview', icon: 'fa-tachometer-alt', end: true },
-  { path: '/superadmin/organizations', label: 'Organizations', icon: 'fa-building', end: false },
-  { path: '/superadmin/payment-gateway', label: 'Payment Gateway', icon: 'fa-credit-card', end: false },
+const NAV_ITEMS: { path: string; label: string; icon: IconDefinition; end: boolean }[] = [
+  { path: '/superadmin', label: 'Overview', icon: faTachometerAlt, end: true },
+  { path: '/superadmin/organizations', label: 'Organizations', icon: faBuilding, end: false },
+  { path: '/superadmin/payment-gateway', label: 'Payment Gateway', icon: faCreditCard, end: false },
 ];
 
 export const SuperAdminLayout: React.FC = () => {
@@ -14,40 +19,38 @@ export const SuperAdminLayout: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const { data: notifData, isLoading: notifLoading, isMarkingRead, fetch: fetchNotifications, markAllRead } = useNotifications();
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   return (
-    <div className="d-flex min-vh-100" style={{ backgroundColor: '#f8f9fa' }}>
+    <div className="d-flex min-vh-100 bg-light">
       {/* Sidebar */}
-      <aside
-        className="bg-white border-end d-flex flex-column"
-        style={{
-          width: sidebarCollapsed ? 64 : 240,
-          minHeight: '100vh',
-          transition: 'width 0.2s ease',
-          flexShrink: 0,
-        }}
-      >
+      <aside className={`bg-white border-end d-flex flex-column sa-sidebar${sidebarCollapsed ? ' sa-sidebar-collapsed' : ''}`}>
         {/* Logo / Brand */}
-        <div
-          className="border-bottom d-flex align-items-center px-3"
-          style={{ height: 56, gap: 10, overflow: 'hidden' }}
-        >
+        <div className="border-bottom d-flex align-items-center px-3 sa-sidebar-logo">
           <div
-            className="bg-primary rounded d-flex align-items-center justify-content-center flex-shrink-0"
-            style={{ width: 32, height: 32, cursor: 'pointer' }}
+            className="bg-primary rounded d-flex align-items-center justify-content-center flex-shrink-0 sa-brand-icon"
             onClick={() => navigate('/superadmin')}
           >
-            <span className="text-white fw-bold" style={{ fontSize: 14 }}>A</span>
+            <span className="text-white fw-bold">A</span>
           </div>
           {!sidebarCollapsed && (
-            <div style={{ overflow: 'hidden' }}>
-              <div className="fw-bold text-dark" style={{ fontSize: 14, whiteSpace: 'nowrap' }}>
+            <div className="overflow-hidden">
+              <div className="fw-bold text-dark text-nowrap">
                 ApexBooking
               </div>
-              <div
-                className="text-uppercase fw-bold"
-                style={{ fontSize: 10, color: '#6c757d', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
-              >
+              <div className="text-uppercase fw-bold text-secondary sa-brand-role text-nowrap">
                 Super Admin
               </div>
             </div>
@@ -57,10 +60,7 @@ export const SuperAdminLayout: React.FC = () => {
         {/* Nav */}
         <nav className="flex-grow-1 py-2">
           {!sidebarCollapsed && (
-            <div
-              className="px-3 mb-1 text-uppercase fw-semibold"
-              style={{ fontSize: 10, color: '#adb5bd', letterSpacing: '0.1em' }}
-            >
+            <div className="px-3 mb-1 text-uppercase fw-semibold sa-nav-section">
               Platform
             </div>
           )}
@@ -70,15 +70,14 @@ export const SuperAdminLayout: React.FC = () => {
               to={path}
               end={end}
               className={({ isActive }) =>
-                `d-flex align-items-center gap-3 px-3 py-2 text-decoration-none rounded mx-2 my-1 ${
+                `d-flex align-items-center gap-3 px-3 py-2 text-decoration-none rounded mx-2 my-1 small${
                   isActive
-                    ? 'bg-primary text-white'
-                    : 'text-secondary'
+                    ? ' bg-primary text-white'
+                    : ' text-secondary'
                 }`
               }
-              style={{ fontSize: 14 }}
             >
-              <i className={`fas ${icon} flex-shrink-0`} style={{ width: 16, textAlign: 'center' }} />
+              <FontAwesomeIcon icon={icon} className="flex-shrink-0 sa-nav-icon" />
               {!sidebarCollapsed && <span>{label}</span>}
             </NavLink>
           ))}
@@ -88,19 +87,15 @@ export const SuperAdminLayout: React.FC = () => {
         <div className="border-top p-3">
           {!sidebarCollapsed ? (
             <div className="d-flex align-items-center gap-2">
-              <div
-                className="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                style={{ width: 32, height: 32, fontSize: 13 }}
-              >
+              <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0 sa-user-avatar">
                 {user?.email?.charAt(0).toUpperCase() ?? 'S'}
               </div>
               <div className="flex-grow-1 overflow-hidden">
-                <div className="small fw-semibold text-truncate" style={{ maxWidth: 130 }}>
+                <div className="small fw-semibold text-truncate sa-user-name">
                   {user?.email ?? 'Super Admin'}
                 </div>
                 <button
-                  className="btn btn-link p-0 text-danger"
-                  style={{ fontSize: 12 }}
+                  className="btn btn-link p-0 text-danger small"
                   onClick={logout}
                   disabled={logoutLoading}
                 >
@@ -115,28 +110,76 @@ export const SuperAdminLayout: React.FC = () => {
               disabled={logoutLoading}
               title="Sign out"
             >
-              <i className="fas fa-sign-out-alt" />
+              <FontAwesomeIcon icon={faSignOutAlt} />
             </button>
           )}
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>
+      <div className="d-flex flex-column flex-grow-1 sa-main-content">
         {/* Top bar */}
-        <header
-          className="bg-white border-bottom d-flex align-items-center justify-content-between px-4"
-          style={{ height: 56, flexShrink: 0 }}
-        >
+        <header className="bg-white border-bottom d-flex align-items-center justify-content-between px-4 sa-topbar">
           <button
             className="btn btn-link p-0 text-muted"
             onClick={() => setSidebarCollapsed(p => !p)}
             title="Toggle sidebar"
           >
-            <i className="fas fa-bars" />
+            <FontAwesomeIcon icon={faBars} />
           </button>
-          <div className="text-muted small">
-            Platform Administration
+          <div className="d-flex align-items-center gap-3">
+            {/* Notification bell */}
+            <div className="position-relative" ref={notifRef}>
+              <button
+                className="btn btn-link p-0 text-secondary position-relative d-flex align-items-center justify-content-center apex-header-btn"
+                onClick={() => {
+                  const opening = !notifOpen;
+                  setNotifOpen(opening);
+                  if (opening) fetchNotifications();
+                }}
+                aria-label="Notifications"
+              >
+                <FontAwesomeIcon icon={faBell} />
+                {(notifData?.unreadCount ?? 0) > 0 && (
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger apex-notif-badge">
+                    {notifData!.unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notifOpen && (
+                <div className="position-absolute end-0 bg-white border rounded shadow-sm apex-notif-dropdown">
+                  <div className="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
+                    <span className="fw-semibold">Notifications</span>
+                    {(notifData?.unreadCount ?? 0) > 0 && (
+                      <button
+                        className="btn btn-link p-0 small text-primary"
+                        onClick={markAllRead}
+                        disabled={isMarkingRead}
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  {notifLoading ? (
+                    <div className="p-4 text-center text-muted small">Loading...</div>
+                  ) : notifData && notifData.items.length > 0 ? (
+                    <div className="apex-notif-scroll">
+                      {notifData.items.map(n => (
+                        <NotificationItem key={n.notificationId} notification={n} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-muted small">
+                      <FontAwesomeIcon icon={faBellSlash} className="mb-2 d-block apex-notif-empty-icon" />
+                      No notifications yet
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="text-muted small">Platform Administration</div>
           </div>
         </header>
 

@@ -4,12 +4,12 @@ using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.Services.Slot;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.Core.Application.Resources.Mappings;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.Public.Queries.GetPublicResources
 {
     internal sealed class GetPublicResourcesQueryHandler
-        : IQueryHandler<GetPublicResourcesQuery, BaseResponse<List<PublicStaffDto>>>
+        : IQueryHandler<GetPublicResourcesQuery, List<PublicStaffDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly SlotAvailabilityService _slotAvailabilityService;
@@ -22,14 +22,14 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetPublicResource
             _slotAvailabilityService = slotAvailabilityService;
         }
 
-        public async Task<BaseResponse<List<PublicStaffDto>>> Handle(
+        public async Task<List<PublicStaffDto>> Handle(
             GetPublicResourcesQuery query,
             CancellationToken cancellationToken)
         {
             var tenant = await _unitOfWork.TenantRepository.FindBySlugAsync(query.Slug);
 
             if (tenant is null)
-                return BaseResponse<List<PublicStaffDto>>.Failure($"Tenant '{query.Slug}' not found.");
+                throw new NotFoundException($"Tenant '{query.Slug}' not found.");
 
             var serviceId = new ServiceId(query.ServiceId);
 
@@ -38,7 +38,7 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetPublicResource
                 includes: s => s.ServiceStaffs);
 
             if (service is null || service.TenantId != tenant.TenantId || !service.IsActive)
-                return BaseResponse<List<PublicStaffDto>>.Failure("Service not found.");
+                throw new NotFoundException("Service not found.");
 
             var staffIds = service.ServiceStaffs
                 .Select(sr => sr.StaffId)
@@ -92,7 +92,7 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetPublicResource
                 dtos.Add(resource.ToPublicResourceDto(services));
             }
 
-            return BaseResponse<List<PublicStaffDto>>.Success(dtos);
+            return dtos;
         }
     }
 }

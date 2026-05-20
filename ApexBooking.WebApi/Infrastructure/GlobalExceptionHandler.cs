@@ -27,12 +27,22 @@ namespace ApexBooking.WebApi.Infrastructure
 
             var (statusCode, title, detail) = exception switch
             {
+                UnauthorizedException => (
+                    StatusCodes.Status401Unauthorized,
+                    "Unauthorized",
+                    exception.Message),
+
+                NotFoundException => (
+                    StatusCodes.Status404NotFound,
+                    "Not Found",
+                    exception.Message),
+
                 BusinessRuleBrokenException => (
                     StatusCodes.Status400BadRequest,
                     "Business Rule Violation",
                     exception.Message),
 
-                ValidationException valEx => ( // FluentValidation exception
+                ValidationException => (
                     StatusCodes.Status400BadRequest,
                     "Validation Error",
                     "One or more validation failures occurred."),

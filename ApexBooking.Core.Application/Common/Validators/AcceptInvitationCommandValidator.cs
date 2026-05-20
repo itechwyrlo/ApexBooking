@@ -7,6 +7,9 @@ public class AcceptInvitationCommandValidator : AbstractValidator<AcceptInvitati
 {
     public AcceptInvitationCommandValidator()
     {
+        RuleFor(x => x.ConfirmPassword)
+            .Equal(x => x.NewPassword)
+            .WithMessage("Passwords do not match.");
         RuleFor(x => x.Token)
             .NotEmpty().WithMessage("Invitation token is required.");
 

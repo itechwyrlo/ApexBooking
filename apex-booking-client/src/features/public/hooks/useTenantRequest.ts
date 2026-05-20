@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import axiosInstance from '../../../services/axiosInstance';
-import type { BaseResponse } from '../../../types';
 
 export interface SubmitTenantRequestData {
   businessName: string;
@@ -20,17 +19,10 @@ export const useTenantRequest = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.post<BaseResponse<void>>(
-        '/public/tenant-requests',
-        data
-      );
-      if (!result.isSuccess) {
-        setError(result.errors?.[0]?.message ?? 'Submission failed. Please try again.');
-        return;
-      }
+      await axiosInstance.post('/public/tenant-requests', data);
       setIsSuccess(true);
-    } catch {
-      setError('Submission failed. Please try again.');
+    } catch (err: any) {
+      setError(err?.message || 'Submission failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

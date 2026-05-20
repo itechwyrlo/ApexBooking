@@ -1,14 +1,14 @@
+using System.Collections.Generic;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.SuperAdmin.Queries.GetTenantRequests;
 
 internal sealed class GetTenantRequestsQueryHandler
-    : IQueryHandler<GetTenantRequestsQuery, BaseResponse<IEnumerable<TenantRequestDto>>>
+    : IQueryHandler<GetTenantRequestsQuery, IEnumerable<TenantRequestDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -17,7 +17,7 @@ internal sealed class GetTenantRequestsQueryHandler
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<BaseResponse<IEnumerable<TenantRequestDto>>> Handle(
+    public async Task<IEnumerable<TenantRequestDto>> Handle(
         GetTenantRequestsQuery request,
         CancellationToken cancellationToken)
     {
@@ -34,10 +34,8 @@ internal sealed class GetTenantRequestsQueryHandler
             requests = await _unitOfWork.TenantRequestRepository.GetAllAsync();
         }
 
-        var dtos = requests
+        return requests
             .OrderByDescending(r => r.CreatedAt)
             .Select(r => r.ToDto());
-
-        return BaseResponse<IEnumerable<TenantRequestDto>>.Success(dtos);
     }
 }

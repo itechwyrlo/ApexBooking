@@ -1,0 +1,57 @@
+.sa-sidebar {
+  width: 240px;
+  min-height: 100vh;
+  transition: width 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sa-sidebar-collapsed {
+  width: 64px;
+}
+
+.sa-sidebar-logo {
+  height: 56px;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.sa-brand-icon {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.sa-brand-role {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.sa-nav-section {
+  font-size: 10px;
+  color: var(--bs-gray-500);
+  letter-spacing: 0.1em;
+}
+
+.sa-nav-icon {
+  width: 16px;
+  text-align: center;
+}
+
+.sa-user-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+
+.sa-user-name {
+  max-width: 130px;
+}
+
+.sa-topbar {
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.sa-main-content {
+  min-width: 0;
+}

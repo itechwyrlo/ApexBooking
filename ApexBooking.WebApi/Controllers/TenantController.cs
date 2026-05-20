@@ -36,7 +36,7 @@ namespace ApexBooking.WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateProfile(string slug, [FromBody] UpdateProfileRequestDto request)
         {
-            var response = await _mediator.Send(new UpdateTenantProfileCommand(
+            await _mediator.Send(new UpdateTenantProfileCommand(
                 TenantSlug: slug,
                 LogoUrl: request.LogoUrl,
                 AddressLine1: request.AddressLine1,
@@ -54,7 +54,7 @@ namespace ApexBooking.WebApi.Controllers
                 TimeFormat: request.TimeFormat,
                 LanguageCode: request.LanguageCode));
 
-            return Ok(response);
+            return NoContent();
         }
     }
 }

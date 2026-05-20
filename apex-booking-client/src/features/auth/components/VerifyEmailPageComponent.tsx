@@ -1,92 +1,75 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Button } from "../../../components/ui/Button";
 import { Alert } from "../../../components/ui/Alert";
+import { useVerifyEmail } from "../hooks/useVerifyEmail";
 
 const VerifyEmailPageComponent: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
-
-  // 1. Initialize the redirectUrl state with a default login path
-  const [redirectUrl, setRedirectUrl] = useState("/login");
-
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("");
   const hasCalledApi = useRef(false);
 
+  const { verify, data, isLoading, error } = useVerifyEmail();
+
   useEffect(() => {
-    if (hasCalledApi.current) return;
-
-    const verify = async () => {
-      if (!token) {
-        setStatus("error");
-        setMessage("No verification token found in URL.");
-        return;
-      }
-
-      try {
-        const response = await fetch(`/auth/verify-email?token=${token}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        const data = await response.json();
-
-        // 2. Handle BaseResponse and DTO specific checks
-        if (!response.ok || !data.isSuccess) {
-          const errorMessage = data.errors?.[0]?.message || "Verification failed";
-          throw new Error(errorMessage);
-        }
-
-        // 3. CORRECTED: Access the 'url' property from your DTO
-        // .NET serializes 'Url' to 'url' by default in JSON
-        if (data.url) {
-          setRedirectUrl(data.url);
-        }
-
-        setStatus("success");
-        setMessage("Email verified successfully!");
-
-        // 4. Auto-redirect using the specific backend URL
-        setTimeout(() => {
-          navigate(data.url || "/login");
-        }, 2000);
-
-      } catch (error) {
-        setStatus("error");
-        setMessage(error instanceof Error ? error.message : "An error occurred");
-      }
-    };
-
-    verify();
+    if (hasCalledApi.current || !token) return;
     hasCalledApi.current = true;
-  }, [token, navigate]);
+    verify(token);
+  }, [token, verify]);
+
+  useEffect(() => {
+    if (!data?.url) return;
+    const timer = setTimeout(() => navigate(data.url), 2000);
+    return () => clearTimeout(timer);
+  }, [data, navigate]);
 
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-      <div className="card shadow" style={{ width: "100%", maxWidth: "500px" }}>
-        <div className="card-body p-4">
-          <h2 className="card-title text-center mb-4">Email Verification</h2>
-          
-          {/* Status UI logic remains the same */}
+      <div className="container">
+        <div className="row justify-content-center">
+          <div className="col-12 col-sm-10 col-md-6 col-lg-5">
+            <div className="card border-0 shadow-sm p-4 p-md-5 text-center">
+              <h4 className="fw-bold mb-4">Email Verification</h4>
 
-          {status === "error" && (
-            <div>
-              <Alert variant="error" className="mb-3">{message}</Alert>
-              <div className="d-grid gap-2">
-                {/* 5. Button now uses the dynamic redirectUrl state */}
-                <Button variant="primary" onClick={() => navigate(redirectUrl)}>
-                  Go to Login
-                </Button>
-              </div>
+              {isLoading && (
+                <div className="d-flex flex-column align-items-center gap-3 py-2">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Verifying...</span>
+                  </div>
+                  <p className="text-muted mb-0">Verifying your email...</p>
+                </div>
+              )}
+
+              {!token && !isLoading && (
+                <div className="alert alert-danger" role="alert">
+                  No verification token found in URL.
+                </div>
+              )}
+
+              {error && (
+                <div>
+                  <Alert variant="error" className="mb-3">{error}</Alert>
+                  <button
+                    type="button"
+                    className="btn btn-primary w-100"
+                    onClick={() => navigate("/login")}
+                  >
+                    Go to Login
+                  </button>
+                </div>
+              )}
+
+              {data?.url && !error && (
+                <div className="alert alert-success" role="alert">
+                  Email verified successfully! Redirecting...
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
 
 export default VerifyEmailPageComponent;

@@ -1,16 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Domain.Entities;
+using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
-using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Staffs.Commands.DeactivateStaff
 {
-    internal sealed class DeactivateStaffCommandHandler : ICommandHandler<DeactivateStaffCommand, BaseResponse<bool>>
+    internal sealed class DeactivateStaffCommandHandler : ICommandHandler<DeactivateStaffCommand>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _contextService;
@@ -21,7 +18,7 @@ namespace ApexBooking.Core.Application.Features.Staffs.Commands.DeactivateStaff
             _contextService = contextService;
         }
 
-        public async Task<BaseResponse<bool>> Handle(DeactivateStaffCommand command, CancellationToken cancellationToken)
+        public async Task Handle(DeactivateStaffCommand command, CancellationToken cancellationToken)
         {
             var tenantId = _contextService.GetCurrentTenantId();
             var staffId = new StaffId(command.staffId);
@@ -31,14 +28,25 @@ namespace ApexBooking.Core.Application.Features.Staffs.Commands.DeactivateStaff
                 .ConfigureAwait(false);
 
             if (staff is null || staff.TenantId != tenantId)
-                return BaseResponse<bool>.Failure("Resource not found.");
+                throw new NotFoundException("Staff not found.");
 
             staff.Deactivate();
 
             _unitOfWork.StaffRepository.Update(staff);
+
+            var admins = await _unitOfWork.UserRepository.GetUsersByRoleAsync(tenantId, UserRole.TenantAdmin);
+            foreach (var admin in admins)
+            {
+                _unitOfWork.NotificationRepository.Add(Notification.Create(
+                    admin.Id,
+                    NotificationRecipientType.TenantAdmin,
+                    tenantId,
+                    NotificationEventType.StaffDeactivated,
+                    "Staff Deactivated",
+                    $"Staff record for {staff.FirstName} {staff.LastName} has been deactivated."));
+            }
+
             await _unitOfWork.CompleteAsync(cancellationToken).ConfigureAwait(false);
-            
-            return BaseResponse<bool>.Success(true);
         }
     }
 }

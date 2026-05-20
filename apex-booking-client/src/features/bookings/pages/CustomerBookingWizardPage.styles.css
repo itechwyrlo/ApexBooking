@@ -1,0 +1,22 @@
+.wizard-page-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.wizard-tenant-logo {
+  max-height: 60px;
+}
+
+.wizard-icon-circle {
+  width: 64px;
+  height: 64px;
+}
+
+.wizard-result-card {
+  max-width: 480px;
+  width: 100%;
+}
+
+.clickable-row {
+  cursor: pointer;
+}

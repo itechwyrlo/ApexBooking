@@ -58,5 +58,25 @@ namespace ApexBooking.Core.Persistence.Repositories
                 cancellationToken);
         }
 
+        public async Task<IReadOnlyList<Booking>> GetBookingsForMonthAsync(
+            TenantId tenantId,
+            int year,
+            int month,
+            StaffId? staffId,
+            CancellationToken cancellationToken = default)
+        {
+            var startDate = new DateOnly(year, month, 1);
+            var endDate = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+
+            return await Context.Set<Booking>()
+                .Include(b => b.Guest)
+                .Where(b =>
+                    b.TenantId == tenantId &&
+                    b.ScheduledDate >= startDate &&
+                    b.ScheduledDate <= endDate &&
+                    (staffId == null || b.StaffId == staffId))
+                .ToListAsync(cancellationToken);
+        }
+
     }
 }

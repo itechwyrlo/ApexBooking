@@ -45,6 +45,8 @@ namespace ApexBooking.Core.Domain.ValueObjects
     [NotMapped]
     public record NotificationLogId(Guid Value);
     [NotMapped]
+    public record NotificationId(Guid Value);
+    [NotMapped]
     public record SuperAdminId(Guid Value);
     [NotMapped]
     public record SubscriptionPlanId(Guid Value);
@@ -66,4 +68,6 @@ namespace ApexBooking.Core.Domain.ValueObjects
     public record TenantRequestId(Guid Value);
     [NotMapped]
     public record StaffId(Guid Value);
+    [NotMapped]
+    public record SuperAdminRefreshTokenId(Guid Value);
 }

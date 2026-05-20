@@ -91,8 +91,8 @@ public class PublicController : ControllerBase
     [HttpPost("cancellation/cancel")]
     public async Task<IActionResult> CancelByToken([FromBody] GuestCancelRequestDto dto, CancellationToken ct)
     {
-        var result = await _mediator.Send(new CancelBookingByTokenCommand(dto.Token, dto.Reason), ct);
-        return Ok(result);
+        await _mediator.Send(new CancelBookingByTokenCommand(dto.Token, dto.Reason), ct);
+        return NoContent();
     }
 
     [HttpPost("tenant-requests")]

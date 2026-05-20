@@ -1,0 +1,153 @@
+# ApexBooking Project Folder Tree
+
+- .git/
+- .gitignore
+- apex-booking-client/
+  - .env
+  - .env.example
+  - .gitignore
+  - eslint.config.js
+  - index.html
+  - node_modules/
+  - obj/
+  - package-lock.json
+  - package.json
+  - public/
+  - README.md
+  - src/
+    - App.css
+    - App.tsx
+    - assets/
+    - components/
+    - constants/
+    - context/
+    - data/
+    - features/
+      - auth/
+      - bookings/
+      - dashboard/
+      - public/
+      - resources/
+      - service/
+      - settings/
+      - slots/
+      - superadmin/
+    - hooks/
+    - index.css
+    - main.tsx
+    - routes/
+    - services/
+    - store/
+    - types/
+    - utils/
+    
+  - tsconfig.app.json
+  - tsconfig.json
+  - tsconfig.node.json
+  - vite.config.ts
+- ApexBooking.Core.Application/
+  - ApexBooking.Core.Application.csproj
+  - bin/
+  - Common/
+  - Dependency/
+  - Dtos/
+  - Features/
+    - Auth/
+    - Availability/
+    - Bookings/
+    - Payment/
+    - Public/
+    - Services/
+    - Settings/
+    - Staffs/
+    - SuperAdmin/
+    - Tenants/
+  - Interfaces/
+  - mapper/
+  - Messaging/
+  - obj/
+  - Services/
+- ApexBooking.Core.Domain/
+  - ApexBooking.Core.Domain.csproj
+  - bin/
+  - Entities/
+  - Enums/
+  - Interfaces/
+  - obj/
+  - Repositories/
+  - Services/
+  - ValueObjects/
+- ApexBooking.Core.Persistence/
+  - ApexBooking.Core.Persistence.csproj
+  - bin/
+  - Data/
+  - Dependencies/
+  - Mappings/
+  - Migrations/
+  - obj/
+  - Repositories/
+  - Seeders/
+  - UnitOfWork.cs
+- ApexBooking.Infrastructure/
+  - ApexBooking.Infrastructure.csproj
+  - BackgroundJobs/
+  - bin/
+  - Configuration/
+  - Dependency/
+  - ExternalServices/
+  - Identity/
+  - obj/
+- ApexBooking.OrganizationAuthFeature
+- ApexBooking.sln
+- ApexBooking.WebApi/
+  - ApexBooking.WebApi.csproj
+  - ApexBooking.WebApi.http
+  - appsettings.Development.json
+  - appsettings.json
+  - appsettings.Production.json
+  - bin/
+  - Configuration/
+  - Controllers/
+  - Dependency/
+  - Dtos/
+  - Extensions/
+  - Infrastructure/
+  - Middleware/
+  - obj/
+  - Program.cs
+  - Properties/
+  - Validators/
+  - wwwroot/
+- Claude.md
+- DEPLOYMENT_READINESS_PLAN.md
+- DEVELOPER_SETUP.md
+- ENVIRONMENT_VARIABLES.md
+- feature_usecase.md
+- Framework.Core/
+  - GenericRepository/
+    - ApexBooking.GenericRepository.Abstractions/
+      - ApexBooking.GenericRepository.Abstractions.csproj
+      - bin/
+      - IGenericRepository.cs
+      - obj/
+  - GenericRepositoryEntityFramework/
+    - ApexBooking.GenericRepository.EntityFramework/
+      - ApexBooking.GenericRepository.EntityFramework.csproj
+      - bin/
+      - GenericRepository.cs
+      - obj/
+      - SortingUtility.cs
+  - SharedKernel/
+    - ApexBooking.SharedKernel/
+      - ApexBooking.SharedKernel.csproj
+      - BaseSpecification.cs
+      - bin/
+      - Exceptions/
+      - ISpecification.cs
+      - Models/
+      - obj/
+      - Services/
+      - Utils/
+      - ValueObject/
+- obj/
+- README.md

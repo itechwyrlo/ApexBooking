@@ -23,4 +23,12 @@ internal class SuperAdminRepository : GenericRepository<SuperAdmin>, ISuperAdmin
         return await Context.Set<SuperAdmin>()
             .AnyAsync(sa => sa.Email == email);
     }
+
+    public async Task<SuperAdmin?> FindByRefreshTokenAsync(string refreshToken)
+    {
+        return await Context.Set<SuperAdmin>()
+            .Include(sa => sa.RefreshTokens)
+            .Where(sa => sa.RefreshTokens.Any(rt => rt.Token == refreshToken))
+            .FirstOrDefaultAsync();
+    }
 }

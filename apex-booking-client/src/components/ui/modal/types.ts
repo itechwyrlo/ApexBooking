@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ModelSchema } from "../table/types";
 
 export type FormModalProps<T> = {
@@ -8,4 +9,5 @@ export type FormModalProps<T> = {
   onChange: (value: T) => void;
   onSubmit: (value: T) => Promise<void>;
   onClose: () => void;
+  notice?: ReactNode;
 };

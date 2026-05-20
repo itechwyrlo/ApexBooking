@@ -8,5 +8,5 @@ using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Auth.Commands.Login
 {
-    public record LoginCommand(string Email, string Password) : ICommand<BaseResponse<AuthResponseDto>>;
+    public record LoginCommand(string Email, string Password) : ICommand<AuthResponseDto>;
 }

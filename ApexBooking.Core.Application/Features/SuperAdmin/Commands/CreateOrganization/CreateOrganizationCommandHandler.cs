@@ -3,12 +3,12 @@ using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.SuperAdmin.Commands.CreateOrganization;
 
 internal sealed class CreateOrganizationCommandHandler
-    : ICommandHandler<CreateOrganizationCommand, BaseResponse<OrganizationSummaryDto>>
+    : ICommandHandler<CreateOrganizationCommand, OrganizationSummaryDto>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -17,22 +17,17 @@ internal sealed class CreateOrganizationCommandHandler
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<BaseResponse<OrganizationSummaryDto>> Handle(
+    public async Task<OrganizationSummaryDto> Handle(
         CreateOrganizationCommand command,
         CancellationToken cancellationToken)
     {
         var slugExists = await _unitOfWork.TenantRepository.FindBySlugAsync(command.Slug);
-        if (slugExists is not null)
-            return BaseResponse<OrganizationSummaryDto>.Failure("This booking URL slug is already taken.");
+        Tenant.EnsureSlugIsAvailable(slugExists is not null);
 
-        var emailExists = await _unitOfWork.TenantRepository.FindByEmailAsync(command.OwnerEmail);
-        if (emailExists is not null)
-            return BaseResponse<OrganizationSummaryDto>.Failure("An organization with this owner email already exists.");
+        var emailExistsAsTenant = await _unitOfWork.TenantRepository.FindByEmailAsync(command.OwnerEmail);
+        Tenant.EnsureOwnerEmailIsAvailable(emailExistsAsTenant is not null);
 
-        var emailTaken = await _unitOfWork.UserRepository.FindByEmailAcrossAllTenantsAsync(command.OwnerEmail);
-        if (emailTaken is not null)
-            return BaseResponse<OrganizationSummaryDto>.Failure("This email is already registered to an existing user.");
-
+        var emailExistsAsUser = await _unitOfWork.UserRepository.FindByEmailAcrossAllTenantsAsync(command.OwnerEmail);
         var tenant = Tenant.Create(
             command.Slug,
             command.BusinessName,
@@ -40,6 +35,7 @@ internal sealed class CreateOrganizationCommandHandler
             command.OwnerEmail,
             command.OwnerPhone
         );
+        tenant.EnsureUserEmailIsNotRegistered(emailExistsAsUser is not null);
 
         tenant.CreateTenantProfile("UTC", "USD");
         tenant.CreateTenantSettings();
@@ -60,23 +56,23 @@ internal sealed class CreateOrganizationCommandHandler
         if (!createResult.Succeeded)
         {
             var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-            return BaseResponse<OrganizationSummaryDto>.Failure($"Failed to create admin user: {errors}");
+            throw new InvalidOperationException($"Failed to create admin user: {errors}");
         }
 
         var roleResult = await _unitOfWork.UserRepository.AddToRoleAsync(admin, "TENANT ADMIN");
         if (!roleResult.Succeeded)
         {
             var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-            return BaseResponse<OrganizationSummaryDto>.Failure($"Failed to assign admin role: {errors}");
+            throw new InvalidOperationException($"Failed to assign admin role: {errors}");
         }
 
         admin = await _unitOfWork.UserRepository.FindByEmailAsync(tenant.TenantId, admin.Email!);
         if (admin is null)
-            return BaseResponse<OrganizationSummaryDto>.Failure("Error retrieving created admin user.");
+            throw new NotFoundException("Error retrieving created admin user.");
 
         admin.MarkEmailVerified();
         await _unitOfWork.CompleteAsync(cancellationToken);
 
-        return BaseResponse<OrganizationSummaryDto>.Success(tenant.ToOrganizationSummaryDto(userCount: 1));
+        return tenant.ToOrganizationSummaryDto(userCount: 1);
     }
 }

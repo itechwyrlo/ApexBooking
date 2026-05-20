@@ -8,4 +8,4 @@ public sealed record AcceptInvitationCommand(
     string Token,
     string NewPassword,
     string ConfirmPassword
-) : ICommand<BaseResponse<AuthResponseDto>>;
+) : ICommand<AuthResponseDto>;

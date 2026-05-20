@@ -1,16 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
-using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Availability.Commands.AddException
 {
-    internal sealed class AddExceptionHandler : ICommandHandler<AddExceptionCommand, BaseResponse<bool>>
+    internal sealed class AddExceptionHandler : ICommandHandler<AddExceptionCommand>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _contextService;
@@ -21,7 +18,7 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.AddExcepti
             _contextService = contextService;
         }
 
-        public async Task<BaseResponse<bool>> Handle(AddExceptionCommand command, CancellationToken ct)
+        public async Task Handle(AddExceptionCommand command, CancellationToken ct)
         {
             var tenantId = _contextService.GetCurrentTenantId();
             var staffId = new StaffId(command.ResourceId);
@@ -31,7 +28,7 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.AddExcepti
                 .ConfigureAwait(false);
 
             if (staff is null || staff.TenantId != tenantId)
-                return BaseResponse<bool>.Failure("Resource not found.");
+                throw new NotFoundException("Staff not found.");
 
             staff.AddException(
                 command.ExceptionDate,
@@ -43,8 +40,6 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.AddExcepti
 
             _unitOfWork.StaffRepository.Update(staff);
             await _unitOfWork.CompleteAsync(ct);
-
-            return BaseResponse<bool>.Success(true);
         }
     }
 }

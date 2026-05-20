@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../services/axiosInstance';
 import { useAuth } from '../../../context/AuthContext';
-import type { BaseResponse } from '../../../types';
 import type { AuthResponseData } from '../../auth/types';
 
 export const useAcceptInvitation = () => {
@@ -15,16 +14,12 @@ export const useAcceptInvitation = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.post<BaseResponse<AuthResponseData>>('/auth/accept-invitation', {
+      const result = await axiosInstance.post<AuthResponseData>('/auth/accept-invitation', {
         token,
         newPassword,
         confirmPassword,
       });
-      if (!result.isSuccess) {
-        setError(result.errors?.[0]?.message ?? 'Failed to accept invitation.');
-        return;
-      }
-      const { accessToken, tenantSlug } = result.data!;
+      const { accessToken, tenantSlug } = result;
       setAccessToken(accessToken);
       sessionStorage.setItem('isAuthenticated', 'true');
       if (tenantSlug) {
@@ -34,10 +29,7 @@ export const useAcceptInvitation = () => {
         navigate('/login');
       }
     } catch (err: any) {
-      const responseData = err.response?.data;
-      setError(
-        responseData?.errors?.[0]?.message ?? responseData?.message ?? 'Failed to accept invitation.'
-      );
+      setError(err?.message ?? 'Failed to accept invitation.');
     } finally {
       setIsLoading(false);
     }

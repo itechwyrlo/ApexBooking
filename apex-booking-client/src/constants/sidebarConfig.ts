@@ -1,7 +1,20 @@
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import {
+  faTachometerAlt,
+  faCalendarAlt,
+  faCalendarDays,
+  faUsers,
+  faBriefcase,
+  faCog,
+  faUser,
+  faClock,
+  faAddressBook,
+} from '@fortawesome/free-solid-svg-icons';
+
 export interface SidebarChild {
   id: string;
   label: string;
-  icon: string;
+  icon: IconDefinition;
   path?: string;
   children?: SidebarChild[];
 }
@@ -13,62 +26,57 @@ export interface SidebarGroup {
   children: SidebarChild[];
 }
 
-export const getSidebarConfig = (): SidebarGroup[] => [
-  {
-    id: 'main',
-    label: 'Main',
-    isGroup: true,
-    children: [
+export const getSidebarConfig = (role: string): SidebarGroup[] => {
+  if (role === 'staff') {
+    return [
       {
-        id: 'dashboard',
-        label: 'Dashboard',
-        icon: 'fas fa-chart-pie',
-        path: '/dashboard',
-      },
-    ],
-  },
-  {
-    id: 'resources-group',
-    label: 'Resources',
-    isGroup: true,
-    children: [
-      {
-        id: 'resources',
-        label: 'Resources',
-        icon: 'fas fa-layer-group',
-        path: '/resources',
+        id: 'main',
+        label: 'Main',
+        isGroup: true,
+        children: [
+          { id: 'dashboard', label: 'Dashboard', icon: faTachometerAlt, path: '/dashboard' },
+          { id: 'bookings', label: 'My Bookings', icon: faCalendarAlt, path: '/bookings' },
+          { id: 'calendar', label: 'Calendar', icon: faCalendarDays, path: '/calendar' },
+          { id: 'my-availability', label: 'My Availability', icon: faClock, path: '/my-availability' },
+        ],
       },
       {
-        id: 'services',
-        label: 'Services',
-        icon: 'fas fa-concierge-bell',
-        path: '/services',
+        id: 'account',
+        label: 'Account',
+        isGroup: true,
+        children: [
+          { id: 'my-profile', label: 'My Profile', icon: faUser, path: '/my-profile' },
+        ],
       },
-      {
-        id: "bookings",
-        label: "Bookings",
-        icon: "fa-calendar",
-        path: "/bookings",
-      }
-    ],
-  },
-  {
-    id: 'account',
-    label: 'Account',
-    isGroup: true,
-    children: [
-      {
-        id: 'profile',
-        label: 'Profile',
-        icon: 'fas fa-user',
-        path: '/profile',
-      },
-      {
-        id: 'settings',
-        label: 'Settings',
-        icon: 'fas fa-cog',
-        path: '/settings',
-      },
-    ],
-  },
-];
+    ];
+  }
+
+  const adminGroups: SidebarGroup[] = [
+    {
+      id: 'main',
+      label: 'Main',
+      isGroup: true,
+      children: [
+        { id: 'dashboard', label: 'Dashboard', icon: faTachometerAlt, path: '/dashboard' },
+        { id: 'bookings', label: 'Bookings', icon: faCalendarAlt, path: '/bookings' },
+        { id: 'calendar', label: 'Calendar', icon: faCalendarDays, path: '/calendar' },
+        { id: 'clients', label: 'Clients', icon: faAddressBook, path: '/clients' },
+        { id: 'staff', label: 'My Team', icon: faUsers, path: '/staff' },
+        { id: 'services', label: 'Services', icon: faBriefcase, path: '/services' },
+      ],
+    },
+  ];
+
+  if (role === 'tenantadmin') {
+    adminGroups.push({
+      id: 'system',
+      label: 'System',
+      isGroup: true,
+      children: [
+        { id: 'settings', label: 'Settings', icon: faCog, path: '/settings' },
+      ],
+    });
+  }
+
+  return adminGroups;
+};

@@ -2,6 +2,9 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "../context/AuthContext";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { AdminManagerRoute } from "./AdminManagerRoute";
+import { AdminOnlyRoute } from "./AdminOnlyRoute";
+import { StaffOnlyRoute } from "./StaffOnlyRoute";
 // import { CustomerProtectedRoute } from "./CustomerProtectedRoute";
 import { SuperAdminProtectedRoute } from "./SuperAdminProtectedRoute";
 
@@ -14,11 +17,15 @@ import VerifyEmailNoticePage from "../features/auth/pages/VerifyEmailNoticePage"
 import { MainLayout } from "../components/layout/MainLayout";
 // import { CustomerLayout } from "../components/layout/CustomerLayout";
 import { SuperAdminLayout } from "../components/layout/SuperAdminLayout";
-import TenantDashboardPage from "../features/dashboard/TenantDashboardPage";
-import ResourcesPage from "../features/resources/pages/ResourcesPage";
-import ResourceAvailabilityPage from "../features/resources/pages/ResourceAvailabilityPage";
+import TenantDashboardPage from "../features/dashboard/pages/TenantDashboardPage";
+import StaffPage from "../features/staff/pages/StaffPage";
+import StaffAvailabilityPage from "../features/staff/pages/StaffAvailabilityPage";
+import MyAvailabilityPage from "../features/staff/pages/MyAvailabilityPage";
+import MyProfilePage from "../features/staff/pages/MyProfilePage";
 import ServicesPage from "../features/service/pages/ServicesPage";
 import BookingsPage from "../features/bookings/pages/BookingsPage";
+import CalendarPage from "../features/bookings/pages/CalendarPage";
+import ClientsPage from "../features/clients/pages/ClientsPage";
 // import CustomerBookingsPage from "../features/bookings/pages/CustomerBookingsPage";
 // import PublicTenantPage from "../features/bookings/pages/PublicTenantPage";
 import CustomerBookingWizardPage from "../features/bookings/pages/CustomerBookingWizardPage";
@@ -73,15 +80,32 @@ export const AppRouter: React.FC = () => {
             </Route>
           </Route> */}
 
-          {/* Protected tenant admin routes */}
+          {/* Protected tenant routes */}
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
+              {/* All roles */}
               <Route path="/t/:tenant/dashboard" element={<TenantDashboardPage />} />
-              <Route path="/t/:tenant/resources" element={<ResourcesPage />} />
-              <Route path="/t/:tenant/resources/:id/availability" element={<ResourceAvailabilityPage />} />
-              <Route path="/t/:tenant/services" element={<ServicesPage />} />
               <Route path="/t/:tenant/bookings" element={<BookingsPage />} />
-              <Route path="/t/:tenant/settings" element={<SettingsPage />} />
+              <Route path="/t/:tenant/calendar" element={<CalendarPage />} />
+              <Route path="/t/:tenant/clients" element={<ClientsPage />} />
+
+              {/* Admin and manager only */}
+              <Route element={<AdminManagerRoute />}>
+                <Route path="/t/:tenant/staff" element={<StaffPage />} />
+                <Route path="/t/:tenant/staff/:id/availability" element={<StaffAvailabilityPage />} />
+                <Route path="/t/:tenant/services" element={<ServicesPage />} />
+              </Route>
+
+              {/* Admin only */}
+              <Route element={<AdminOnlyRoute />}>
+                <Route path="/t/:tenant/settings" element={<SettingsPage />} />
+              </Route>
+
+              {/* Staff only */}
+              <Route element={<StaffOnlyRoute />}>
+                <Route path="/t/:tenant/my-availability" element={<MyAvailabilityPage />} />
+                <Route path="/t/:tenant/my-profile" element={<MyProfilePage />} />
+              </Route>
             </Route>
           </Route>
 

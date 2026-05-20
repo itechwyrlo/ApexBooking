@@ -26,6 +26,11 @@ namespace ApexBooking.Core.Persistence.Mappings
             builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
 
             builder.HasIndex(x => x.Email).IsUnique();
+
+            builder.HasMany(x => x.RefreshTokens)
+                .WithOne()
+                .HasForeignKey(x => x.SuperAdminId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

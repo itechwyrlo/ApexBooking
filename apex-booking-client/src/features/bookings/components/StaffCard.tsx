@@ -17,39 +17,19 @@ function getInitials(name: string): string {
 const StaffCard: React.FC<Props> = ({ resource, isSelected, onSelect, onInfoClick }) => {
   const isAnyAvailable = resource === null;
 
-  const cardStyle: React.CSSProperties = {
-    borderLeft: isSelected ? '4px solid var(--bs-primary)' : '4px solid transparent',
-    background: isSelected ? 'var(--bs-primary-bg-subtle, #cfe2ff)' : '#fff',
-    border: isSelected
-      ? '1px solid var(--bs-primary-border-subtle, #9ec5fe)'
-      : '1px solid #dee2e6',
-    borderLeftWidth: 4,
-    cursor: 'pointer',
-    transition: 'background 0.15s',
-  };
-
   return (
     <div
-      className="d-flex align-items-center gap-3 rounded p-3 mb-2"
-      style={cardStyle}
+      className={`staff-card d-flex align-items-center gap-3 rounded p-3 mb-2${isSelected ? ' staff-card--selected' : ''}`}
       onClick={onSelect}
     >
-      <div
-        className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white"
-        style={{
-          width: 44,
-          height: 44,
-          background: 'var(--bs-primary)',
-          fontSize: 15,
-        }}
-      >
+      <div className="staff-card-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white">
         {isAnyAvailable
-          ? <i className="fas fa-user" style={{ fontSize: 18 }} />
+          ? <i className="fas fa-user" />
           : getInitials(resource.name)}
       </div>
 
       <div className="flex-grow-1 min-w-0">
-        <div className="fw-semibold" style={{ fontSize: 15 }}>
+        <div className="fw-semibold">
           {isAnyAvailable ? 'Any Available' : resource.name}
         </div>
         <div className="text-muted small text-truncate">
@@ -62,12 +42,11 @@ const StaffCard: React.FC<Props> = ({ resource, isSelected, onSelect, onInfoClic
       {!isAnyAvailable && onInfoClick && (
         <button
           type="button"
-          className="btn btn-sm btn-light rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-          style={{ width: 30, height: 30, padding: 0 }}
+          className="staff-card-info-btn btn btn-sm btn-light rounded-circle d-flex align-items-center justify-content-center"
           onClick={e => { e.stopPropagation(); onInfoClick(); }}
           aria-label={`Info about ${resource.name}`}
         >
-          <i className="fas fa-info" style={{ fontSize: 11 }} />
+          <i className="fas fa-info" />
         </button>
       )}
     </div>

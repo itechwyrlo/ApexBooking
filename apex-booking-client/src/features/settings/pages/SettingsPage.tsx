@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import {
+  faCalendarCheck,
+  faFileInvoiceDollar,
+  faCreditCard,
+  faBuilding,
+} from '@fortawesome/free-solid-svg-icons';
 import { Alert } from '../../../components/ui/Alert';
 import { Button } from '../../../components/ui/Button';
+import { Tabs } from '../../../components/ui/Tabs';
 import { usePaymentGateway } from '../hooks/usePaymentGateway';
 import { usePaymentPolicy } from '../hooks/usePaymentPolicy';
 import { useTenantSettings } from '../hooks/useTenantSettings';
@@ -17,6 +24,13 @@ import type {
 } from '../types';
 
 type SettingsTab = 'booking' | 'policy' | 'gateway' | 'profile';
+
+const SETTINGS_TABS = [
+  { id: 'booking' as SettingsTab, label: 'Booking Settings', icon: faCalendarCheck },
+  { id: 'policy' as SettingsTab, label: 'Payment Policy', icon: faFileInvoiceDollar },
+  { id: 'gateway' as SettingsTab, label: 'Payment Gateway', icon: faCreditCard },
+  { id: 'profile' as SettingsTab, label: 'Organization Profile', icon: faBuilding },
+];
 
 const SettingsPage: React.FC = () => {
   const { tenantSlug } = useAuth();
@@ -148,39 +162,23 @@ const SettingsPage: React.FC = () => {
     if (ok) setProfileSuccess('Profile saved.');
   };
 
-  const tab = (id: SettingsTab, label: string) => (
-    <li className="nav-item">
-      <button
-        type="button"
-        className={`nav-link ${activeTab === id ? 'active fw-semibold' : 'text-muted'}`}
-        onClick={() => setActiveTab(id)}
-      >
-        {label}
-      </button>
-    </li>
-  );
-
   return (
-    <div className="container-fluid">
-      <div className="mb-4">
-        <h4 className="fw-bold mb-1">Settings</h4>
-        <div className="text-muted small">Manage your booking rules and payment configuration.</div>
+    <div className="container-fluid px-3 px-md-4 py-4">
+      <div className="row mb-4 align-items-center">
+        <div className="col">
+          <h5 className="fw-bold mb-0">Settings</h5>
+          <small className="text-muted">Manage your booking rules and payment configuration.</small>
+        </div>
       </div>
 
       <div className="card border-0 shadow-sm">
         <div className="card-body p-0">
-          <div className="border-bottom px-4 pt-4">
-            <ul className="nav nav-tabs border-0">
-              {tab('booking', 'Booking Settings')}
-              {tab('policy', 'Payment Policy')}
-              {tab('gateway', 'Payment Gateway')}
-              {tab('profile', 'Organization Profile')}
-            </ul>
+          <div className="px-4 pt-4">
+            <Tabs tabs={SETTINGS_TABS} activeTab={activeTab} onChange={(id) => setActiveTab(id)} />
           </div>
 
-          {/* Booking Settings */}
           {activeTab === 'booking' && (
-            <div className="p-4" style={{ maxWidth: 560 }}>
+            <div className="p-4 apex-settings-panel">
               <h6 className="fw-semibold mb-3">Booking Settings</h6>
 
               {settingsSuccess && (
@@ -189,9 +187,10 @@ const SettingsPage: React.FC = () => {
                 </Alert>
               )}
               {settingsError && (
-                <Alert variant="error" dismissible onDismiss={clearSettingsError} className="mb-3">
+                <div className="alert alert-danger alert-dismissible d-flex align-items-center mb-3" role="alert">
                   {settingsError}
-                </Alert>
+                  <button type="button" className="btn-close ms-auto" onClick={clearSettingsError} aria-label="Dismiss" />
+                </div>
               )}
 
               {settingsLoading && !settings ? (
@@ -296,9 +295,8 @@ const SettingsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Payment Policy */}
           {activeTab === 'policy' && (
-            <div className="p-4" style={{ maxWidth: 560 }}>
+            <div className="p-4 apex-settings-panel">
               <h6 className="fw-semibold mb-1">Payment Policy</h6>
               <p className="text-muted small mb-4">
                 Define when and how much to charge. The platform handles gateway credentials separately.
@@ -310,9 +308,10 @@ const SettingsPage: React.FC = () => {
                 </Alert>
               )}
               {policyError && (
-                <Alert variant="error" dismissible onDismiss={clearPolicyError} className="mb-3">
+                <div className="alert alert-danger alert-dismissible d-flex align-items-center mb-3" role="alert">
                   {policyError}
-                </Alert>
+                  <button type="button" className="btn-close ms-auto" onClick={clearPolicyError} aria-label="Dismiss" />
+                </div>
               )}
 
               {policyLoading && !policy ? (
@@ -359,7 +358,7 @@ const SettingsPage: React.FC = () => {
 
                       {policyForm.depositOnly && (
                         <div className="row g-2">
-                          <div className="col-5">
+                          <div className="col-12 col-sm-5">
                             <label className="form-label small fw-medium">Deposit Type</label>
                             <select
                               className="form-select form-select-sm"
@@ -370,7 +369,7 @@ const SettingsPage: React.FC = () => {
                               <option value="FixedAmount">Fixed Amount</option>
                             </select>
                           </div>
-                          <div className="col-7">
+                          <div className="col-12 col-sm-7">
                             <label className="form-label small fw-medium">
                               {policyForm.depositType === 'FixedAmount' ? 'Amount' : 'Percentage'}
                             </label>
@@ -399,7 +398,7 @@ const SettingsPage: React.FC = () => {
 
                   <div className="mb-4">
                     <label className="form-label small fw-medium">Partial Refund Percentage</label>
-                    <div className="input-group" style={{ maxWidth: 180 }}>
+                    <div className="input-group apex-refund-input">
                       <input
                         type="number"
                         className="form-control"
@@ -423,15 +422,15 @@ const SettingsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Payment Gateway */}
           {activeTab === 'gateway' && (
-            <div className="p-4" style={{ maxWidth: 560 }}>
+            <div className="p-4 apex-settings-panel">
               <h6 className="fw-semibold mb-3">Payment Gateway</h6>
 
               {gatewayError && (
-                <Alert variant="error" dismissible onDismiss={clearGatewayError} className="mb-3">
+                <div className="alert alert-danger alert-dismissible d-flex align-items-center mb-3" role="alert">
                   {gatewayError}
-                </Alert>
+                  <button type="button" className="btn-close ms-auto" onClick={clearGatewayError} aria-label="Dismiss" />
+                </div>
               )}
 
               {gatewayLoading && !gatewayStatus ? (
@@ -478,9 +477,8 @@ const SettingsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Organization Profile */}
           {activeTab === 'profile' && (
-            <div className="p-4" style={{ maxWidth: 560 }}>
+            <div className="p-4 apex-settings-panel">
               <h6 className="fw-semibold mb-3">Organization Profile</h6>
 
               {profileSuccess && (
@@ -489,9 +487,10 @@ const SettingsPage: React.FC = () => {
                 </Alert>
               )}
               {profileError && (
-                <Alert variant="error" dismissible onDismiss={clearProfileError} className="mb-3">
+                <div className="alert alert-danger alert-dismissible d-flex align-items-center mb-3" role="alert">
                   {profileError}
-                </Alert>
+                  <button type="button" className="btn-close ms-auto" onClick={clearProfileError} aria-label="Dismiss" />
+                </div>
               )}
 
               {profileLoading && !profile ? (
@@ -575,7 +574,7 @@ const SettingsPage: React.FC = () => {
                   </div>
 
                   <div className="row g-2 mb-3">
-                    <div className="col">
+                    <div className="col-12 col-sm-6">
                       <label className="form-label small fw-medium">City</label>
                       <input
                         type="text"
@@ -584,7 +583,7 @@ const SettingsPage: React.FC = () => {
                         onChange={e => handleProfileChange('city', e.target.value)}
                       />
                     </div>
-                    <div className="col">
+                    <div className="col-12 col-sm-6">
                       <label className="form-label small fw-medium">State</label>
                       <input
                         type="text"
@@ -596,7 +595,7 @@ const SettingsPage: React.FC = () => {
                   </div>
 
                   <div className="row g-2 mb-3">
-                    <div className="col">
+                    <div className="col-12 col-sm-6">
                       <label className="form-label small fw-medium">Postal Code</label>
                       <input
                         type="text"
@@ -605,7 +604,7 @@ const SettingsPage: React.FC = () => {
                         onChange={e => handleProfileChange('postalCode', e.target.value)}
                       />
                     </div>
-                    <div className="col">
+                    <div className="col-12 col-sm-6">
                       <label className="form-label small fw-medium">Country Code</label>
                       <input
                         type="text"

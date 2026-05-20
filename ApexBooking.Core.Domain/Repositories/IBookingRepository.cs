@@ -34,5 +34,12 @@ namespace ApexBooking.Core.Domain.Repositories
             int year,
             int month,
             CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<Booking>> GetBookingsForMonthAsync(
+            TenantId tenantId,
+            int year,
+            int month,
+            StaffId? staffId,
+            CancellationToken cancellationToken = default);
     }
 }

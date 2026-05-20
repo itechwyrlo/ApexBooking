@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ApexBooking.Core.Domain.Entities;
+using ApexBooking.Core.Domain.ValueObjects;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Domain.Services.Slot
 {
@@ -210,6 +212,40 @@ namespace ApexBooking.Core.Domain.Services.Slot
             }
 
             return merged;
+        }
+
+        public StaffId FindFirstAvailableStaff(
+            Service service,
+            IEnumerable<(Staff staff, IReadOnlyList<Booking> activeBookings)> candidates,
+            DateOnly date,
+            TimeOnly startTime,
+            DateTime nowLocal,
+            int minAdvanceHours)
+        {
+            var requestedSlot = startTime.ToString("HH:mm");
+
+            foreach (var (staff, bookings) in candidates)
+            {
+                var slots = ComputeAvailableSlots(service, staff, date, bookings, nowLocal, minAdvanceHours);
+                if (slots.Contains(requestedSlot))
+                    return staff.StaffId;
+            }
+
+            throw new BusinessRuleBrokenException("Selected time is no longer available.");
+        }
+
+        public void ValidateSlotAvailable(
+            Service service,
+            Staff staff,
+            DateOnly date,
+            IReadOnlyList<Booking> activeBookings,
+            DateTime nowLocal,
+            int minAdvanceHours,
+            TimeOnly startTime)
+        {
+            var slots = ComputeAvailableSlots(service, staff, date, activeBookings, nowLocal, minAdvanceHours);
+            if (!slots.Contains(startTime.ToString("HH:mm")))
+                throw new BusinessRuleBrokenException("Selected slot is no longer available.");
         }
 
         private static (TimeOnly Start, TimeOnly End) BuildBlockedWindow(

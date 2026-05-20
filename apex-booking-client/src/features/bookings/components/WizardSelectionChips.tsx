@@ -8,16 +8,8 @@ interface Props {
 }
 
 const Chip: React.FC<{ icon: string; label: string }> = ({ icon, label }) => (
-  <span
-    className="d-inline-flex align-items-center gap-1 rounded-pill px-3 py-1 small fw-medium"
-    style={{
-      background: 'var(--bs-primary-bg-subtle, #cfe2ff)',
-      color: 'var(--bs-primary-text-emphasis, #052c65)',
-      border: '1px solid var(--bs-primary-border-subtle, #9ec5fe)',
-      fontSize: 13,
-    }}
-  >
-    <i className={`fas ${icon}`} style={{ fontSize: 11 }} />
+  <span className="wizard-chip d-inline-flex align-items-center gap-1 rounded-pill px-3 py-1 small fw-medium">
+    <i className={`fas ${icon}`} />
     {label}
   </span>
 );

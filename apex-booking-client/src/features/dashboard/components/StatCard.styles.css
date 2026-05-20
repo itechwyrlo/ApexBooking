@@ -1,0 +1,25 @@
+.apex-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bs-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.apex-stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--bs-gray-900);
+  line-height: 1;
+}
+
+.apex-stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}

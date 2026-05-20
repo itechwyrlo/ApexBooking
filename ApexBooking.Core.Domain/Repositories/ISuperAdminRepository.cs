@@ -9,4 +9,5 @@ public interface ISuperAdminRepository : IGenericRepository<SuperAdmin>
     Task<SuperAdmin?> FindByEmailAsync(string email);
     //unused method
     Task<bool> EmailExistsAsync(string email);
+    Task<SuperAdmin?> FindByRefreshTokenAsync(string refreshToken);
 }

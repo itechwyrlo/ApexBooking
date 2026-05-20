@@ -21,6 +21,15 @@ public class CreateResourceCommandValidator : AbstractValidator<CreateStaffComma
             .MaximumLength(256).WithMessage("Resource name cannot exceed 256 characters")
             .Matches(@"^[a-zA-Z0-9\s\-()&.]*$").WithMessage("LastName name contains invalid characters");
 
+        RuleFor(x => x.email)
+            .NotEmpty().WithMessage("Email is required.")
+            .EmailAddress().WithMessage("A valid email address is required.")
+            .MaximumLength(256).WithMessage("Email cannot exceed 256 characters.");
+
+        RuleFor(x => x.contactNumber)
+            .NotEmpty().WithMessage("Contact number is required.")
+            .MaximumLength(255).WithMessage("Contact number cannot exceed 255 characters.");
+
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters")
             .Must(desc => string.IsNullOrEmpty(desc) || !ContainsScriptTags(desc))

@@ -85,6 +85,18 @@ public class User : IdentityUser<Guid>, IAggregateRoot, ITenantEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void EnsureNotYetActivated()
+    {
+        if (Status != UserStatus.Invited)
+            throw new BusinessRuleBrokenException("This account has already been activated.");
+    }
+
+    public void EnsureInvitationNotExpired()
+    {
+        if (InvitationExpiresAt.HasValue && InvitationExpiresAt < DateTime.UtcNow)
+            throw new BusinessRuleBrokenException("Verification token has expired.");
+    }
+
     public void Activate()
     {
         if (Status == UserStatus.Active)
@@ -225,7 +237,7 @@ public class User : IdentityUser<Guid>, IAggregateRoot, ITenantEntity
     public void AddResourceAssignment(ResourceId resourceId)
     {
         if (resourceId == null)
-            throw new BusinessRuleBrokenException("Resource ID is required.");
+            throw new BusinessRuleBrokenException("Staff Id is required.");
 
         if (Role != UserRole.Staff)
             throw new BusinessRuleBrokenException("Only staff users can have resource assignments.");
@@ -241,7 +253,7 @@ public class User : IdentityUser<Guid>, IAggregateRoot, ITenantEntity
     public void RemoveResourceAssignment(ResourceId resourceId)
     {
         if (resourceId == null)
-            throw new BusinessRuleBrokenException("Resource ID is required.");
+            throw new BusinessRuleBrokenException("Staff Id is required.");
 
         var assignment = _userResourceAssignments.FirstOrDefault(ura => ura.ResourceId == resourceId);
         if (assignment == null)

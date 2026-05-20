@@ -7,8 +7,9 @@ import { FormModal } from "../../../components/ui/modal/FormModal";
 import { ConfirmModal } from "../../../components/ui/modal/ConfirmModal";
 import { Pagination } from "../../../components/ui/pagination/Pagination";
 import { Table } from "../../../components/ui/table/table";
+import { ServiceSkeleton } from "../components/ServiceSkeleton";
 import { useServices } from "../hooks/useServices";
-import { useResources } from "../../resources/hooks/useResources";
+import { useStaff } from "../../staff/hooks/useStaff";
 import type {
   Service,
   CreateServiceRequest,
@@ -29,6 +30,8 @@ const EMPTY_FORM: CreateServiceRequest = {
   maxAdvanceBookingDays: undefined,
 };
 
+const PAGE_SIZE = 10;
+
 const ServicesPage: React.FC = () => {
   const {
     services,
@@ -41,10 +44,9 @@ const ServicesPage: React.FC = () => {
     update,
     deactivate,
   } = useServices();
-  const { resources, getAll: getResources } = useResources();
+  const { staff, getAll: getStaff } = useStaff();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -52,18 +54,12 @@ const ServicesPage: React.FC = () => {
   const [formValue, setFormValue] = useState<CreateServiceRequest>(EMPTY_FORM);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {
-    getAll(currentPage, pageSize);
-    getResources();
-  }, [currentPage, pageSize]);
-
-  const handlePageChange = (page: number) => setCurrentPage(page);
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size);
-    setCurrentPage(1);
-  };
+    getAll(currentPage, PAGE_SIZE);
+    getStaff();
+  }, [getAll, getStaff, currentPage]);
 
   const serviceFormSchema = useMemo(
     (): ModelSchema<CreateServiceRequest>[] => [
@@ -109,13 +105,13 @@ const ServicesPage: React.FC = () => {
         required: true,
         dataSource: {
           mode: "static",
-          options: resources
+          options: staff
             .filter((r) => r.isActive)
             .map((r) => ({ label: r.firstName, value: r.id })),
         },
       },
     ],
-    [resources],
+    [staff],
   );
 
   const columns: Column<Service>[] = [
@@ -229,14 +225,14 @@ const ServicesPage: React.FC = () => {
       if (ok) {
         setShowForm(false);
         setSuccessMessage("Service updated.");
-        await getAll(currentPage, pageSize);
+        await getAll(currentPage, PAGE_SIZE);
       }
     } else {
       const ok = await create(value);
       if (ok) {
         setShowForm(false);
         setSuccessMessage("Service created.");
-        await getAll(currentPage, pageSize);
+        await getAll(currentPage, PAGE_SIZE);
       }
     }
   };
@@ -248,22 +244,22 @@ const ServicesPage: React.FC = () => {
       setShowConfirm(false);
       setTargetService(null);
       setSuccessMessage("Service deactivated.");
-      await getAll(currentPage, pageSize);
+      await getAll(currentPage, PAGE_SIZE);
     }
   };
 
   return (
-    <div className="container-fluid">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">Services</h4>
-          <div className="text-muted small">
-            Manage bookable services and their resource assignments.
-          </div>
+    <div className="container-fluid px-3 px-md-4 py-4">
+      <div className="row mb-4 align-items-center">
+        <div className="col">
+          <h5 className="fw-bold mb-0">Services</h5>
+          <small className="text-muted">Manage bookable services and their resource assignments.</small>
         </div>
-        <Button variant="primary" icon={faPlus} onClick={openCreate}>
-          New Service
-        </Button>
+        <div className="col-auto">
+          <Button variant="primary" icon={faPlus} onClick={openCreate}>
+            New Service
+          </Button>
+        </div>
       </div>
 
       {successMessage && (
@@ -278,47 +274,44 @@ const ServicesPage: React.FC = () => {
       )}
 
       {error && (
-        <Alert
-          variant="error"
-          dismissible
-          onDismiss={clearError}
-          className="mb-3"
-        >
+        <div className="alert alert-danger alert-dismissible d-flex align-items-center mb-3" role="alert">
           {error}
-        </Alert>
+          <button type="button" className="btn-close ms-auto" onClick={clearError} aria-label="Dismiss" />
+        </div>
       )}
 
-      <div className="card border-0 shadow-sm">
-        <div className="card-body p-0">
-          {isLoading ? (
-            <div className="p-4 text-center text-muted small">
-              Loading services...
+      <div className="row">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body p-0">
+              {isLoading ? (
+                <ServiceSkeleton />
+              ) : services.length === 0 ? (
+                <div className="p-4 text-center text-muted small">
+                  No services found. Add your first service to get started.
+                </div>
+              ) : (
+                <Table
+                  data={services}
+                  columns={columns}
+                  getRowId={(row) => row.id}
+                />
+              )}
             </div>
-          ) : services.length === 0 ? (
-            <div className="p-4 text-center text-muted small">
-              No services found. Add your first service to get started.
-            </div>
-          ) : (
-            <Table
-              data={services}
-              columns={columns}
-              getRowId={(row) => row.id}
-            />
-          )}
-        </div>
 
-        {total > 0 && (
-          <div className="card-footer bg-white border-top-0">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              totalItems={total}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-            />
+            {total > PAGE_SIZE && (
+              <div className="card-footer bg-white border-top-0">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={PAGE_SIZE}
+                  totalItems={total}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <FormModal

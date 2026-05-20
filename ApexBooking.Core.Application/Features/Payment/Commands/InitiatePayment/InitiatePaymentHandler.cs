@@ -7,12 +7,12 @@ using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.Payment.Commands.InitiatePayment;
 
 internal sealed class InitiatePaymentHandler
-    : ICommandHandler<InitiatePaymentCommand, BaseResponse<InitiatePaymentDto>>
+    : ICommandHandler<InitiatePaymentCommand, InitiatePaymentDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAppUrlService _appUrlService;
@@ -25,7 +25,7 @@ internal sealed class InitiatePaymentHandler
         _appUrlService = appUrlService;
     }
 
-    public async Task<BaseResponse<InitiatePaymentDto>> Handle(
+    public async Task<InitiatePaymentDto> Handle(
         InitiatePaymentCommand command,
         CancellationToken ct)
     {
@@ -33,35 +33,31 @@ internal sealed class InitiatePaymentHandler
             .GetByIdAsync(new BookingId(command.BookingId));
 
         if (booking is null)
-            return BaseResponse<InitiatePaymentDto>.Failure("Booking not found.");
+            throw new NotFoundException("Booking not found.");
 
-        if (booking.Status != BookingStatus.PendingPayment)
-            return BaseResponse<InitiatePaymentDto>.Failure("Booking is not awaiting payment.");
+        booking.EnsureAwaitingPayment();
 
         var platformGateway = await _unitOfWork.PlatformPaymentGatewayRepository.GetActiveAsync(ct);
 
         if (platformGateway is null)
-            return BaseResponse<InitiatePaymentDto>.Failure(
-                "No active payment gateway configured.",
-                "NO_GATEWAY_CONFIGURED");
+            throw new NotFoundException("No active payment gateway configured.");
 
         var tenant = await _unitOfWork.TenantRepository.GetByIdAsync(booking.TenantId);
 
         if (tenant is null)
-            return BaseResponse<InitiatePaymentDto>.Failure("Tenant not found.");
+            throw new NotFoundException("Tenant not found.");
 
         var returnUrl = _appUrlService.GetPaymentReturnUrl(tenant.Slug, booking.BookingId.Value);
         var cancelUrl = _appUrlService.GetPaymentCancelUrl(tenant.Slug, booking.BookingId.Value);
 
+        // Subordinate to known infrastructure violation: HTTP calls from Application layer
         var accessToken = await GetPayPalAccessTokenAsync(
             platformGateway.ClientId,
             platformGateway.SecretKeyEncrypted,
             platformGateway.Mode);
 
         if (accessToken is null)
-            return BaseResponse<InitiatePaymentDto>.Failure(
-                "Failed to authenticate with PayPal.",
-                "GATEWAY_AUTH_FAILED");
+            throw new InvalidOperationException("Failed to authenticate with PayPal.");
 
         var baseUrl = platformGateway.Mode == GatewayMode.Live
             ? "https://api-m.paypal.com"
@@ -77,16 +73,12 @@ internal sealed class InitiatePaymentHandler
             cancelUrl);
 
         if (orderId is null)
-            return BaseResponse<InitiatePaymentDto>.Failure(
-                "Failed to create PayPal order.",
-                "PAYPAL_ORDER_FAILED");
+            throw new InvalidOperationException("Failed to create PayPal order.");
 
         var approvalUrl = await GetApprovalUrlAsync(accessToken, baseUrl, orderId);
 
         if (approvalUrl is null)
-            return BaseResponse<InitiatePaymentDto>.Failure(
-                "Failed to retrieve PayPal approval URL.",
-                "PAYPAL_APPROVAL_URL_FAILED");
+            throw new InvalidOperationException("Failed to retrieve PayPal approval URL.");
 
         var transaction = PaymentTransaction.Create(
             booking.TenantId,
@@ -99,10 +91,10 @@ internal sealed class InitiatePaymentHandler
         _unitOfWork.PaymentTransactionRepository.Add(transaction);
         await _unitOfWork.CompleteAsync(ct);
 
-        return BaseResponse<InitiatePaymentDto>.Success(new InitiatePaymentDto(
+        return new InitiatePaymentDto(
             ApprovalUrl: approvalUrl,
             GatewayTransactionId: orderId,
-            BookingReference: booking.BookingReference));
+            BookingReference: booking.BookingReference);
     }
 
     private static async Task<string?> GetPayPalAccessTokenAsync(

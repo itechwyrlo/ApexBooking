@@ -32,17 +32,22 @@ function formatTime(timeStr: string): string {
 }
 
 const PageShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center p-3">
-    <div className="card border-0 shadow-sm p-4" style={{ maxWidth: 480, width: '100%' }}>
-      {children}
+  <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center py-4">
+    <div className="container">
+      <div className="row justify-content-center">
+        <div className="col-12 col-md-6 col-lg-5">
+          <div className="card border-0 shadow-sm p-4">
+            {children}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 );
 
 const IconCircle: React.FC<{ color: string; icon: string }> = ({ color, icon }) => (
   <div
-    className={`rounded-circle bg-${color} bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3`}
-    style={{ width: 64, height: 64 }}
+    className={`booking-icon-circle rounded-circle bg-${color} bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3`}
   >
     <i className={`${icon} fa-xl text-${color}`} />
   </div>
@@ -69,7 +74,6 @@ const CancelBookingPage: React.FC = () => {
     }
   };
 
-  // Loading
   if (state === 'loading') {
     return (
       <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center">
@@ -81,7 +85,6 @@ const CancelBookingPage: React.FC = () => {
     );
   }
 
-  // Terminal: successfully cancelled
   if (cancelled && validationData) {
     const hasRefund = validationData.refundPercent > 0;
     return (
@@ -99,7 +102,6 @@ const CancelBookingPage: React.FC = () => {
     );
   }
 
-  // State 5: no token in URL or token not found / generic invalid
   if (state === 'invalid') {
     return (
       <PageShell>
@@ -112,7 +114,6 @@ const CancelBookingPage: React.FC = () => {
     );
   }
 
-  // State 4: token already used
   if (state === 'used') {
     return (
       <PageShell>
@@ -125,7 +126,6 @@ const CancelBookingPage: React.FC = () => {
     );
   }
 
-  // State 3: cancellation window has passed
   if (state === 'expired') {
     return (
       <PageShell>
@@ -141,7 +141,6 @@ const CancelBookingPage: React.FC = () => {
     );
   }
 
-  // States 1 & 2: valid token — validationData is guaranteed non-null here
   const data = validationData!;
   const refundAmount = computeRefundAmount(data);
 
@@ -166,7 +165,6 @@ const CancelBookingPage: React.FC = () => {
         ))}
       </div>
 
-      {/* State 1: refund available */}
       {state === 'valid_refund' && (
         <Alert variant="info" className="mb-4">
           You will receive a refund of{' '}
@@ -177,7 +175,6 @@ const CancelBookingPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* State 2: no refund */}
       {state === 'valid_no_refund' && (
         <Alert variant="warning" className="mb-4">
           You will not receive a refund if you cancel.
@@ -190,21 +187,18 @@ const CancelBookingPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* State 1 action */}
       {state === 'valid_refund' && (
         <Button variant="danger" loading={isCancelling} onClick={handleCancel} className="w-100">
           Cancel My Booking
         </Button>
       )}
 
-      {/* State 2 action — initial button */}
       {state === 'valid_no_refund' && !confirming && (
         <Button variant="danger" onClick={() => setConfirming(true)} className="w-100">
           Cancel My Booking
         </Button>
       )}
 
-      {/* State 2 action — confirmation step */}
       {state === 'valid_no_refund' && confirming && (
         <>
           <p className="text-muted small text-center mb-3">

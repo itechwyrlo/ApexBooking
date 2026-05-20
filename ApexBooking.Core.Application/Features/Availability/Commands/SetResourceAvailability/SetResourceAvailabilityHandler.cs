@@ -28,7 +28,7 @@ namespace ApexBooking.Core.Application.Features.Availability.Commands.SetResourc
                 .FindByIdWithAvailabilityAsync(new StaffId(command.StaffId), ct);
 
             if (staff is null)
-                throw new BusinessRuleBrokenException("Staff not found.");
+                throw new NotFoundException("Staff not found.");
 
             var scheduleEntities = new List<StaffAvailabilitySchedule>();
 

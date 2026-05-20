@@ -6,25 +6,34 @@ export type BookingStatus =
   | 'Completed'
   | 'NoShow';
 
+export interface GuestDto {
+  guestId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+}
+
 export interface Booking {
-  id: string;
-  tenantId: string;
+  bookingId: string;
+  bookingReference: string;
   serviceId: string;
   serviceName: string;
-  resourceId: string;
-  resourceName: string;
-  customerName: string;
-  customerEmail: string;
-  startTime: string;
-  endTime: string;
+  resourceId: string | null;
+  resourceName: string | null;
+  guest: GuestDto | null;
+  scheduledDate: string;
+  scheduledStartTime: string;
+  scheduledEndTime: string;
+  durationMinutes: number;
   status: BookingStatus;
-  totalPrice: number;
-  currencyCode: string;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
+  confirmationMode: string;
   priceSnapshot: number;
-  bookingReference: string;
+  currencyCode: string;
+  customerNotes: string | null;
+  cancellationReason: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
 }
 
 export interface PublicBookingDto {
@@ -100,7 +109,7 @@ export interface PublicResource {
 
 export interface AvailableSlotsResponse {
   serviceId: string;
-  resourceId: string | null;
+  staffId: string | null;
   date: string;
   durationMinutes: number;
   availableSlots: string[];
@@ -130,6 +139,23 @@ export interface CustomerBooking {
   status: BookingStatus;
   priceSnapshot: number;
   currencyCode: string;
+}
+
+export interface DayAvailabilityDto {
+  date: string;
+  isAvailable: boolean;
+}
+
+export interface MonthlyAvailabilityDto {
+  year: number;
+  month: number;
+  days: DayAvailabilityDto[];
+}
+
+export interface InitiatePaymentResult {
+  approvalUrl: string;
+  gatewayTransactionId: string;
+  bookingReference: string;
 }
 
 export interface CancellationTokenValidation {

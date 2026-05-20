@@ -4,5 +4,5 @@ using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Auth.Commands.ForgotPassword
 {
-    public sealed record ForgotPasswordCommand(string Email) : ICommand<BaseResponse<ForgotPasswordResponseDto>>;
+    public sealed record ForgotPasswordCommand(string Email) : ICommand<ForgotPasswordResponseDto>;
 }

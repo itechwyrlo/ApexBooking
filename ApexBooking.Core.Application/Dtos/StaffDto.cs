@@ -9,6 +9,7 @@ namespace ApexBooking.Core.Application.Dtos
         string? Description,
         int Capacity,
         bool IsActive,
+        string? PhotoUrl,
         DateTime CreatedAt,
         DateTime UpdatedAt
     );

@@ -17,6 +17,7 @@ namespace ApexBooking.Core.Persistence.Data
 
         // Platform entities
         public DbSet<SuperAdmin> SuperAdmins => Set<SuperAdmin>();
+        public DbSet<SuperAdminRefreshToken> SuperAdminRefreshTokens => Set<SuperAdminRefreshToken>();
 
         // Tenant entities
         public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -48,6 +49,7 @@ namespace ApexBooking.Core.Persistence.Data
 
         public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
         public DbSet<PlatformPaymentGateway> PlatformPaymentGateways => Set<PlatformPaymentGateway>();
+        public DbSet<Notification> Notifications => Set<Notification>();
 
         public ApexBookingDbContext(
             DbContextOptions<ApexBookingDbContext> options,

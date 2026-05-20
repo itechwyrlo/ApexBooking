@@ -1,35 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
-// import { useParams } from 'react-router-dom';
-import { faPlus, faEdit, faBan } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
-import { Button } from '../../../components/ui/Button';
 import { Alert } from '../../../components/ui/Alert';
-import { FormModal } from '../../../components/ui/modal/FormModal';
 import { ConfirmModal } from '../../../components/ui/modal/ConfirmModal';
 import { Pagination } from '../../../components/ui/pagination/Pagination';
+import { Table } from '../../../components/ui/table/table';
+import BookingDetailDrawer from '../components/BookingDetailDrawer';
+import { BookingsSkeleton } from '../components/BookingsSkeleton';
 
 import { useBookings } from '../hooks/useBookings';
-import type { AdminBookingForm } from '../hooks/useBookings';
-import { useServices } from '../../service/hooks/useServices';
-import { useResources } from '../../resources/hooks/useResources';
+import type { Booking, BookingStatus } from '../types';
+import type { Column } from '../../../components/ui/table/types';
+import './BookingsPage.styles.css';
 
-import type {
-  Booking,
-  UpdateBookingRequest,
-  BookingStatus,
-} from '../types';
-
-import type { ModelSchema } from '../../../components/ui/table/types';
-
-// const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
-//   Pending: 'Pending',
-//   Confirmed: 'Confirmed',
-//   Cancelled: 'Cancelled',
-//   Completed: 'Completed',
-// };
-
-const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
+const STATUS_LABELS: Record<BookingStatus, string> = {
   PendingPayment: 'Pending Payment',
   Pending: 'Pending',
   Confirmed: 'Confirmed',
@@ -38,160 +22,75 @@ const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   NoShow: 'No Show',
 };
 
-const EMPTY_FORM: AdminBookingForm = {
-  serviceId: '',
-  resourceId: '',
-  scheduledDate: '',
-  scheduledStartTime: '',
-  customerNotes: '',
-};
-
 const PAGE_SIZE = 10;
 
+const statusBadgeClass = (status: BookingStatus): string => {
+  switch (status) {
+    case 'Confirmed':      return 'bg-success-subtle text-success';
+    case 'Pending':        return 'bg-warning-subtle text-warning';
+    case 'PendingPayment': return 'bg-warning-subtle text-warning';
+    case 'Completed':      return 'bg-info-subtle text-info';
+    case 'Cancelled':      return 'bg-secondary-subtle text-secondary';
+    case 'NoShow':         return 'bg-danger-subtle text-danger';
+  }
+};
+
+const paymentLabel = (b: Booking): string | null => {
+  if (b.status === 'PendingPayment') return 'Pending';
+  if (b.priceSnapshot === 0) return 'Free';
+  return null;
+};
+
+const paymentBadgeClass = (b: Booking): string => {
+  if (b.status === 'PendingPayment') return 'bg-warning-subtle text-warning';
+  if (b.priceSnapshot === 0) return 'bg-secondary-subtle text-secondary';
+  return 'bg-primary-subtle text-primary';
+};
+
 const BookingsPage: React.FC = () => {
-  // const { tenant } = useParams<{ tenant: string }>();
-
-  const { bookings, isLoading, error, clearError, getAll, create, update, cancel } =
-    useBookings();
-
-  const { services, getAll: getServices } = useServices();
-  const { resources, getAll: getResources } = useResources();
+  const { tenant } = useParams<{ tenant: string }>();
+  const { bookings, total, isLoading, error, clearError, getAll, cancel, confirm } = useBookings();
 
   const [currentPage, setCurrentPage] = useState(1);
-
-  const [showForm, setShowForm] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
-
-  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [targetBooking, setTargetBooking] = useState<Booking | null>(null);
-
-  const [formValue, setFormValue] =
-    useState<AdminBookingForm>(EMPTY_FORM);
-
+  const [showConfirmApproval, setShowConfirmApproval] = useState(false);
+  const [targetConfirmBooking, setTargetConfirmBooking] = useState<Booking | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<BookingStatus | ''>('');
 
   useEffect(() => {
-    getAll();
-    getServices();
-    getResources();
-  }, [getAll, getServices, getResources]);
+    getAll(currentPage, PAGE_SIZE);
+  }, [getAll, currentPage]);
 
-  const filteredResources = useMemo(() => {
-    if (!formValue.serviceId) return [];
-    const selectedService = services.find(s => s.id === formValue.serviceId);
-    if (!selectedService) return [];
-    return resources.filter(r => selectedService.staffIds.includes(r.id));
-  }, [services, resources, formValue.serviceId]);
-
-  const bookingFormSchema = useMemo(
-    (): ModelSchema<AdminBookingForm>[] => [
-      {
-        key: 'serviceId',
-        label: 'Service',
-        type: 'select',
-        required: true,
-        dataSource: {
-          mode: 'static',
-          options: services.map((s) => ({
-            label: s.name,
-            value: s.id,
-          })),
-        },
-      },
-      {
-        key: 'resourceId',
-        label: 'Resource',
-        type: 'select',
-        required: true,
-        dataSource: {
-          mode: 'static',
-          options: filteredResources.map((r) => ({
-            label: r.firstName,
-            value: r.id,
-          })),
-        },
-      },
-      { key: 'scheduledDate', label: 'Scheduled Date', type: 'date', required: true },
-      { key: 'scheduledStartTime', label: 'Scheduled Start Time', type: 'time', required: true },
-      { key: 'customerNotes', label: 'Customer Notes', type: 'textarea' },
-    ],
-    [services, filteredResources]
-  );
-
-  const handleFormChange = (value: AdminBookingForm) => {
-    if (value.serviceId !== formValue.serviceId) {
-      setFormValue({ ...value, resourceId: '' });
-    } else {
-      setFormValue(value);
-    }
-  };
-
-  const totalPages = Math.max(1, Math.ceil(bookings.length / PAGE_SIZE));
-  const paged = bookings.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const openCreate = () => {
-    setEditingBooking(null);
-    setFormValue(EMPTY_FORM);
-    setShowForm(true);
-  };
-
-  const openEdit = (booking: Booking) => {
-    setEditingBooking(booking);
-
-    // Extract date (YYYY-MM-DD) and time (HH:mm) from ISO string
-    const date = new Date(booking.startTime);
-    const scheduledDate = date.toISOString().split('T')[0];
-    const scheduledStartTime = date.toTimeString().slice(0, 5);
-
-    setFormValue({
-      serviceId: booking.serviceId,
-      resourceId: booking.resourceId,
-      scheduledDate: scheduledDate,
-      scheduledStartTime: scheduledStartTime,
-      customerNotes: booking.notes ?? '',
+  const filtered = useMemo(() => {
+    return bookings.filter(b => {
+      const matchesStatus = !statusFilter || b.status === statusFilter;
+      const term = search.toLowerCase();
+      const matchesSearch =
+        !term ||
+        b.bookingReference.toLowerCase().includes(term) ||
+        [b.guest?.firstName, b.guest?.lastName].filter(Boolean).join(' ').toLowerCase().includes(term) ||
+        (b.guest?.email ?? '').toLowerCase().includes(term);
+      return matchesStatus && matchesSearch;
     });
+  }, [bookings, search, statusFilter]);
 
-    setShowForm(true);
-  };
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const openCancel = (booking: Booking) => {
+  const openCancel = useCallback((booking: Booking) => {
     setTargetBooking(booking);
+    setSelectedBooking(null);
     setShowConfirm(true);
-  };
-
-  const handleSubmit = async (value: AdminBookingForm): Promise<void> => {
-    if (editingBooking) {
-      const req: UpdateBookingRequest = {
-        serviceId: value.serviceId,
-        resourceId: value.resourceId,
-        startTime: value.scheduledStartTime,
-        endTime: value.scheduledStartTime,
-        notes: value.customerNotes,
-      };
-
-      const ok = await update(editingBooking.id, req);
-
-      if (ok) {
-        setShowForm(false);
-        setSuccessMessage('Booking updated.');
-      }
-
-      return;
-    }
-
-    const ok = await create(value);
-
-    if (ok) {
-      setShowForm(false);
-      setSuccessMessage('Booking created.');
-    }
-  };
+  }, []);
 
   const handleCancel = async () => {
     if (!targetBooking) return;
-
-    const ok = await cancel(targetBooking.id);
-
+    const ok = await cancel(targetBooking.bookingId, async () => {
+      await getAll(currentPage, PAGE_SIZE);
+    });
     if (ok) {
       setShowConfirm(false);
       setTargetBooking(null);
@@ -199,156 +98,195 @@ const BookingsPage: React.FC = () => {
     }
   };
 
-  const getStatusBadgeClass = (status: BookingStatus) => {
-    switch (status) {
-      case 'Confirmed':
-        return 'bg-success-subtle text-success';
-      case 'Pending':
-        return 'bg-warning-subtle text-warning';
-      case 'Completed':
-        return 'bg-info-subtle text-info';
-      case 'Cancelled':
-        return 'bg-secondary-subtle text-secondary';
-      default:
-        return 'bg-secondary-subtle text-secondary';
+  const openConfirm = useCallback((booking: Booking) => {
+    setTargetConfirmBooking(booking);
+    setSelectedBooking(null);
+    setShowConfirmApproval(true);
+  }, []);
+
+  const handleConfirm = async () => {
+    if (!targetConfirmBooking) return;
+    const ok = await confirm(targetConfirmBooking.bookingId, async () => {
+      await getAll(currentPage, PAGE_SIZE);
+    });
+    if (ok) {
+      setShowConfirmApproval(false);
+      setTargetConfirmBooking(null);
+      setSuccessMessage('Booking confirmed.');
     }
   };
 
-  return (
-    <div className="container-fluid">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+  const columns: Column<Booking>[] = [
+    {
+      key: 'guest',
+      header: 'Client',
+      render: (_value, row) => (
         <div>
-          <h4 className="fw-bold mb-1">Bookings</h4>
-          <div className="text-muted small">Manage scheduled appointments.</div>
+          <div className="fw-medium small">
+            {[row.guest?.firstName, row.guest?.lastName].filter(Boolean).join(' ') || '—'}
+          </div>
+          <div className="text-muted bookings-sub-text">{row.guest?.email ?? '—'}</div>
         </div>
+      ),
+    },
+    {
+      key: 'serviceName',
+      header: 'Service',
+      render: (value) => (
+        <div className="d-flex align-items-center gap-2">
+          <span className="bookings-service-dot" />
+          <span className="small">{value}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'resourceName',
+      header: 'Staff',
+      render: (value) => <span className="text-muted small">{value ?? '—'}</span>,
+    },
+    {
+      key: 'scheduledDate',
+      header: 'Date & Time',
+      render: (_value, row) => (
+        <div>
+          <div className="small">{row.scheduledDate}</div>
+          <div className="text-muted bookings-sub-text">
+            {row.scheduledStartTime.slice(0, 5)} – {row.scheduledEndTime.slice(0, 5)}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (value) => (
+        <span className={`badge bookings-badge ${statusBadgeClass(value as BookingStatus)}`}>
+          {STATUS_LABELS[value as BookingStatus]}
+        </span>
+      ),
+    },
+    {
+      key: 'priceSnapshot',
+      header: 'Payment',
+      render: (_value, row) => {
+        const label = paymentLabel(row);
+        if (label === null) return null;
+        return (
+          <span className={`badge bookings-badge ${paymentBadgeClass(row)}`}>
+            {label}
+          </span>
+        );
+      },
+    },
+  ];
 
-        <Button variant="primary" icon={faPlus} onClick={openCreate}>
-          New Booking
-        </Button>
+  return (
+    <div className="container-fluid px-3 px-md-4 py-4">
+      <div className="row mb-4 align-items-center">
+        <div className="col">
+          <h5 className="fw-bold mb-0">Bookings</h5>
+        </div>
+        <div className="col-auto">
+          <a
+            href={`/book/${tenant}/new`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+          >
+            <i className="fas fa-external-link-alt" />
+            Booking Page
+          </a>
+        </div>
       </div>
 
       {successMessage && (
-        <Alert
-          variant="success"
-          dismissible
-          onDismiss={() => setSuccessMessage(null)}
-          className="mb-3"
-        >
+        <Alert variant="success" dismissible onDismiss={() => setSuccessMessage(null)} className="mb-3">
           {successMessage}
         </Alert>
       )}
 
       {error && (
-        <Alert variant="error" dismissible onDismiss={clearError} className="mb-3">
+        <div className="alert alert-danger alert-dismissible d-flex align-items-center mb-3" role="alert">
           {error}
-        </Alert>
+          <button type="button" className="btn-close ms-auto" onClick={clearError} aria-label="Dismiss" />
+        </div>
       )}
+
+      <div className="row mb-3 g-2">
+        <div className="col-12 col-md-5">
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            placeholder="Search bookings…"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+          />
+        </div>
+        <div className="col-auto">
+          <select
+            className="form-select form-select-sm"
+            value={statusFilter}
+            onChange={e => { setStatusFilter(e.target.value as BookingStatus | ''); setCurrentPage(1); }}
+          >
+            <option value="">All statuses</option>
+            {(Object.keys(STATUS_LABELS) as BookingStatus[]).map(s => (
+              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <div className="card border-0 shadow-sm">
         <div className="card-body p-0">
           {isLoading ? (
-            <div className="p-4 text-center text-muted small">Loading bookings...</div>
-          ) : bookings.length === 0 ? (
-            <div className="p-4 text-center text-muted small">
-              No bookings found. Please try creating a new booking or check back later.
-            </div>
+            <BookingsSkeleton />
+          ) : filtered.length === 0 ? (
+            <div className="p-4 text-center text-muted small">No bookings match the current filter.</div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
-                <thead className="table-light">
-                  <tr>
-                    <th className="ps-4 fw-semibold small text-muted">Customer</th>
-                    <th className="fw-semibold small text-muted">Service</th>
-                    <th className="fw-semibold small text-muted">Resource</th>
-                    <th className="fw-semibold small text-muted">Schedule</th>
-                    <th className="fw-semibold small text-muted">Status</th>
-                    <th className="fw-semibold small text-muted text-end pe-4">Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {paged.map((b) => (
-                    <tr key={b.id}>
-                      <td className="ps-4">
-                        <div className="fw-medium">{b.customerName}</div>
-                        <div className="text-muted small">{b.customerEmail}</div>
-                      </td>
-
-                      <td className="text-muted small">{b.serviceName}</td>
-                      <td className="text-muted small">{b.resourceName}</td>
-
-                      <td className="text-muted small">
-                        {b.startTime} → {b.endTime}
-                      </td>
-
-                      <td>
-                        <span className={`badge ${getStatusBadgeClass(b.status)}`}>
-                          {BOOKING_STATUS_LABELS[b.status]}
-                        </span>
-                      </td>
-
-                      <td className="text-end pe-4">
-                        <div className="d-flex justify-content-end gap-2">
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            title="Edit"
-                            onClick={() => openEdit(b)}
-                          >
-                            <FontAwesomeIcon icon={faEdit} />
-                          </button>
-
-                          {b.status !== 'Cancelled' && (
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              title="Cancel"
-                              onClick={() => openCancel(b)}
-                            >
-                              <FontAwesomeIcon icon={faBan} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              data={filtered}
+              columns={columns}
+              getRowId={(b) => b.bookingId}
+              onRowClick={(b) => setSelectedBooking(b)}
+            />
           )}
         </div>
 
-        {bookings.length > PAGE_SIZE && (
+        {total > PAGE_SIZE && (
           <div className="card-footer bg-white border-top-0">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               pageSize={PAGE_SIZE}
-              totalItems={bookings.length}
+              totalItems={total}
               onPageChange={setCurrentPage}
-              onPageSizeChange={() => {}}
             />
           </div>
         )}
       </div>
 
-      <FormModal
-        isOpen={showForm}
-        title={editingBooking ? 'Edit Booking' : 'New Booking'}
-        fields={bookingFormSchema}
-        value={formValue}
-        onChange={handleFormChange}
-        onSubmit={handleSubmit}
-        onClose={() => setShowForm(false)}
+      <BookingDetailDrawer
+        booking={selectedBooking}
+        onClose={() => setSelectedBooking(null)}
+        onCancel={openCancel}
+        onConfirm={openConfirm}
       />
 
       <ConfirmModal
         isOpen={showConfirm}
         title="Cancel Booking"
-        message={`Cancel booking for "${targetBooking?.customerName}"? This action cannot be undone.`}
+        message={`Cancel booking for "${targetBooking?.guest?.firstName ?? 'this client'}"? This cannot be undone.`}
         onConfirm={handleCancel}
-        onCancel={() => {
-          setShowConfirm(false);
-          setTargetBooking(null);
-        }}
+        onCancel={() => { setShowConfirm(false); setTargetBooking(null); }}
+      />
+
+      <ConfirmModal
+        isOpen={showConfirmApproval}
+        title="Confirm Booking"
+        message={`Confirm booking for "${targetConfirmBooking?.guest?.firstName ?? 'this client'}"?`}
+        confirmLabel="Confirm Booking"
+        onConfirm={handleConfirm}
+        onCancel={() => { setShowConfirmApproval(false); setTargetConfirmBooking(null); }}
       />
     </div>
   );

@@ -1,19 +1,21 @@
+using ApexBooking.Core.Application.Features.Availability.Commands.AddException;
+using ApexBooking.Core.Application.Features.Availability.Commands.RemoveException;
 using ApexBooking.Core.Application.Features.Availability.Commands.SetResourceAvailability;
+using ApexBooking.Core.Application.Features.Staffs.Commands.CreateStaff;
+using ApexBooking.Core.Application.Features.Staffs.Commands.DeactivateStaff;
+using ApexBooking.Core.Application.Features.Staffs.Commands.UpdateMyPhoto;
+using ApexBooking.Core.Application.Features.Staffs.Commands.UpdateStaff;
+using ApexBooking.Core.Application.Features.Staffs.Queries.GetMyProfile;
+using ApexBooking.Core.Application.Features.Staffs.Queries.GetStaffAvailability;
+using ApexBooking.Core.Application.Features.Staffs.Queries.GetStaffById;
+using ApexBooking.Core.Application.Features.Staffs.Queries.GetStaffExceptions;
+using ApexBooking.Core.Domain.Entities;
 using ApexBooking.SharedKernel.Exceptions;
+using ApexBooking.SharedKernel.Models;
 using ApexBooking.WebApi.Dtos;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ApexBooking.Core.Application.Features.Availability.Commands.RemoveException;
-using ApexBooking.Core.Application.Features.Availability.Commands.AddException;
-using ApexBooking.Core.Domain.Entities;
-using ApexBooking.SharedKernel.Models;
-using ApexBooking.Core.Application.Features.Staffs.Queries.GetStaffExceptions;
-using ApexBooking.Core.Application.Features.Staffs.Queries.GetStaffById;
-using ApexBooking.Core.Application.Features.Staffs.Commands.CreateStaff;
-using ApexBooking.Core.Application.Features.Staffs.Commands.UpdateStaff;
-using ApexBooking.Core.Application.Features.Staffs.Commands.DeactivateStaff;
-using ApexBooking.Core.Application.Features.Staffs.Queries.GetStaffAvailability;
 
 namespace ApexBooking.WebApi.Controllers;
 
@@ -28,6 +30,22 @@ public class StaffController : ControllerBase
     {
         _logger = logger;
         _mediator = mediator;
+    }
+
+    [HttpGet("me")]
+    [Authorize(Roles = "staff")]
+    public async Task<IActionResult> GetMyProfile()
+    {
+        var result = await _mediator.Send(new GetMyProfileQuery());
+        return Ok(result);
+    }
+
+    [HttpPut("me/photo")]
+    [Authorize(Roles = "staff")]
+    public async Task<IActionResult> UpdateMyPhoto([FromBody] UpdateMyPhotoRequestDto dto)
+    {
+        var result = await _mediator.Send(new UpdateMyPhotoCommand(dto.PhotoUrl));
+        return Ok(result);
     }
 
     [HttpGet()]
@@ -50,8 +68,7 @@ public class StaffController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Create(CreateStaffRequestDto dto)
     {
-
-        var response = await _mediator.Send(new CreateStaffCommand(
+        var staff = await _mediator.Send(new CreateStaffCommand(
             dto.FirstName,
             dto.LastName,
             dto.Email,
@@ -60,7 +77,7 @@ public class StaffController : ControllerBase
             dto.Description
         ));
 
-        return CreatedAtAction(nameof(GetById), new { resourceId = response.Data.StaffId.Value }, response);
+        return CreatedAtAction(nameof(GetById), new { resourceId = staff.Id }, staff);
     }
 
     [HttpPatch("{staffId:guid}")]
@@ -111,7 +128,7 @@ public class StaffController : ControllerBase
         if (!Enum.TryParse<ExceptionType>(dto.ExceptionType, out var exceptionType))
             throw new BusinessRuleBrokenException("Invalid exception type.");
 
-        var response = await _mediator.Send(new AddExceptionCommand(
+        await _mediator.Send(new AddExceptionCommand(
             staffId,
             dto.ExceptionDate,
             exceptionType,
@@ -120,15 +137,15 @@ public class StaffController : ControllerBase
             dto.Note
         ));
 
-        return Ok(response);
+        return NoContent();
     }
 
     [HttpDelete("{staffId:guid}/exceptions/{exceptionId:guid}")]
     [Authorize]
     public async Task<IActionResult> RemoveException(Guid staffId, Guid exceptionId)
     {
-        var response = await _mediator.Send(new RemoveExceptionCommand(staffId, exceptionId));
-        return Ok(response);
+        await _mediator.Send(new RemoveExceptionCommand(staffId, exceptionId));
+        return NoContent();
     }
 
     [HttpPut("{staffId}/availability")]

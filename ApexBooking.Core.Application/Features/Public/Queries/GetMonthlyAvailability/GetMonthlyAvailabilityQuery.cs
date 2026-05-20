@@ -1,7 +1,5 @@
-using System;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
-using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Public.Queries.GetMonthlyAvailability
 {
@@ -10,5 +8,5 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetMonthlyAvailab
         Guid ServiceId,
         int Year,
         int Month
-    ) : IQuery<BaseResponse<MonthlyAvailabilityDto>>;
+    ) : IQuery<MonthlyAvailabilityDto>;
 }

@@ -1,3 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap');
+
+/* ─── Component imports (must precede all rules) ─────────────── */
+
+@import './components/layout/AppLayout.styles.css';
+@import './components/layout/SuperAdminLayout.styles.css';
+@import './components/layout/Sidebar.styles.css';
+@import './components/layout/Header.styles.css';
+@import './components/ui/StatusPill.styles.css';
+@import './components/ui/table/table.styles.css';
+@import './components/ui/pagination/Pagination.styles.css';
+@import './components/ui/modal/renderField.styles.css';
+@import './components/ui/modal/FormModal.styles.css';
+@import './components/ui/modal/ConfirmModal.styles.css';
+@import './components/ui/PhoneField.styles.css';
+@import './components/ui/Tabs.styles.css';
+@import './features/public/components/PublicNav.styles.css';
+@import './features/public/pages/LandingPage.styles.css';
+@import './features/public/pages/PricingPage.styles.css';
+@import './features/public/pages/RequestAccessPage.styles.css';
+@import './features/auth/components/LoginForm.styles.css';
+@import './features/auth/components/ForgotPasswordForm.styles.css';
+@import './features/auth/components/ResetPasswordForm.styles.css';
+@import './features/auth/components/VerifyEmailPageComponent.styles.css';
+@import './features/auth/pages/VerifyEmailNoticePage.styles.css';
+@import './features/auth/pages/EmailVerificationPage.styles.css';
+@import './features/dashboard/pages/TenantDashboardPage.styles.css';
+@import './features/dashboard/components/DashboardSkeleton.styles.css';
+@import './features/dashboard/components/StatCard.styles.css';
+@import './features/dashboard/components/WeeklyRevenueChart.styles.css';
+@import './features/dashboard/components/ServiceBreakdownCard.styles.css';
+@import './features/dashboard/components/TodayScheduleTable.styles.css';
+@import './features/staff/pages/StaffPage.styles.css';
+@import './features/staff/components/StaffSkeleton.styles.css';
+@import './features/staff/pages/StaffAvailabilityPage.styles.css';
+@import './features/service/pages/ServicesPage.styles.css';
+@import './features/service/components/ServiceSkeleton.styles.css';
+@import './features/bookings/components/BookingCalendar.styles.css';
+@import './features/bookings/components/BookingEventCalendar.styles.css';
+@import './features/bookings/components/CalendarSkeleton.styles.css';
+@import './features/bookings/components/WizardProgressBar.styles.css';
+@import './features/bookings/components/WizardSelectionChips.styles.css';
+@import './features/bookings/components/StaffCard.styles.css';
+@import './features/bookings/components/StaffInfoDrawer.styles.css';
+@import './features/bookings/components/BookingDetailDrawer.styles.css';
+@import './features/bookings/components/TimeSlotGrid.styles.css';
+@import './features/bookings/pages/BookingsPage.styles.css';
+@import './features/bookings/pages/CustomerBookingWizardPage.styles.css';
+@import './features/bookings/pages/CustomerRegisterPage.styles.css';
+@import './features/bookings/pages/PaymentSuccessPage.styles.css';
+@import './features/bookings/pages/CancelBookingPage.styles.css';
+@import './features/settings/pages/SettingsPage.styles.css';
+@import './features/notifications/components/NotificationItem.styles.css';
+@import './features/superadmin/pages/SuperAdminLoginPage.styles.css';
+@import './features/superadmin/pages/SuperAdminOverviewPage.styles.css';
+@import './features/superadmin/pages/OrganizationDetailPage.styles.css';
+@import './features/superadmin/pages/TenantRequestsPage.styles.css';
+@import './features/superadmin/pages/SuperAdminPaymentGatewayPage.styles.css';
+@import './features/superadmin/pages/SetupAccountPage.styles.css';
+@import './features/superadmin/components/AddTeamMemberModal.styles.css';
+
+/* ─── Design tokens ──────────────────────────────────────────── */
+
 :root {
   --bs-primary: #0d6efd;
   --bs-primary-hover: #0b5ed7;
@@ -20,7 +83,6 @@
   --bs-gray-800: #343a40;
   --bs-gray-900: #212529;
 
-  /* Updated default font colors for uniformity */
   --text: #212529;
   --text-h: #111827;
   --bg: #ffffff;
@@ -30,14 +92,14 @@
   --accent-bg: rgba(59, 130, 246, 0.1);
   --accent-border: rgba(59, 130, 246, 0.5);
   --social-bg: rgba(249, 250, 251, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --apex-blue-soft: #e8f0fe;
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  /* Table-specific dark colors */
   --table-dark: #495057;
   --table-dark-hover: #343a40;
   --table-border: #dee2e6;
@@ -58,7 +120,8 @@
   }
 }
 
-/* Bootstrap Customizations */
+/* ─── Bootstrap overrides ────────────────────────────────────── */
+
 .btn-primary {
   background-color: var(--bs-primary) !important;
   border-color: var(--bs-primary) !important;
@@ -93,11 +156,24 @@ body {
   margin: 0;
 }
 
-
 .sidebar-hover {
   transition: background-color 0.15s ease;
 }
 
 .sidebar-hover:hover {
   background-color: rgba(13, 110, 253, 0.08);
+}
+
+/* ─── Skeleton animation ─────────────────────────────────────── */
+
+@keyframes apex-skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.apex-skeleton {
+  background: linear-gradient(90deg, var(--bs-gray-200) 25%, var(--bs-gray-300) 50%, var(--bs-gray-200) 75%);
+  background-size: 200% 100%;
+  animation: apex-skeleton-shimmer 1.4s ease infinite;
+  border-radius: 4px;
 }

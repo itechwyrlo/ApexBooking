@@ -16,6 +16,7 @@ public interface IUnitOfWork
     IPlatformPaymentGatewayRepository PlatformPaymentGatewayRepository { get; }
     IGuestCancellationTokenRepository GuestCancellationTokenRepository { get; }
     ITenantRequestRepository TenantRequestRepository { get; }
+    INotificationRepository NotificationRepository { get; }
     Task<int> CompleteAsync();
     Task<int> CompleteAsync(CancellationToken cancellationToken);
 }

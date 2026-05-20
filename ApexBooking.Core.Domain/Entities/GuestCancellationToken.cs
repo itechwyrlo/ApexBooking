@@ -61,4 +61,16 @@ public class GuestCancellationToken : IAggregateRoot, ITenantEntity
     }
 
     public bool IsExpired => ExpiresAt <= DateTime.UtcNow;
+
+    public void EnsureNotUsed()
+    {
+        if (IsUsed)
+            throw new BusinessRuleBrokenException("This cancellation link has already been used.");
+    }
+
+    public void EnsureNotExpired()
+    {
+        if (IsExpired)
+            throw new BusinessRuleBrokenException("This cancellation link has expired.");
+    }
 }

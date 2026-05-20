@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import axiosInstance from '../../../services/axiosInstance';
-import type { BaseResponse } from '../../../types';
-
-interface InitiatePaymentResult {
-  approvalUrl: string;
-  gatewayTransactionId: string;
-  bookingReference: string;
-}
+import type { InitiatePaymentResult } from '../types';
 
 export const useInitiatePayment = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,18 +11,13 @@ export const useInitiatePayment = () => {
     setError(null);
 
     try {
-      const result = await axiosInstance.post<BaseResponse<InitiatePaymentResult>>(
+      const result = await axiosInstance.post<InitiatePaymentResult>(
         `/booking/${bookingId}/payment`
       );
 
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to initiate payment.');
-        return null;
-      }
-
-      return result.data?.approvalUrl ?? null;
-    } catch {
-      setError('Failed to initiate payment.');
+      return result.approvalUrl ?? null;
+    } catch (err: any) {
+      setError(err?.message || 'Failed to initiate payment.');
       return null;
     } finally {
       setIsLoading(false);

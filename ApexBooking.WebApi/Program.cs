@@ -48,6 +48,7 @@ builder.Services.AddControllersWithViews()
 
 // Exception Handling
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // API Configuration (Auth, Tenant Service)
 builder.Services.AddApiConfiguration(builder.Configuration);
@@ -89,7 +90,8 @@ if (securityOptions.RequireHttps)
 }
 
 // Exception handling
-app.UseExceptionHandler("/error");
+app.UseExceptionHandler();
+// app.UseExceptionHandler("/error");
 
 // Serves static files (React, CSS, JS) from wwwroot
 app.UseDefaultFiles();

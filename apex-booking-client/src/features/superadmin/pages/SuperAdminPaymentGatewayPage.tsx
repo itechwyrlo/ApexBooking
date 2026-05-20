@@ -89,7 +89,7 @@ const SuperAdminPaymentGatewayPage: React.FC = () => {
       </div>
 
       <div className="card border-0 shadow-sm">
-        <div className="card-body p-4" style={{ maxWidth: 560 }}>
+        <div className="card-body p-4 sa-gateway-form">
           {successMessage && (
             <Alert variant="success" dismissible onDismiss={() => setSuccessMessage(null)} className="mb-3">
               {successMessage}

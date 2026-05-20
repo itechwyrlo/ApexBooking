@@ -10,24 +10,50 @@ internal sealed class GetBookingsQueryHandler
     : IQueryHandler<GetBookingsQuery, PagedResult<TenantBookingsDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserContextService _contextService;
 
-    public GetBookingsQueryHandler(IUnitOfWork unitOfWork)
+    public GetBookingsQueryHandler(IUnitOfWork unitOfWork, IUserContextService contextService)
     {
         _unitOfWork = unitOfWork;
+        _contextService = contextService;
     }
 
     public async Task<PagedResult<TenantBookingsDto>> Handle(
         GetBookingsQuery query,
         CancellationToken cancellationToken)
     {
+        var sortedParams = query.param with
+        {
+            SortingParams = query.param.SortingParams.Count > 0
+                ? query.param.SortingParams
+                : [new SortParam { OrderProperty = "CreatedAt", SortOrderDescending = true }]
+        };
+
+        if (_contextService.GetUserRole() == "staff")
+        {
+            var userId = _contextService.GetCurrentUserId();
+            var staff = await _unitOfWork.StaffRepository
+                .FindByUserIdAsync(userId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (staff is null)
+                throw new UnauthorizedAccessException("Staff profile not found.");
+
+            var staffResult = await _unitOfWork.BookingRepository
+                .GetPageAsync(sortedParams, predicate: b => b.StaffId == staff.StaffId, b => b.Guest)
+                .ConfigureAwait(false);
+
+            return new PagedResult<TenantBookingsDto>(
+                staffResult.data.Select(b => b.ToTenantDto()).ToList(),
+                staffResult.total);
+        }
+
         var pagedResult = await _unitOfWork.BookingRepository
-            .GetPageAsync(query.param, predicate: null, b => b.Guest)
+            .GetPageAsync(sortedParams, predicate: null, b => b.Guest)
             .ConfigureAwait(false);
 
-        var dtos = pagedResult.data
-            .Select(b => b.ToTenantDto())
-            .ToList();
-
-        return new PagedResult<TenantBookingsDto>(dtos, pagedResult.total);
+        return new PagedResult<TenantBookingsDto>(
+            pagedResult.data.Select(b => b.ToTenantDto()).ToList(),
+            pagedResult.total);
     }
 }

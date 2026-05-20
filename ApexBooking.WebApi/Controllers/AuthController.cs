@@ -5,6 +5,7 @@ using ApexBooking.Core.Application.Features.Auth.Commands.ForgotPassword;
 using ApexBooking.Core.Application.Features.Auth.Commands.Login;
 using ApexBooking.Core.Application.Features.Auth.Commands.LoginSuperAdmin;
 using ApexBooking.Core.Application.Features.Auth.Commands.Logout;
+using ApexBooking.Core.Application.Features.Auth.Commands.RefreshSuperAdminToken;
 using ApexBooking.Core.Application.Features.Auth.Commands.RefreshToken;
 using ApexBooking.Core.Application.Features.Auth.Commands.ResetPassword;
 using ApexBooking.WebApi.Dtos;
@@ -61,8 +62,8 @@ namespace ApexBooking.WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request, CancellationToken ct)
         {
-            var result = await _mediator.Send(new ResetPasswordCommand(request.Token, request.NewPassword, request.ConfirmPassword));
-            return Ok(result);
+            await _mediator.Send(new ResetPasswordCommand(request.Token, request.NewPassword, request.ConfirmPassword));
+            return NoContent();
         }
 
         [HttpPost("refresh")]
@@ -98,6 +99,14 @@ namespace ApexBooking.WebApi.Controllers
             CancellationToken ct)
         {
             var result = await _mediator.Send(new LoginSuperAdminCommand(request.Email, request.Password), ct);
+            return Ok(result);
+        }
+
+        [HttpPost("refresh/superadmin")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RefreshSuperAdmin(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new RefreshSuperAdminTokenCommand(), ct);
             return Ok(result);
         }
     }

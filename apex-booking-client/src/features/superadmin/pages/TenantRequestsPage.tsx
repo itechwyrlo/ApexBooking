@@ -1,14 +1,25 @@
 import React, { useEffect, useState } from 'react';
+import { faList, faClock, faCheckCircle, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 import { useTenantRequests } from '../hooks/useTenantRequests';
 import { Alert } from '../../../components/ui/Alert';
+import { Tabs } from '../../../components/ui/Tabs';
 import type { TenantRequestDto, TenantRequestStatus } from '../types';
 
-const STATUS_TABS: { label: string; value: string | undefined }[] = [
-  { label: 'All', value: undefined },
-  { label: 'Pending', value: 'Pending' },
-  { label: 'Approved', value: 'Approved' },
-  { label: 'Rejected', value: 'Rejected' },
+type StatusTabId = 'all' | 'pending' | 'approved' | 'rejected';
+
+const STATUS_TABS = [
+  { id: 'all' as StatusTabId, label: 'All', icon: faList },
+  { id: 'pending' as StatusTabId, label: 'Pending', icon: faClock },
+  { id: 'approved' as StatusTabId, label: 'Approved', icon: faCheckCircle },
+  { id: 'rejected' as StatusTabId, label: 'Rejected', icon: faTimesCircle },
 ];
+
+const TAB_FILTER_MAP: Record<StatusTabId, string | undefined> = {
+  all: undefined,
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
+};
 
 const statusBadge = (status: TenantRequestStatus) => {
   const classes: Record<TenantRequestStatus, string> = {
@@ -35,7 +46,7 @@ const TenantRequestsPage: React.FC = () => {
     reject,
   } = useTenantRequests();
 
-  const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState<StatusTabId>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Approve form state
@@ -48,7 +59,7 @@ const TenantRequestsPage: React.FC = () => {
   const [rejectSuccess, setRejectSuccess] = useState(false);
 
   useEffect(() => {
-    fetchRequests(activeTab);
+    fetchRequests(TAB_FILTER_MAP[activeTab]);
   }, [activeTab, fetchRequests]);
 
   const handleSelectRow = (req: TenantRequestDto) => {
@@ -67,7 +78,7 @@ const TenantRequestsPage: React.FC = () => {
     const ok = await approve(selectedId, { slug: slug.trim(), trialDays });
     if (ok) {
       setApproveSuccess(true);
-      fetchRequests(activeTab);
+      fetchRequests(TAB_FILTER_MAP[activeTab]);
     }
   };
 
@@ -76,7 +87,7 @@ const TenantRequestsPage: React.FC = () => {
     const ok = await reject(selectedId, { reason: reason.trim() });
     if (ok) {
       setRejectSuccess(true);
-      fetchRequests(activeTab);
+      fetchRequests(TAB_FILTER_MAP[activeTab]);
     }
   };
 
@@ -98,22 +109,11 @@ const TenantRequestsPage: React.FC = () => {
       <div className="row g-3">
         {/* Left: request list */}
         <div className={selectedId ? 'col-lg-6' : 'col-12'}>
-          {/* Status filter tabs */}
-          <ul className="nav nav-tabs mb-3">
-            {STATUS_TABS.map(tab => (
-              <li className="nav-item" key={tab.label}>
-                <button
-                  className={`nav-link${activeTab === tab.value ? ' active' : ''}`}
-                  onClick={() => {
-                    setActiveTab(tab.value);
-                    setSelectedId(null);
-                  }}
-                >
-                  {tab.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <Tabs
+            tabs={STATUS_TABS}
+            activeTab={activeTab}
+            onChange={(id) => { setActiveTab(id); setSelectedId(null); }}
+          />
 
           <div className="card border-0 shadow-sm">
             <div className="card-body p-0">
@@ -137,12 +137,11 @@ const TenantRequestsPage: React.FC = () => {
                         <tr
                           key={req.id}
                           onClick={() => handleSelectRow(req)}
-                          style={{ cursor: 'pointer' }}
-                          className={selectedId === req.id ? 'table-active' : ''}
+                          className={`tr-row-clickable${selectedId === req.id ? ' table-active' : ''}`}
                         >
                           <td className="ps-4">
                             <div className="fw-semibold small">{req.businessName}</div>
-                            <div className="text-muted" style={{ fontSize: 12 }}>{req.ownerEmail}</div>
+                            <div className="text-muted small">{req.ownerEmail}</div>
                           </td>
                           <td>
                             <span className="small">{req.plan}</span>
@@ -188,14 +187,14 @@ const TenantRequestsPage: React.FC = () => {
                   </div>
 
                   {selectedRequest.message && (
-                    <div className="mb-3 p-3 rounded" style={{ background: '#f8fafc', fontSize: 13 }}>
+                    <div className="mb-3 p-3 rounded tr-message-box">
                       <div className="text-muted small fw-semibold mb-1">Message</div>
                       {selectedRequest.message}
                     </div>
                   )}
 
                   {selectedRequest.status === 'Rejected' && selectedRequest.rejectionReason && (
-                    <div className="mb-3 p-3 rounded bg-danger bg-opacity-10" style={{ fontSize: 13 }}>
+                    <div className="mb-3 p-3 rounded bg-danger bg-opacity-10 small">
                       <div className="text-danger small fw-semibold mb-1">Rejection Reason</div>
                       {selectedRequest.rejectionReason}
                     </div>

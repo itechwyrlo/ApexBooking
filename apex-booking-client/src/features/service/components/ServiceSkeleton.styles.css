@@ -1,0 +1,15 @@
+.apex-svc-sk-name {
+  height: 18px;
+  width: 150px;
+}
+
+.apex-svc-sk-meta {
+  height: 18px;
+  width: 80px;
+}
+
+.apex-svc-sk-status {
+  height: 22px;
+  width: 60px;
+  border-radius: 12px;
+}

@@ -78,7 +78,7 @@ public class SuperAdminController : ControllerBase
             request.Email,
             request.Role), ct);
 
-        return Ok(result);
+        return Created(string.Empty, result);
     }
 
     [HttpPost("organizations/{slug}/users/assign")]
@@ -101,8 +101,8 @@ public class SuperAdminController : ControllerBase
         Guid userId,
         CancellationToken ct)
     {
-        var result = await _mediator.Send(new ResendInvitationCommand(slug, userId), ct);
-        return Ok(result);
+        await _mediator.Send(new ResendInvitationCommand(slug, userId), ct);
+        return NoContent();
     }
 
     [HttpGet("payment-gateway")]
@@ -147,9 +147,8 @@ public class SuperAdminController : ControllerBase
         [FromBody] ApproveTenantRequestDto dto,
         CancellationToken ct)
     {
-        var result = await _mediator.Send(
-            new ApproveTenantRequestCommand(id, dto.Slug, dto.TrialDays), ct);
-        return Ok(result);
+        await _mediator.Send(new ApproveTenantRequestCommand(id, dto.Slug, dto.TrialDays), ct);
+        return NoContent();
     }
 
     [HttpPost("tenant-requests/{id:guid}/reject")]
@@ -158,7 +157,7 @@ public class SuperAdminController : ControllerBase
         [FromBody] RejectTenantRequestDto dto,
         CancellationToken ct)
     {
-        var result = await _mediator.Send(new RejectTenantRequestCommand(id, dto.Reason), ct);
-        return Ok(result);
+        await _mediator.Send(new RejectTenantRequestCommand(id, dto.Reason), ct);
+        return NoContent();
     }
 }

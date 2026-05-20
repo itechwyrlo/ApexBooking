@@ -111,7 +111,7 @@ const SuperAdminOverviewPage: React.FC = () => {
           </div>
         </div>
         <div className="col-sm-3">
-          <div className="card border-0 shadow-sm h-100" style={{ cursor: 'pointer' }} onClick={() => navigate('/superadmin/requests')}>
+          <div className="card border-0 shadow-sm h-100 sa-clickable" onClick={() => navigate('/superadmin/requests')}>
             <div className="card-body">
               <div className="text-muted small mb-1">Pending Requests</div>
               <div className="fs-3 fw-bold text-warning">
@@ -150,20 +150,16 @@ const SuperAdminOverviewPage: React.FC = () => {
                       <td className="ps-4">
                         <div className="d-flex align-items-center gap-3">
                           <div
-                            className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
-                            style={{
-                              width: 36,
-                              height: 36,
-                              backgroundColor: avatarColor(org.slug),
-                            }}
+                            className="rounded d-flex align-items-center justify-content-center flex-shrink-0 sa-org-avatar"
+                            style={{ backgroundColor: avatarColor(org.slug) }}
                           >
-                            <span className="text-white fw-bold" style={{ fontSize: 13 }}>
+                            <span className="text-white fw-bold small">
                               {orgInitials(org.businessName)}
                             </span>
                           </div>
                           <div>
                             <div className="fw-semibold small">{org.businessName}</div>
-                            <div className="text-muted" style={{ fontSize: 12 }}>{org.ownerEmail}</div>
+                            <div className="text-muted small">{org.ownerEmail}</div>
                           </div>
                         </div>
                       </td>

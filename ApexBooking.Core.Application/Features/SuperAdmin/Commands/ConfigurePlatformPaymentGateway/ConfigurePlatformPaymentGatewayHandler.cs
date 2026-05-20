@@ -5,12 +5,12 @@ using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.SuperAdmin.Commands.ConfigurePlatformPaymentGateway;
 
 internal sealed class ConfigurePlatformPaymentGatewayHandler
-    : ICommandHandler<ConfigurePlatformPaymentGatewayCommand, BaseResponse<PlatformPaymentGatewayDto>>
+    : ICommandHandler<ConfigurePlatformPaymentGatewayCommand, PlatformPaymentGatewayDto>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -19,15 +19,15 @@ internal sealed class ConfigurePlatformPaymentGatewayHandler
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<BaseResponse<PlatformPaymentGatewayDto>> Handle(
+    public async Task<PlatformPaymentGatewayDto> Handle(
         ConfigurePlatformPaymentGatewayCommand command,
         CancellationToken ct)
     {
+        // Subordinate to known infrastructure violation: HTTP call from Application layer
         var isValid = await ValidatePayPalCredentialsAsync(command.ClientId, command.SecretKey, command.Mode);
         if (!isValid)
-            return BaseResponse<PlatformPaymentGatewayDto>.Failure(
-                "Gateway credentials are invalid. Please check your PayPal Client ID and Secret.",
-                "GATEWAY_CREDENTIALS_INVALID");
+            throw new BusinessRuleBrokenException(
+                "Gateway credentials are invalid. Please check your PayPal Client ID and Secret.");
 
         var existing = await _unitOfWork.PlatformPaymentGatewayRepository.GetActiveAsync(ct);
         if (existing is not null)
@@ -48,7 +48,7 @@ internal sealed class ConfigurePlatformPaymentGatewayHandler
         _unitOfWork.PlatformPaymentGatewayRepository.Add(gateway);
         await _unitOfWork.CompleteAsync(ct);
 
-        return BaseResponse<PlatformPaymentGatewayDto>.Success(gateway.ToPlatformPaymentGatewayDto());
+        return gateway.ToPlatformPaymentGatewayDto();
     }
 
     private static async Task<bool> ValidatePayPalCredentialsAsync(

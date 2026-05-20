@@ -1,11 +1,13 @@
+using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Application.Resources.Mappings;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.Staffs.Commands.UpdateStaff
 {
-    internal sealed class UpdateStaffCommandHandler : ICommandHandler<UpdateStaffCommand, BaseResponse<StaffId>>
+    internal sealed class UpdateStaffCommandHandler : ICommandHandler<UpdateStaffCommand, StaffDto>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _contextService;
@@ -16,7 +18,7 @@ namespace ApexBooking.Core.Application.Features.Staffs.Commands.UpdateStaff
             _contextService = contextService;
         }
 
-        public async Task<BaseResponse<StaffId>> Handle(UpdateStaffCommand command, CancellationToken cancellationToken)
+        public async Task<StaffDto> Handle(UpdateStaffCommand command, CancellationToken cancellationToken)
         {
             var tenantId = _contextService.GetCurrentTenantId();
             var staffId = new StaffId(command.StaffId);
@@ -26,14 +28,14 @@ namespace ApexBooking.Core.Application.Features.Staffs.Commands.UpdateStaff
                 .ConfigureAwait(false);
 
             if (staff is null || staff.TenantId != tenantId)
-                return BaseResponse<StaffId>.Failure("staff not found.");
+                throw new NotFoundException("Staff not found.");
 
             staff.Update(command.email, command.contactNumber, command.Description, command.Capacity);
 
             _unitOfWork.StaffRepository.Update(staff);
             await _unitOfWork.CompleteAsync(cancellationToken).ConfigureAwait(false);
 
-            return BaseResponse<StaffId>.Success(staffId);
+            return staff.ToStaffDto();
         }
     }
 }

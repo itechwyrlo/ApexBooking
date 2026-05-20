@@ -2,24 +2,23 @@ using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.Core.Domain.Services.Notification;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.Core.Domain.Services.Notification.Auth;
 
 namespace ApexBooking.Core.Application.Features.Public.Commands.SubmitTenantRequest;
 
 internal sealed class SubmitTenantRequestCommandHandler
-    : ICommandHandler<SubmitTenantRequestCommand, BaseResponse<Guid>>
+    : ICommandHandler<SubmitTenantRequestCommand, Guid>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly INotificationService _notification;
+    private readonly IAuthNotificationService _authNotification;
 
-    public SubmitTenantRequestCommandHandler(IUnitOfWork unitOfWork, INotificationService notification)
+    public SubmitTenantRequestCommandHandler(IUnitOfWork unitOfWork, IAuthNotificationService authNotification)
     {
         _unitOfWork = unitOfWork;
-        _notification = notification;
+        _authNotification = authNotification;
     }
 
-    public async Task<BaseResponse<Guid>> Handle(
+    public async Task<Guid> Handle(
         SubmitTenantRequestCommand command,
         CancellationToken cancellationToken)
     {
@@ -27,11 +26,9 @@ internal sealed class SubmitTenantRequestCommandHandler
             r => r.OwnerEmail == command.OwnerEmail &&
                  r.Status == TenantRequestStatus.Pending);
 
-        if (existing.Any())
-            return BaseResponse<Guid>.Failure("A pending request for this email already exists.");
+        TenantRequest.EnsureNoPendingRequest(existing.Any());
 
-        if (!Enum.TryParse<TenantPlan>(command.Plan, ignoreCase: true, out var plan))
-            return BaseResponse<Guid>.Failure($"Invalid plan '{command.Plan}'.");
+        var plan = Enum.Parse<TenantPlan>(command.Plan, ignoreCase: true);
 
         var request = TenantRequest.Create(
             command.BusinessName,
@@ -42,19 +39,28 @@ internal sealed class SubmitTenantRequestCommandHandler
             command.Message);
 
         _unitOfWork.TenantRequestRepository.Add(request);
+
+        var superAdmins = await _unitOfWork.SuperAdminRepository.GetAllAsync(sa => sa.IsActive);
+        foreach (var sa in superAdmins)
+        {
+            _unitOfWork.NotificationRepository.Add(Notification.Create(
+                sa.SuperAdminId.Value,
+                NotificationRecipientType.SuperAdmin,
+                null,
+                NotificationEventType.TenantRequestSubmitted,
+                "New Tenant Request",
+                $"New tenant request from {request.BusinessName} is awaiting your approval."));
+        }
+
         await _unitOfWork.CompleteAsync(cancellationToken);
 
-        var emailBody = $@"
-            <p>Hi {command.OwnerFullName},</p>
-            <p>Thank you for your interest in ApexBooking. We have received your request for a <strong>{plan}</strong> account for <strong>{command.BusinessName}</strong>.</p>
-            <p>Our team will review your request and get back to you shortly.</p>
-            <p>If you have any questions in the meantime, please contact our support team.</p>";
-
-        await _notification.SendEmailAsync(
+        await _authNotification.SendTenantRequestReceivedEmailAsync(
             command.OwnerEmail,
-            "Your ApexBooking access request has been received",
-            emailBody);
+            command.OwnerFullName,
+            command.BusinessName,
+            plan.ToString(),
+            cancellationToken);
 
-        return BaseResponse<Guid>.Success(request.Id.Value);
+        return request.Id.Value;
     }
 }

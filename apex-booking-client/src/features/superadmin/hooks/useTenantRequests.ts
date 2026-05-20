@@ -6,7 +6,6 @@ import type {
   ApproveTenantRequestRequest,
   RejectTenantRequestRequest,
 } from '../types';
-import type { BaseResponse } from '../../../types';
 
 export const useTenantRequests = () => {
   const [requests, setRequests] = useState<TenantRequestDto[]>([]);
@@ -23,16 +22,12 @@ export const useTenantRequests = () => {
       const url = status
         ? `/superadmin/tenant-requests?status=${status}`
         : '/superadmin/tenant-requests';
-      const result = await axiosInstance.get<BaseResponse<TenantRequestDto[]>>(url);
-      if (!result.isSuccess) {
-        setError(result.errors?.[0]?.message ?? 'Failed to load requests.');
-        return [];
-      }
-      const data = result.data ?? [];
+      const result = await axiosInstance.get<TenantRequestDto[]>(url);
+      const data = result ?? [];
       setRequests(data);
       return data;
-    } catch {
-      setError('Failed to load requests.');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load requests.');
       return [];
     } finally {
       setIsLoading(false);
@@ -43,16 +38,12 @@ export const useTenantRequests = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.get<BaseResponse<TenantRequestDetailDto>>(
+      const result = await axiosInstance.get<TenantRequestDetailDto>(
         `/superadmin/tenant-requests/${id}`
       );
-      if (!result.isSuccess) {
-        setError(result.errors?.[0]?.message ?? 'Failed to load request.');
-        return;
-      }
-      setSelectedRequest(result.data ?? null);
-    } catch {
-      setError('Failed to load request.');
+      setSelectedRequest(result ?? null);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load request.');
     } finally {
       setIsLoading(false);
     }
@@ -63,17 +54,10 @@ export const useTenantRequests = () => {
       setIsSubmitting(true);
       setActionError(null);
       try {
-        const result = await axiosInstance.post<BaseResponse<void>>(
-          `/superadmin/tenant-requests/${id}/approve`,
-          data
-        );
-        if (!result.isSuccess) {
-          setActionError(result.errors?.[0]?.message ?? 'Approval failed.');
-          return false;
-        }
+        await axiosInstance.post(`/superadmin/tenant-requests/${id}/approve`, data);
         return true;
-      } catch {
-        setActionError('Approval failed.');
+      } catch (err: any) {
+        setActionError(err?.message || 'Approval failed.');
         return false;
       } finally {
         setIsSubmitting(false);
@@ -87,17 +71,10 @@ export const useTenantRequests = () => {
       setIsSubmitting(true);
       setActionError(null);
       try {
-        const result = await axiosInstance.post<BaseResponse<void>>(
-          `/superadmin/tenant-requests/${id}/reject`,
-          data
-        );
-        if (!result.isSuccess) {
-          setActionError(result.errors?.[0]?.message ?? 'Rejection failed.');
-          return false;
-        }
+        await axiosInstance.post(`/superadmin/tenant-requests/${id}/reject`, data);
         return true;
-      } catch {
-        setActionError('Rejection failed.');
+      } catch (err: any) {
+        setActionError(err?.message || 'Rejection failed.');
         return false;
       } finally {
         setIsSubmitting(false);

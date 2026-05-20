@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import type { ModelSchema, Option } from "../table/types";
 import { PhoneField } from "../PhoneField";
 
@@ -7,73 +9,38 @@ type Props<T> = {
   value: any;
   formValue?: T;
   onChange: (value: any) => void;
+  resolvedOptions?: Option[];
 };
 
 export function FieldRenderer<T>({
   field,
   value,
   onChange,
+  resolvedOptions,
 }: Props<T>) {
   const disabled = field.readonly === true;
 
   const baseInput =
     "form-control bg-white border rounded-3 px-3 py-2 shadow-none";
 
-  const labelStyle: React.CSSProperties = {
-    fontSize: "13px",
-    fontWeight: 600,
-    marginBottom: "6px",
-  };
-
   const dataSource = field.dataSource;
 
   const [query, setQuery] = useState("");
-  const [options, setOptions] = useState<Option[]>(field.options ?? []);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    let active = true;
-
-    const delay =
-      dataSource?.mode === "remote"
-        ? dataSource.debounceMs ?? 300
-        : 0;
-
-    const handler = setTimeout(async () => {
-      if (!dataSource) {
-        if (field.options) setOptions(field.options);
-        return;
-      }
-
-      if (dataSource.mode === "static") {
-        setOptions(dataSource.options);
-        return;
-      }
-
-      if (dataSource.mode === "local") {
-        const filtered = dataSource.filter(dataSource.options, query);
-        setOptions(filtered);
-        return;
-      }
-
-      if (dataSource.mode === "remote") {
-        const result = await dataSource.fetch(query);
-        if (active) setOptions(result);
-      }
-    }, delay);
-
-    return () => {
-      active = false;
-      clearTimeout(handler);
-    };
-  }, [query, field, dataSource]);
+  const computeOptions = (): Option[] => {
+    if (resolvedOptions !== undefined) return resolvedOptions;
+    if (!dataSource) return field.options ?? [];
+    if (dataSource.mode === "static") return dataSource.options;
+    if (dataSource.mode === "local") return dataSource.filter(dataSource.options, query);
+    return [];
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!containerRef.current) return;
-
       if (!containerRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
         setQuery("");
@@ -81,17 +48,14 @@ export function FieldRenderer<T>({
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   switch (field.type) {
     case "string":
       return (
         <div>
-          <label style={labelStyle}>{field.label}</label>
+          <label className="form-label fw-semibold small mb-1">{field.label}</label>
           <input
             className={baseInput}
             value={value ?? ""}
@@ -104,7 +68,7 @@ export function FieldRenderer<T>({
     case "number":
       return (
         <div>
-          <label style={labelStyle}>{field.label}</label>
+          <label className="form-label fw-semibold small mb-1">{field.label}</label>
           <input
             className={baseInput}
             type="number"
@@ -118,7 +82,7 @@ export function FieldRenderer<T>({
     case "textarea":
       return (
         <div>
-          <label style={labelStyle}>{field.label}</label>
+          <label className="form-label fw-semibold small mb-1">{field.label}</label>
           <textarea
             className={baseInput}
             value={value ?? ""}
@@ -132,7 +96,7 @@ export function FieldRenderer<T>({
     case "date":
       return (
         <div>
-          <label style={labelStyle}>{field.label}</label>
+          <label className="form-label fw-semibold small mb-1">{field.label}</label>
           <input
             className={baseInput}
             type="date"
@@ -146,7 +110,7 @@ export function FieldRenderer<T>({
     case "time":
       return (
         <div>
-          <label style={labelStyle}>{field.label}</label>
+          <label className="form-label fw-semibold small mb-1">{field.label}</label>
           <input
             className={baseInput}
             type="time"
@@ -157,19 +121,20 @@ export function FieldRenderer<T>({
         </div>
       );
 
-      case "phone":
-        return (
-          <PhoneField
-            label={field.label}
-            value={value ?? ""}
-            disabled={disabled}
-            onChange={onChange}
-            required={field.required} 
-            error={(field as any).error} 
-          />
-        );
+    case "phone":
+      return (
+        <PhoneField
+          label={field.label}
+          value={value ?? ""}
+          disabled={disabled}
+          onChange={onChange}
+          required={field.required}
+          error={(field as any).error}
+        />
+      );
 
     case "select": {
+      const options = computeOptions();
       const selectedOption = options.find((o) => o.value === value);
 
       const filteredOptions = options.filter(
@@ -186,17 +151,15 @@ export function FieldRenderer<T>({
 
       return (
         <div>
-          <label style={labelStyle}>{field.label}</label>
+          <label className="form-label fw-semibold small mb-1">{field.label}</label>
 
           <div className="position-relative" ref={containerRef}>
             <div
               className="form-control bg-white border rounded-3 d-flex align-items-center px-2"
-              style={{ minHeight: "42px" }}
               onClick={() => setShowDropdown(true)}
             >
               <input
-                className="border-0 bg-transparent flex-grow-1"
-                style={{ outline: "none" }}
+                className="border-0 bg-transparent flex-grow-1 field-inner-input"
                 placeholder={selectedOption ? selectedOption.label : "Select..."}
                 value={query}
                 disabled={disabled}
@@ -208,22 +171,16 @@ export function FieldRenderer<T>({
               />
 
               {selectedOption && !query && (
-                <span className="text-muted small">
-                  {selectedOption.label}
-                </span>
+                <span className="text-muted small">{selectedOption.label}</span>
               )}
             </div>
 
             {showDropdown && !disabled && (
-              <div
-                className="position-absolute w-100 border rounded-3 bg-white shadow-sm mt-1"
-                style={{ maxHeight: 220, overflowY: "auto", zIndex: 1000 }}
-              >
+              <div className="position-absolute w-100 border rounded-3 bg-white shadow-sm mt-1 field-dropdown">
                 {filteredOptions.map((o) => (
                   <div
                     key={o.value}
-                    className="px-3 py-2 d-flex justify-content-between"
-                    style={{ cursor: "pointer" }}
+                    className="px-3 py-2 d-flex justify-content-between cursor-pointer"
                     onMouseDown={(e) => {
                       e.preventDefault();
                       selectValue(o.value);
@@ -237,9 +194,7 @@ export function FieldRenderer<T>({
                 ))}
 
                 {filteredOptions.length === 0 && (
-                  <div className="px-3 py-2 text-muted small">
-                    No results
-                  </div>
+                  <div className="px-3 py-2 text-muted small">No results</div>
                 )}
               </div>
             )}
@@ -249,19 +204,16 @@ export function FieldRenderer<T>({
     }
 
     case "multiselect": {
+      const options = computeOptions();
       const selected = Array.isArray(value) ? value : [];
 
-      const selectedOptions = options.filter((o) =>
-        selected.includes(o.value)
-      );
+      const selectedOptions = options.filter((o) => selected.includes(o.value));
 
       const filteredOptions = options.filter((o) => {
         const matchQuery =
           query.trim() === "" ||
           o.label.toLowerCase().includes(query.toLowerCase());
-
         const notSelected = !selected.includes(o.value);
-
         return matchQuery && notSelected;
       });
 
@@ -277,45 +229,38 @@ export function FieldRenderer<T>({
 
       return (
         <div>
-          <label style={labelStyle}>{field.label}</label>
+          <label className="form-label fw-semibold small mb-1">{field.label}</label>
 
           <div className="position-relative" ref={containerRef}>
             <div
               className="form-control bg-white border rounded-3 d-flex flex-wrap gap-2 align-items-center p-2"
-              style={{ minHeight: "42px" }}
               onClick={() => setShowDropdown(true)}
             >
               {selectedOptions.map((o) => (
                 <span
                   key={o.value}
-                  className="d-flex align-items-center gap-1 bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill"
-                  style={{ fontSize: "12px" }}
+                  className="d-flex align-items-center gap-1 bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill small"
                 >
                   {o.label}
 
                   {!disabled && (
                     <button
                       type="button"
+                      className="btn btn-link p-0 lh-1 text-primary"
                       onClick={(e) => {
                         e.stopPropagation();
                         removeChip(o.value);
                       }}
-                      style={{
-                        border: 0,
-                        background: "transparent",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                      }}
+                      aria-label="Remove"
                     >
-                      ×
+                      <FontAwesomeIcon icon={faXmark} />
                     </button>
                   )}
                 </span>
               ))}
 
               <input
-                className="border-0 bg-transparent flex-grow-1"
-                style={{ minWidth: "120px", outline: "none" }}
+                className="border-0 bg-transparent flex-grow-1 field-inner-input field-multiselect-input"
                 placeholder={selected.length === 0 ? "Search..." : ""}
                 value={query}
                 disabled={disabled}
@@ -328,15 +273,11 @@ export function FieldRenderer<T>({
             </div>
 
             {showDropdown && !disabled && (
-              <div
-                className="position-absolute w-100 border rounded-3 bg-white shadow-sm mt-1"
-                style={{ maxHeight: 220, overflowY: "auto", zIndex: 1000 }}
-              >
+              <div className="position-absolute w-100 border rounded-3 bg-white shadow-sm mt-1 field-dropdown">
                 {filteredOptions.map((o) => (
                   <div
                     key={o.value}
-                    className="px-3 py-2 d-flex justify-content-between"
-                    style={{ cursor: "pointer" }}
+                    className="px-3 py-2 d-flex justify-content-between cursor-pointer"
                     onMouseDown={(e) => {
                       e.preventDefault();
                       addValue(o.value);
@@ -347,9 +288,7 @@ export function FieldRenderer<T>({
                 ))}
 
                 {filteredOptions.length === 0 && (
-                  <div className="px-3 py-2 text-muted small">
-                    No results
-                  </div>
+                  <div className="px-3 py-2 text-muted small">No results</div>
                 )}
               </div>
             )}
@@ -358,86 +297,10 @@ export function FieldRenderer<T>({
       );
     }
 
-    case "phone": {
-      const [countryCode, setCountryCode] = useState("+1");
-      const [phoneNumber, setPhoneNumber] = useState("");
-
-      const countryCodes = [
-        { label: "+1 (US/CA)", value: "+1" },
-        { label: "+44 (UK)", value: "+44" },
-        { label: "+61 (AU)", value: "+61" },
-        { label: "+86 (CN)", value: "+86" },
-        { label: "+91 (IN)", value: "+91" },
-        { label: "+81 (JP)", value: "+81" },
-        { label: "+49 (DE)", value: "+49" },
-        { label: "+33 (FR)", value: "+33" },
-        { label: "+39 (IT)", value: "+39" },
-        { label: "+34 (ES)", value: "+34" },
-        { label: "+55 (BR)", value: "+55" },
-        { label: "+52 (MX)", value: "+52" },
-        { label: "+7 (RU)", value: "+7" },
-        { label: "+82 (KR)", value: "+82" },
-        { label: "+65 (SG)", value: "+65" },
-        { label: "+64 (NZ)", value: "+64" },
-        { label: "+353 (IE)", value: "+353" },
-        { label: "+31 (NL)", value: "+31" },
-        { label: "+46 (SE)", value: "+46" },
-        { label: "+47 (NO)", value: "+47" },
-      ];
-
-      useEffect(() => {
-        if (value) {
-          const match = value.match(/^(\+\d+)(.*)$/);
-          if (match) {
-            setCountryCode(match[1]);
-            setPhoneNumber(match[2]);
-          } else {
-            setPhoneNumber(value);
-          }
-        }
-      }, [value]);
-
-      const handlePhoneChange = (newCountryCode: string, newPhoneNumber: string) => {
-        setCountryCode(newCountryCode);
-        setPhoneNumber(newPhoneNumber);
-        onChange(`${newCountryCode}${newPhoneNumber}`);
-      };
-
-      return (
-        <div>
-          <label style={labelStyle}>{field.label}</label>
-          <div className="d-flex gap-2">
-            <select
-              className="form-control bg-white border rounded-3"
-              style={{ width: "140px" }}
-              value={countryCode}
-              disabled={disabled}
-              onChange={(e) => handlePhoneChange(e.target.value, phoneNumber)}
-            >
-              {countryCodes.map((code) => (
-                <option key={code.value} value={code.value}>
-                  {code.label}
-                </option>
-              ))}
-            </select>
-            <input
-              className={baseInput}
-              style={{ flex: 1 }}
-              type="tel"
-              placeholder="Phone number"
-              value={phoneNumber}
-              disabled={disabled}
-              onChange={(e) => handlePhoneChange(countryCode, e.target.value)}
-            />
-          </div>
-        </div>
-      );
-    }
-
     case "boolean":
       return (
         <div className="d-flex justify-content-between align-items-center">
-          <label style={labelStyle}>{field.label}</label>
+          <label className="form-label fw-semibold small mb-1">{field.label}</label>
           <input
             type="checkbox"
             className="form-check-input"

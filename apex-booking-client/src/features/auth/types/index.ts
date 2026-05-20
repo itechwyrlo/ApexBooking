@@ -1,7 +1,5 @@
 // Auth request and response types matching backend endpoints
 
-import type { BaseResponse } from "../../../types";
-
 export interface AuthResponseData {
   accessToken: string;
   refreshToken: string;
@@ -9,15 +7,6 @@ export interface AuthResponseData {
   tenantId: string;
   tenantSlug: string | null
 }
-
-export interface AuthResponse extends BaseResponse<AuthResponseData> {}
-
-export interface EmailVerificationData {
-  url: string;
-  tenantSlug: string;
-}
-
-export interface EmailVerificationResponse extends BaseResponse<EmailVerificationData> {}
 
 // Login Request
 export interface LoginRequest {
@@ -30,13 +19,11 @@ export interface AccountVerificationRequest {
   token: string;
 }
 
-// Account Verification Response Data
-export interface AccountVerificationResponseData {
+// Direct DTO mirror of backend AccountVerificationResponseDto
+export interface AccountVerificationResponseDto {
   url: string;
-  tenantSlug?: string;
+  tenantSlug?: string | null;
 }
-
-export interface AccountVerificationResponse extends BaseResponse<AccountVerificationResponseData> {}
 
 // Forgot Password Request
 export interface ForgotPasswordRequest {
@@ -48,24 +35,12 @@ export interface ForgotPasswordResponseData {
   message: string;
 }
 
-export interface ForgotPasswordResponse extends BaseResponse<ForgotPasswordResponseData> {}
-
 // Reset Password Request
 export interface ResetPasswordRequest {
   token: string;
   newPassword: string;
   confirmPassword: string;
 }
-
-// Reset Password Response Data
-export interface ResetPasswordResponseData {
-  accessToken: string | null;
-  refreshToken: string | null;
-  userId: string;
-  tenantId: string;
-}
-
-export interface ResetPasswordResponse extends BaseResponse<ResetPasswordResponseData> {}
 
 // Refresh Token Request (empty - uses HTTP-only cookie)
 export interface RefreshTokenRequest {}
@@ -77,20 +52,8 @@ export interface RefreshTokenResponseData {
   tenantId: string;
 }
 
-export interface RefreshTokenResponse extends BaseResponse<RefreshTokenResponseData> {}
-
 // Logout Request (empty)
 export interface LogoutRequest {}
-
-// Paginated Response for search/list operations
-export interface PaginatedResponse<T> extends BaseResponse<T[]> {
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
 
 // User info from auth context
 export interface UserInfo {
@@ -123,4 +86,3 @@ export interface CreateServiceRequest {
   durationMinutes: number;
   price: number;
 }
-

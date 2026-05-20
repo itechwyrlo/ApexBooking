@@ -1,0 +1,59 @@
+.apex-cal-month {
+  font-size: inherit;
+}
+
+.apex-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.apex-cal-day-name {
+  font-size: 11px;
+  font-weight: 600;
+  padding-bottom: 4px;
+}
+
+.apex-cal-day {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--bs-dark);
+}
+
+.apex-cal-day:hover {
+  background: var(--bs-gray-100);
+}
+
+.apex-cal-day--selected {
+  background: var(--bs-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.apex-cal-day--selected:hover {
+  background: var(--bs-primary);
+}
+
+.apex-cal-day--today {
+  background: var(--bs-primary-bg-subtle, #cfe2ff);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.apex-cal-day--today:hover {
+  background: var(--bs-primary-bg-subtle, #cfe2ff);
+}
+
+.apex-cal-day--disabled {
+  color: var(--bs-gray-400);
+  cursor: default;
+  pointer-events: none;
+}

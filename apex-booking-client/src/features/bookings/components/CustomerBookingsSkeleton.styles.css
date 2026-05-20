@@ -1,0 +1,36 @@
+.apex-cbk-sk-ref {
+  height: 14px;
+  width: 100px;
+}
+
+.apex-cbk-sk-service {
+  height: 14px;
+  width: 100px;
+}
+
+.apex-cbk-sk-staff {
+  height: 14px;
+  width: 80px;
+}
+
+.apex-cbk-sk-schedule {
+  height: 14px;
+  width: 120px;
+}
+
+.apex-cbk-sk-badge {
+  height: 22px;
+  width: 70px;
+  border-radius: 12px;
+}
+
+.apex-cbk-sk-price {
+  height: 14px;
+  width: 60px;
+}
+
+.apex-cbk-sk-action {
+  height: 30px;
+  width: 36px;
+  border-radius: 6px;
+}

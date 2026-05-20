@@ -73,7 +73,6 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
-  // Pad to complete last row
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
@@ -87,7 +86,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
         >
           <i className="fas fa-chevron-left" />
         </button>
-        <span className="fw-semibold d-flex align-items-center" style={{ fontSize: 15 }}>
+        <span className="apex-cal-month fw-semibold d-flex align-items-center">
           {MONTH_NAMES[viewMonth]} {viewYear}
           {isLoadingAvailability && <span className="spinner-border spinner-border-sm ms-2" role="status"></span>}
         </span>
@@ -101,16 +100,9 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
         </button>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 2,
-          textAlign: 'center',
-        }}
-      >
+      <div className="apex-cal-grid">
         {DAY_NAMES.map(d => (
-          <div key={d} className="text-muted" style={{ fontSize: 11, fontWeight: 600, paddingBottom: 4 }}>
+          <div key={d} className="apex-cal-day-name text-muted">
             {d}
           </div>
         ))}
@@ -126,40 +118,18 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
           const isToday = dateStr === todayStr;
           const isSelected = dateStr === selectedDate;
 
-          let cellStyle: React.CSSProperties = {
-            width: 34,
-            height: 34,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto',
-            fontSize: 13,
-            cursor: isPast ? 'default' : 'pointer',
-          };
-
-          if (isSelected) {
-            cellStyle = { ...cellStyle, background: 'var(--bs-primary)', color: '#fff', fontWeight: 600 };
-          } else if (isToday) {
-            cellStyle = { ...cellStyle, background: 'var(--bs-primary-bg-subtle, #cfe2ff)', color: 'var(--bs-primary)', fontWeight: 600 };
-          } else if (isPast) {
-            cellStyle = { ...cellStyle, color: '#ced4da' };
-          } else {
-            cellStyle = { ...cellStyle, color: '#212529' };
-          }
+          const cellClass = [
+            'apex-cal-day',
+            isSelected ? 'apex-cal-day--selected' : '',
+            !isSelected && isToday ? 'apex-cal-day--today' : '',
+            isPast ? 'apex-cal-day--disabled' : '',
+          ].filter(Boolean).join(' ');
 
           return (
             <div key={idx}>
               <div
-                style={cellStyle}
+                className={cellClass}
                 onClick={() => !isPast && onDateSelect(dateStr)}
-                onMouseEnter={e => {
-                  if (!isPast && !isSelected) (e.currentTarget as HTMLDivElement).style.background = '#f8f9fa';
-                }}
-                onMouseLeave={e => {
-                  if (!isPast && !isSelected && !isToday)
-                    (e.currentTarget as HTMLDivElement).style.background = '';
-                }}
               >
                 {day}
               </div>

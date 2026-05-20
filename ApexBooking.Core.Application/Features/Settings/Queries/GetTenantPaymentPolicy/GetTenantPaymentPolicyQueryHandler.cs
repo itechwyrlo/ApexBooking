@@ -1,13 +1,15 @@
+using System.Threading;
+using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.Settings.Queries.GetTenantPaymentPolicy;
 
 internal sealed class GetTenantPaymentPolicyQueryHandler
-    : IQueryHandler<GetTenantPaymentPolicyQuery, BaseResponse<TenantPaymentPolicyDto>>
+    : IQueryHandler<GetTenantPaymentPolicyQuery, TenantPaymentPolicyDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserContextService _contextService;
@@ -18,9 +20,7 @@ internal sealed class GetTenantPaymentPolicyQueryHandler
         _contextService = contextService;
     }
 
-    public async Task<BaseResponse<TenantPaymentPolicyDto>> Handle(
-        GetTenantPaymentPolicyQuery query,
-        CancellationToken ct)
+    public async Task<TenantPaymentPolicyDto> Handle(GetTenantPaymentPolicyQuery query, CancellationToken ct)
     {
         var tenantId = _contextService.GetCurrentTenantId();
 
@@ -29,12 +29,10 @@ internal sealed class GetTenantPaymentPolicyQueryHandler
             includes: t => t.TenantPaymentPolicy);
 
         if (tenant is null)
-            return BaseResponse<TenantPaymentPolicyDto>.Failure("Tenant not found.");
+            throw new NotFoundException("Tenant not found.");
 
-        var dto = tenant.TenantPaymentPolicy is not null
+        return tenant.TenantPaymentPolicy is not null
             ? tenant.TenantPaymentPolicy.ToPaymentPolicyDto()
             : TenantMappings.DefaultPaymentPolicyDto();
-
-        return BaseResponse<TenantPaymentPolicyDto>.Success(dto);
     }
 }

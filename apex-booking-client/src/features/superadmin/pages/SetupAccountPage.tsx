@@ -28,7 +28,7 @@ const SetupAccountPage: React.FC = () => {
 
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-      <div className="card shadow-sm border-0 p-4" style={{ width: '100%', maxWidth: '400px' }}>
+      <div className="card shadow-sm border-0 p-4 sa-setup-card">
         <div className="card-body">
           <div className="text-center mb-4">
             <h3 className="fw-bold">Set up your account</h3>
@@ -72,7 +72,8 @@ const SetupAccountPage: React.FC = () => {
 
               <Button
                 type="submit"
-                className="btn btn-primary w-100 py-2 fw-semibold"
+                variant="primary"
+                className="w-100 py-2 fw-semibold"
                 disabled={isLoading || !!passwordMismatch || !newPassword || !confirmPassword}
               >
                 {isLoading ? 'Activating...' : 'Activate Account'}

@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
+import { faPlus, faUserCheck } from '@fortawesome/free-solid-svg-icons';
 import { Alert } from '../../../components/ui/Alert';
 import { Button } from '../../../components/ui/Button';
+import { Tabs } from '../../../components/ui/Tabs';
+import type { TabItem } from '../../../components/ui/Tabs';
 import type { CreateTenantUserRequest, AssignExistingUserRequest, TenantUserDto } from '../types';
 
 type Tab = 'create' | 'assign';
+
+const TEAM_TABS: Array<TabItem<Tab>> = [
+  { id: 'create', label: 'Create New', icon: faPlus },
+  { id: 'assign', label: 'Assign Existing', icon: faUserCheck },
+];
 
 const ROLE_OPTIONS = ['TenantAdmin', 'Manager', 'Staff', 'Customer'];
 
@@ -79,16 +87,14 @@ const AddTeamMemberModal: React.FC<Props> = ({
     <>
       <div
         className="modal-backdrop show"
-        style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
         onClick={handleClose}
       />
       <div
         className="modal show d-block"
-        style={{ zIndex: 1055 }}
         role="dialog"
         aria-modal="true"
       >
-        <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 480 }}>
+        <div className="modal-dialog modal-dialog-centered sa-add-team-modal">
           <div className="modal-content border-0 shadow">
             <div className="modal-header border-bottom py-3">
               <h6 className="modal-title fw-bold">Add Team Member</h6>
@@ -100,34 +106,12 @@ const AddTeamMemberModal: React.FC<Props> = ({
               />
             </div>
 
-            {/* Tabs */}
-            <div className="border-bottom">
-              <div className="d-flex">
-                <button
-                  className={`btn btn-link px-4 py-3 text-decoration-none rounded-0 ${
-                    tab === 'create'
-                      ? 'border-bottom border-primary border-2 fw-semibold text-primary'
-                      : 'text-muted'
-                  }`}
-                  style={{ fontSize: 14 }}
-                  onClick={() => { setTab('create'); clearError(); setSuccess(null); }}
-                >
-                  <i className="fas fa-plus me-1" style={{ fontSize: 12 }} />
-                  Create New
-                </button>
-                <button
-                  className={`btn btn-link px-4 py-3 text-decoration-none rounded-0 ${
-                    tab === 'assign'
-                      ? 'border-bottom border-primary border-2 fw-semibold text-primary'
-                      : 'text-muted'
-                  }`}
-                  style={{ fontSize: 14 }}
-                  onClick={() => { setTab('assign'); clearError(); setSuccess(null); }}
-                >
-                  <i className="fas fa-user-check me-1" style={{ fontSize: 12 }} />
-                  Assign Existing
-                </button>
-              </div>
+            <div className="px-4">
+              <Tabs
+                tabs={TEAM_TABS}
+                activeTab={tab}
+                onChange={(id) => { setTab(id); clearError(); setSuccess(null); }}
+              />
             </div>
 
             <div className="modal-body p-4">
@@ -144,7 +128,7 @@ const AddTeamMemberModal: React.FC<Props> = ({
 
               {tab === 'create' ? (
                 <>
-                  <div className="alert alert-info py-2 px-3 mb-3" style={{ fontSize: 13 }}>
+                  <div className="alert alert-info py-2 px-3 mb-3 small">
                     <i className="fas fa-envelope me-2" />
                     An invitation email with a setup link will be sent to the user.
                   </div>

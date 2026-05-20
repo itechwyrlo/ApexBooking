@@ -8,5 +8,5 @@ using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Auth.Commands.RefreshToken
 {
-    public record RefreshTokenCommand() : ICommand<BaseResponse<RefreshTokenResponseDto>>;
+    public record RefreshTokenCommand() : ICommand<RefreshTokenResponseDto>;
 }

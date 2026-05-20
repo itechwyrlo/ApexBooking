@@ -15,8 +15,8 @@ public class CreateBookingCommandValidator : AbstractValidator<CreateBookingComm
             .Must(id => id != Guid.Empty).WithMessage("Service ID must be a valid GUID");
 
         RuleFor(x => x.StaffId)
-            .NotEmpty().WithMessage("Resource ID is required")
-            .Must(id => id != Guid.Empty).WithMessage("Resource ID must be a valid GUID");
+            .Must(id => !id.HasValue || id.Value != Guid.Empty)
+            .WithMessage("Staff Id, if provided, must be a valid GUID");
 
         RuleFor(x => x.ScheduledDate)
             .NotEmpty().WithMessage("Scheduled date is required")

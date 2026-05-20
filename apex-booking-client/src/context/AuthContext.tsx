@@ -12,7 +12,7 @@ interface User {
   email: string;
   fullName: string;
   tenantId: string;
-  role: "TenantAdmin" | "Manager" | "Staff" | "customer" | "superadmin";
+  role: "tenantadmin" | "manager" | "staff" | "customer" | "superadmin";
 }
 
 interface JWTPayload {

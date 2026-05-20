@@ -1,7 +1,9 @@
 using ApexBooking.Core.Application.Features.Bookings.Commands.CancelBooking;
+using ApexBooking.Core.Application.Features.Bookings.Commands.ConfirmBooking;
 using ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking;
 using ApexBooking.Core.Application.Features.Bookings.Queries.GetBookingById;
 using ApexBooking.Core.Application.Features.Bookings.Queries.GetBookings;
+using ApexBooking.Core.Application.Features.Bookings.Queries.GetCalendarBookings;
 using ApexBooking.Core.Application.Features.Payment.Commands.InitiatePayment;
 using ApexBooking.SharedKernel.Models;
 using ApexBooking.WebApi.Dtos;
@@ -55,17 +57,30 @@ public class BookingController : ControllerBase
             dto.CustomerNotes
         ));
 
-        if (!result.IsSuccess)
-            return BadRequest(result);
+        return CreatedAtAction(nameof(GetById), new { bookingId = result.BookingId }, result);
+    }
 
-        return CreatedAtAction(nameof(GetById), new { bookingId = result.Data!.BookingId }, result);
+    [HttpPost("{bookingId:guid}/confirm")]
+    [Authorize]
+    public async Task<IActionResult> Confirm(Guid bookingId)
+    {
+        await _mediator.Send(new ConfirmBookingCommand(bookingId));
+        return NoContent();
     }
 
     [HttpPost("{bookingId:guid}/cancel")]
     [Authorize]
     public async Task<IActionResult> Cancel(Guid bookingId, [FromBody] CancelBookingRequestDto dto)
     {
-        var result = await _mediator.Send(new CancelBookingCommand(bookingId, dto.Reason));
+        await _mediator.Send(new CancelBookingCommand(bookingId, dto.Reason));
+        return NoContent();
+    }
+
+    [HttpGet("calendar")]
+    [Authorize]
+    public async Task<IActionResult> GetCalendar([FromQuery] int year, [FromQuery] int month)
+    {
+        var result = await _mediator.Send(new GetCalendarBookingsQuery(year, month));
         return Ok(result);
     }
 

@@ -1,0 +1,15 @@
+.apex-staff-sk-name {
+  height: 18px;
+  width: 120px;
+}
+
+.apex-staff-sk-desc {
+  height: 18px;
+  width: 180px;
+}
+
+.apex-staff-sk-status {
+  height: 22px;
+  width: 60px;
+  border-radius: 12px;
+}

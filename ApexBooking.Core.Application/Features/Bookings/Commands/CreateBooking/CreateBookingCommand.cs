@@ -15,5 +15,5 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
         string GuestEmail,
         string? GuestPhone,
         string? CustomerNotes
-    ) : ICommand<BaseResponse<BookingDetailDto>>;
+    ) : ICommand<BookingDetailDto>;
 }

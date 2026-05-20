@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import axiosInstance from '../../../services/axiosInstance';
 import type { PlatformOverviewDto } from '../types';
-import type { BaseResponse } from '../../../types';
 
 export const useSuperAdminOrganizations = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,16 +11,10 @@ export const useSuperAdminOrganizations = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.get<BaseResponse<PlatformOverviewDto>>(
-        '/superadmin/overview'
-      );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to load organizations.');
-        return;
-      }
-      setOverview(result.data ?? undefined);
-    } catch {
-      setError('Failed to load organizations.');
+      const result = await axiosInstance.get<PlatformOverviewDto>('/superadmin/overview');
+      setOverview(result ?? undefined);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load organizations.');
     } finally {
       setIsLoading(false);
     }

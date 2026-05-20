@@ -6,7 +6,6 @@ import type {
   CreateTenantUserRequest,
   AssignExistingUserRequest,
 } from '../types';
-import type { BaseResponse } from '../../../types';
 
 export const useOrganizationDetail = (slug: string) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,16 +17,12 @@ export const useOrganizationDetail = (slug: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.get<BaseResponse<OrganizationDetailDto>>(
+      const result = await axiosInstance.get<OrganizationDetailDto>(
         `/superadmin/organizations/${slug}`
       );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to load organization.');
-        return;
-      }
-      setDetail(result.data ?? undefined);
-    } catch {
-      setError('Failed to load organization.');
+      setDetail(result ?? undefined);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load organization.');
     } finally {
       setIsLoading(false);
     }
@@ -37,22 +32,18 @@ export const useOrganizationDetail = (slug: string) => {
     setActionLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.post<BaseResponse<TenantUserDto>>(
+      const result = await axiosInstance.post<TenantUserDto>(
         `/superadmin/organizations/${slug}/users`,
         request
       );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to create user.');
-        return null;
-      }
-      if (result.data && detail) {
+      if (result && detail) {
         setDetail(prev =>
-          prev ? { ...prev, users: [...prev.users, result.data!], userCount: prev.userCount + 1 } : prev
+          prev ? { ...prev, users: [...prev.users, result], userCount: prev.userCount + 1 } : prev
         );
       }
-      return result.data ?? null;
-    } catch {
-      setError('Failed to create user.');
+      return result ?? null;
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create user.');
       return null;
     } finally {
       setActionLoading(false);
@@ -63,29 +54,23 @@ export const useOrganizationDetail = (slug: string) => {
     setActionLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.post<BaseResponse<TenantUserDto>>(
+      const result = await axiosInstance.post<TenantUserDto>(
         `/superadmin/organizations/${slug}/users/assign`,
         request
       );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to assign user.');
-        return null;
-      }
-      if (result.data && detail) {
+      if (result && detail) {
         setDetail(prev =>
           prev
             ? {
                 ...prev,
-                users: prev.users.map(u =>
-                  u.id === result.data!.id ? result.data! : u
-                ),
+                users: prev.users.map(u => (u.id === result.id ? result : u)),
               }
             : prev
         );
       }
-      return result.data ?? null;
-    } catch {
-      setError('Failed to assign user.');
+      return result ?? null;
+    } catch (err: any) {
+      setError(err?.message || 'Failed to assign user.');
       return null;
     } finally {
       setActionLoading(false);
@@ -96,16 +81,12 @@ export const useOrganizationDetail = (slug: string) => {
     setActionLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.post<BaseResponse<boolean>>(
+      await axiosInstance.post(
         `/superadmin/organizations/${slug}/users/${userId}/resend-invite`
       );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to resend invitation.');
-        return false;
-      }
       return true;
-    } catch {
-      setError('Failed to resend invitation.');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to resend invitation.');
       return false;
     } finally {
       setActionLoading(false);

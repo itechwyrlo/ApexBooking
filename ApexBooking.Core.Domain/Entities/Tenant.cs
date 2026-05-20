@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using ApexBooking.Core.Domain.Enums;
+using ApexBooking.Core.Domain.Policies;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
 using ApexBooking.SharedKernel.Models;
@@ -171,6 +172,45 @@ public class Tenant : IAggregateRoot
 
         TenantPaymentPolicy = TenantPaymentPolicy.Create(TenantId);
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void EnforceMonthlyBookingLimit(int currentMonthCount)
+    {
+        var limit = PlanLimits.MaxBookingsPerMonth(Plan);
+        if (limit.HasValue && currentMonthCount >= limit.Value)
+            throw new BusinessRuleBrokenException($"Your {Plan} plan allows a maximum of {limit.Value} bookings per month.");
+    }
+
+    public void EnsureUserEmailIsNotRegistered(bool emailTaken)
+    {
+        if (emailTaken)
+            throw new BusinessRuleBrokenException("A user with this email already exists in this organization.");
+    }
+
+    public static void EnsureSlugIsAvailable(bool slugTaken)
+    {
+        if (slugTaken)
+            throw new BusinessRuleBrokenException("This booking URL slug is already taken.");
+    }
+
+    public static void EnsureOwnerEmailIsAvailable(bool emailTaken)
+    {
+        if (emailTaken)
+            throw new BusinessRuleBrokenException("An organization with this owner email already exists.");
+    }
+
+    public void EnforcePlanStaffLimit(int existingCount)
+    {
+        var limit = PlanLimits.MaxResources(Plan);
+        if (limit.HasValue && existingCount >= limit.Value)
+            throw new BusinessRuleBrokenException($"Your {Plan} plan allows a maximum of {limit.Value} staff members.");
+    }
+
+    public void EnforcePlanServiceLimit(int existingCount)
+    {
+        var limit = PlanLimits.MaxServices(Plan);
+        if (limit.HasValue && existingCount >= limit.Value)
+            throw new BusinessRuleBrokenException($"Your {Plan} plan allows a maximum of {limit.Value} services.");
     }
 
     }

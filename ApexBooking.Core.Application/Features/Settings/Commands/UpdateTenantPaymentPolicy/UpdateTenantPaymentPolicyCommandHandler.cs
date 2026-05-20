@@ -2,12 +2,12 @@ using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.Settings.Commands.UpdateTenantPaymentPolicy;
 
 internal sealed class UpdateTenantPaymentPolicyCommandHandler
-    : ICommandHandler<UpdateTenantPaymentPolicyCommand, BaseResponse<TenantPaymentPolicyDto>>
+    : ICommandHandler<UpdateTenantPaymentPolicyCommand, TenantPaymentPolicyDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserContextService _contextService;
@@ -18,7 +18,7 @@ internal sealed class UpdateTenantPaymentPolicyCommandHandler
         _contextService = contextService;
     }
 
-    public async Task<BaseResponse<TenantPaymentPolicyDto>> Handle(
+    public async Task<TenantPaymentPolicyDto> Handle(
         UpdateTenantPaymentPolicyCommand command,
         CancellationToken ct)
     {
@@ -29,7 +29,7 @@ internal sealed class UpdateTenantPaymentPolicyCommandHandler
             includes: t => t.TenantPaymentPolicy);
 
         if (tenant is null)
-            return BaseResponse<TenantPaymentPolicyDto>.Failure("Tenant not found.");
+            throw new NotFoundException("Tenant not found.");
 
         // Lazy-create on first save for tenants that predate this feature
         if (tenant.TenantPaymentPolicy is null)
@@ -44,6 +44,6 @@ internal sealed class UpdateTenantPaymentPolicyCommandHandler
 
         await _unitOfWork.CompleteAsync(ct);
 
-        return BaseResponse<TenantPaymentPolicyDto>.Success(tenant.TenantPaymentPolicy.ToPaymentPolicyDto());
+        return tenant.TenantPaymentPolicy.ToPaymentPolicyDto();
     }
 }

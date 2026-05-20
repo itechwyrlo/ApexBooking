@@ -1,13 +1,15 @@
 using System.Text.Json;
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Domain.Entities;
+using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.Payment.Commands.HandlePayPalWebhook;
 
 internal sealed class HandlePayPalWebhookHandler
-    : ICommandHandler<HandlePayPalWebhookCommand, BaseResponse<bool>>
+    : ICommandHandler<HandlePayPalWebhookCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPayPalWebhookValidator _validator;
@@ -20,7 +22,7 @@ internal sealed class HandlePayPalWebhookHandler
         _validator = validator;
     }
 
-    public async Task<BaseResponse<bool>> Handle(
+    public async Task Handle(
         HandlePayPalWebhookCommand command,
         CancellationToken ct)
     {
@@ -31,14 +33,14 @@ internal sealed class HandlePayPalWebhookHandler
         }
         catch
         {
-            return BaseResponse<bool>.Failure("Invalid webhook payload.", "INVALID_PAYLOAD");
+            throw new BusinessRuleBrokenException("Invalid webhook payload.");
         }
 
         var eventType = doc.RootElement
             .GetProperty("event_type").GetString();
 
         if (eventType != "CHECKOUT.ORDER.APPROVED" && eventType != "PAYMENT.CAPTURE.COMPLETED")
-            return BaseResponse<bool>.Success(true);
+            return;
 
         var orderId = eventType == "PAYMENT.CAPTURE.COMPLETED"
             ? doc.RootElement
@@ -53,19 +55,19 @@ internal sealed class HandlePayPalWebhookHandler
                 .GetString();
 
         if (string.IsNullOrWhiteSpace(orderId))
-            return BaseResponse<bool>.Failure("Order ID not found in webhook payload.", "ORDER_ID_MISSING");
+            throw new BusinessRuleBrokenException("Order ID not found in webhook payload.");
 
         var transaction = await _unitOfWork.PaymentTransactionRepository
             .GetAsync(t => t.GatewayTransactionId == orderId);
 
         if (transaction is null)
-            return BaseResponse<bool>.Failure("Payment transaction not found.", "TRANSACTION_NOT_FOUND");
+            throw new NotFoundException("Payment transaction not found.");
 
         // TR-11.3: validate webhook signature using the platform-level gateway credentials.
         var platformGateway = await _unitOfWork.PlatformPaymentGatewayRepository.GetActiveAsync(ct);
 
         if (platformGateway is null)
-            return BaseResponse<bool>.Failure("No active payment gateway configured.", "NO_GATEWAY");
+            throw new NotFoundException("No active payment gateway configured.");
 
         var isValid = await _validator.ValidateAsync(
             platformGateway.ClientId,
@@ -80,16 +82,16 @@ internal sealed class HandlePayPalWebhookHandler
             ct);
 
         if (!isValid)
-            return BaseResponse<bool>.Failure("Webhook signature validation failed.", "INVALID_SIGNATURE");
+            throw new BusinessRuleBrokenException("Webhook signature validation failed.");
 
         if (transaction.Status == Domain.Enums.PaymentTransactionStatus.Paid)
-            return BaseResponse<bool>.Success(true);
+            return;
 
         var booking = await _unitOfWork.BookingRepository
             .GetByIdAsync(new BookingId(transaction.BookingId.Value));
 
         if (booking is null)
-            return BaseResponse<bool>.Failure("Booking not found.", "BOOKING_NOT_FOUND");
+            throw new NotFoundException("Booking not found.");
 
         var paymentMethodType = eventType == "PAYMENT.CAPTURE.COMPLETED"
             ? doc.RootElement
@@ -104,8 +106,19 @@ internal sealed class HandlePayPalWebhookHandler
 
         _unitOfWork.PaymentTransactionRepository.Update(transaction);
         _unitOfWork.BookingRepository.Update(booking);
-        await _unitOfWork.CompleteAsync(ct);
 
-        return BaseResponse<bool>.Success(true);
+        var admins = await _unitOfWork.UserRepository.GetUsersByRoleAsync(booking.TenantId, UserRole.TenantAdmin);
+        foreach (var admin in admins)
+        {
+            _unitOfWork.NotificationRepository.Add(Notification.Create(
+                admin.Id,
+                NotificationRecipientType.TenantAdmin,
+                booking.TenantId,
+                NotificationEventType.PaymentCaptured,
+                "Payment Received",
+                $"Payment received for Booking {booking.BookingReference}."));
+        }
+
+        await _unitOfWork.CompleteAsync(ct);
     }
 }

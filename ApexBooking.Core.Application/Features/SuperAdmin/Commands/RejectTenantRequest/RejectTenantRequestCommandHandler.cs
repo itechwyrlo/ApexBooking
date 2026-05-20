@@ -1,46 +1,51 @@
 using ApexBooking.Core.Application.Messaging.Abstractions;
+using ApexBooking.Core.Domain.Entities;
+using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.Core.Domain.Services.Notification;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.Core.Domain.Services.Notification.Auth;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.SuperAdmin.Commands.RejectTenantRequest;
 
-internal sealed class RejectTenantRequestCommandHandler
-    : ICommandHandler<RejectTenantRequestCommand, BaseResponse<bool>>
+internal sealed class RejectTenantRequestCommandHandler : ICommandHandler<RejectTenantRequestCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly INotificationService _notification;
+    private readonly IAuthNotificationService _authNotification;
 
-    public RejectTenantRequestCommandHandler(IUnitOfWork unitOfWork, INotificationService notification)
+    public RejectTenantRequestCommandHandler(IUnitOfWork unitOfWork, IAuthNotificationService authNotification)
     {
         _unitOfWork = unitOfWork;
-        _notification = notification;
+        _authNotification = authNotification;
     }
 
-    public async Task<BaseResponse<bool>> Handle(
-        RejectTenantRequestCommand command,
-        CancellationToken cancellationToken)
+    public async Task Handle(RejectTenantRequestCommand command, CancellationToken cancellationToken)
     {
         var request = await _unitOfWork.TenantRequestRepository.GetByIdAsync(command.RequestId);
         if (request is null)
-            return BaseResponse<bool>.Failure("Request not found.");
+            throw new NotFoundException("Request not found.");
 
         request.Reject(command.Reason);
         _unitOfWork.TenantRequestRepository.Update(request);
+
+        var superAdmins = await _unitOfWork.SuperAdminRepository.GetAllAsync(sa => sa.IsActive);
+        foreach (var sa in superAdmins)
+        {
+            _unitOfWork.NotificationRepository.Add(Notification.Create(
+                sa.SuperAdminId.Value,
+                NotificationRecipientType.SuperAdmin,
+                null,
+                NotificationEventType.TenantRequestRejected,
+                "Tenant Request Rejected",
+                $"Tenant request from {request.BusinessName} has been rejected."));
+        }
+
         await _unitOfWork.CompleteAsync(cancellationToken);
 
-        var emailBody = $@"
-            <p>Hi {request.OwnerFullName},</p>
-            <p>Thank you for your interest in ApexBooking.</p>
-            <p>After reviewing your request for <strong>{request.BusinessName}</strong>, we are unable to approve your account at this time.</p>
-            <p><strong>Reason:</strong> {command.Reason}</p>
-            <p>If you believe this is an error or would like to discuss further, please contact our support team.</p>";
-
-        await _notification.SendEmailAsync(
+        await _authNotification.SendRejectionEmailAsync(
             request.OwnerEmail,
-            "Your ApexBooking access request",
-            emailBody);
-
-        return BaseResponse<bool>.Success(true);
+            request.OwnerFullName,
+            request.BusinessName,
+            command.Reason,
+            cancellationToken);
     }
 }

@@ -5,16 +5,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
-using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.Services.Slot;
 using ApexBooking.Core.Domain.ValueObjects;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.Public.Queries.GetMonthlyAvailability
 {
     internal sealed class GetMonthlyAvailabilityQueryHandler
-        : IQueryHandler<GetMonthlyAvailabilityQuery, BaseResponse<MonthlyAvailabilityDto>>
+        : IQueryHandler<GetMonthlyAvailabilityQuery, MonthlyAvailabilityDto>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly SlotAvailabilityService _slotService;
@@ -25,34 +24,31 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetMonthlyAvailab
             _slotService = slotService;
         }
 
-        public async Task<BaseResponse<MonthlyAvailabilityDto>> Handle(
+        public async Task<MonthlyAvailabilityDto> Handle(
             GetMonthlyAvailabilityQuery query,
             CancellationToken cancellationToken)
         {
-            // Query 1: Load tenant by slug
             var tenant = await _unitOfWork.TenantRepository.FindBySlugAsync(query.Slug);
             if (tenant is null)
-                return BaseResponse<MonthlyAvailabilityDto>.Failure("Tenant not found.");
+                throw new NotFoundException("Tenant not found.");
 
-            // Query 2: Load service with its resources
             var service = await _unitOfWork.ServiceRepository.GetAsync(
                 s => s.ServiceId == new ServiceId(query.ServiceId) && s.TenantId == tenant.TenantId,
                 s => s.ServiceStaffs);
 
             if (service is null || !service.IsActive)
-                return BaseResponse<MonthlyAvailabilityDto>.Failure("Service not found.");
+                throw new NotFoundException("Service not found.");
 
             var resourceIds = service.ServiceStaffs.Select(sr => sr.StaffId).ToList();
             if (!resourceIds.Any())
-                return BaseResponse<MonthlyAvailabilityDto>.Success(new MonthlyAvailabilityDto(query.Year, query.Month, []));
+                return new MonthlyAvailabilityDto(query.Year, query.Month, []);
 
-            // Query 3: Bulk load all active resources for this service with their availability schedules
             var resources = (await _unitOfWork.StaffRepository.FindByIdsWithAvailabilityAsync(resourceIds, cancellationToken))
                 .Where(r => r.IsActive)
                 .ToList();
 
             if (!resources.Any())
-                return BaseResponse<MonthlyAvailabilityDto>.Success(new MonthlyAvailabilityDto(query.Year, query.Month, []));
+                return new MonthlyAvailabilityDto(query.Year, query.Month, []);
 
             // Query 4: Bulk load all active bookings for these resources for the entire month
             var firstDay = new DateOnly(query.Year, query.Month, 1);
@@ -113,7 +109,7 @@ namespace ApexBooking.Core.Application.Features.Public.Queries.GetMonthlyAvailab
                 days.Add(new DayAvailabilityDto(d, isAvailable));
             }
 
-            return BaseResponse<MonthlyAvailabilityDto>.Success(new MonthlyAvailabilityDto(query.Year, query.Month, days));
+            return new MonthlyAvailabilityDto(query.Year, query.Month, days);
         }
     }
 }

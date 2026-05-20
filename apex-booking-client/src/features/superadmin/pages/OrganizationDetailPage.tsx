@@ -23,7 +23,7 @@ const roleBadge = (role: string) => {
     Customer: 'bg-light text-dark border',
   };
   return (
-    <span className={`badge ${classes[role] ?? 'bg-secondary'}`} style={{ fontSize: 11 }}>
+    <span className={`badge ${classes[role] ?? 'bg-secondary'}`}>
       {role === 'TenantAdmin' ? 'Admin' : role}
     </span>
   );
@@ -109,7 +109,7 @@ const OrganizationDetailPage: React.FC = () => {
                 rel="noreferrer"
                 className="ms-2 text-primary small"
               >
-                <i className="fas fa-external-link-alt" style={{ fontSize: 11 }} />
+                <i className="fas fa-external-link-alt" />
               </a>
             </div>
           </div>
@@ -166,15 +166,12 @@ const OrganizationDetailPage: React.FC = () => {
                     <tr key={user.id}>
                       <td className="ps-4">
                         <div className="d-flex align-items-center gap-3">
-                          <div
-                            className="rounded-circle bg-secondary d-flex align-items-center justify-content-center flex-shrink-0 text-white fw-bold"
-                            style={{ width: 32, height: 32, fontSize: 12 }}
-                          >
+                          <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center flex-shrink-0 text-white fw-bold sa-team-avatar">
                             {user.fullName.charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <div className="small fw-semibold">{user.fullName}</div>
-                            <div className="text-muted" style={{ fontSize: 12 }}>{user.email}</div>
+                            <div className="text-muted small">{user.email}</div>
                           </div>
                         </div>
                       </td>
@@ -182,7 +179,6 @@ const OrganizationDetailPage: React.FC = () => {
                       <td>
                         <span
                           className={`badge ${user.status === 'Active' ? 'bg-success' : user.status === 'Invited' ? 'bg-warning text-dark' : 'bg-secondary'}`}
-                          style={{ fontSize: 11 }}
                         >
                           {user.status}
                         </span>
@@ -196,7 +192,7 @@ const OrganizationDetailPage: React.FC = () => {
                             disabled={actionLoading}
                             className="btn btn-outline-secondary btn-sm"
                           >
-                            <i className="fas fa-paper-plane me-1" style={{ fontSize: 11 }} />
+                            <i className="fas fa-paper-plane me-1" />
                             Resend Invite
                           </Button>
                         )}

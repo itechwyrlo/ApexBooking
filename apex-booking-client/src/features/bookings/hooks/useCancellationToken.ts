@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import axiosInstance from '../../../services/axiosInstance';
-import type { BaseResponse } from '../../../types';
 import type { CancellationTokenValidation } from '../types';
 
 export type CancellationPageState =
@@ -33,18 +32,15 @@ export const useCancellationToken = (token: string): UseCancellationTokenResult 
 
     const doValidate = async () => {
       try {
-        const result = await axiosInstance.get<BaseResponse<CancellationTokenValidation>>(
+        const result = await axiosInstance.get<CancellationTokenValidation>(
           `/public/cancellation/validate?token=${encodeURIComponent(token)}`
         );
         if (!active) return;
-
-        if (result.isSuccess && result.data) {
-          setValidationData(result.data);
-          setState(result.data.refundPercent > 0 ? 'valid_refund' : 'valid_no_refund');
-          return;
-        }
-
-        const message = result.errors?.[0]?.message ?? '';
+        setValidationData(result);
+        setState(result.refundPercent > 0 ? 'valid_refund' : 'valid_no_refund');
+      } catch (err: any) {
+        if (!active) return;
+        const message: string = err?.message ?? '';
         if (message.includes('already been used')) {
           setState('used');
         } else if (message.includes('expired')) {
@@ -52,8 +48,6 @@ export const useCancellationToken = (token: string): UseCancellationTokenResult 
         } else {
           setState('invalid');
         }
-      } catch {
-        if (active) setState('invalid');
       }
     };
 
@@ -67,17 +61,10 @@ export const useCancellationToken = (token: string): UseCancellationTokenResult 
     setIsCancelling(true);
     setCancelError(null);
     try {
-      const result = await axiosInstance.post<BaseResponse<boolean>>(
-        '/public/cancellation/cancel',
-        { token }
-      );
-      if (!result.isSuccess) {
-        setCancelError(result.errors?.[0]?.message ?? 'Failed to cancel booking.');
-        return false;
-      }
+      await axiosInstance.post('/public/cancellation/cancel', { token });
       return true;
-    } catch {
-      setCancelError('Failed to cancel booking. Please try again.');
+    } catch (err: any) {
+      setCancelError(err?.message || 'Failed to cancel booking. Please try again.');
       return false;
     } finally {
       setIsCancelling(false);

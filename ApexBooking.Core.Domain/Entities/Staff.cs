@@ -21,6 +21,8 @@ namespace ApexBooking.Core.Domain.Entities
         public string ContactNumber {get; private set;}
         public string Description { get; private set; }
         public int Capacity { get; private set; }
+        public Guid? UserId { get; private set; }
+        public string? PhotoUrl { get; private set; }
         public bool IsActive { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
@@ -72,6 +74,12 @@ namespace ApexBooking.Core.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
+        public void EnsureAvailableForBooking()
+        {
+            if (!IsActive)
+                throw new BusinessRuleBrokenException("Staff is not available.");
+        }
+
         public void Deactivate()
         {
             if (!IsActive)
@@ -87,6 +95,21 @@ namespace ApexBooking.Core.Domain.Entities
                 throw new BusinessRuleBrokenException("Staff is already active.");
 
             IsActive = true;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void LinkUser(Guid userId)
+        {
+            if (userId == Guid.Empty)
+                throw new BusinessRuleBrokenException("User ID is required.");
+
+            UserId = userId;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void UpdatePhoto(string? photoUrl)
+        {
+            PhotoUrl = photoUrl;
             UpdatedAt = DateTime.UtcNow;
         }
 

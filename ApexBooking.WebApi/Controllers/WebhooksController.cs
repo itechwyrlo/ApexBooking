@@ -40,16 +40,13 @@ public class WebhooksController : ControllerBase
             return BadRequest();
         }
 
-        var result = await _mediator.Send(new HandlePayPalWebhookCommand(
+        await _mediator.Send(new HandlePayPalWebhookCommand(
             requestBody,
             transmissionId,
             transmissionTime,
             certUrl,
             authAlgo,
             transmissionSig), ct);
-
-        if (!result.IsSuccess)
-            return BadRequest(result);
 
         return Ok();
     }

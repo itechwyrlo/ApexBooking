@@ -108,6 +108,7 @@ public class Booking : IAggregateRoot, ITenantEntity
         BookingConfirmationMode confirmationMode,
         decimal priceSnapshot,
         string currencyCode,
+        bool requiresPaymentAtBooking,
         string? customerNotes = null)
     {
         if (tenantId is null)
@@ -149,9 +150,9 @@ public class Booking : IAggregateRoot, ITenantEntity
             currencyCode.ToUpperInvariant(),
             customerNotes);
 
-        // Set initial status based on price and confirmation mode.
+        // Set initial status based on confirmation mode and whether payment is required at booking.
         // TR-10.1 Step 7 and Step 8
-        if (priceSnapshot > 0)
+        if (priceSnapshot > 0 && requiresPaymentAtBooking)
         {
             booking.Status = BookingStatus.PendingPayment;
         }
@@ -188,7 +189,7 @@ public class Booking : IAggregateRoot, ITenantEntity
             BookingId, TenantId, previous, Status, BookingActor.TenantAdmin, "Booking confirmed."));
     }
 
-    public void Cancel(Guid cancelledByUserId, string? reason = null)
+    public void Cancel(Guid cancelledByUserId, int cutoffHours, string? reason = null)
     {
         if (Status == BookingStatus.Cancelled)
             throw new BusinessRuleBrokenException("Booking is already cancelled.");
@@ -198,6 +199,12 @@ public class Booking : IAggregateRoot, ITenantEntity
 
         if (Status == BookingStatus.NoShow)
             throw new BusinessRuleBrokenException("No-show bookings cannot be cancelled.");
+
+        var scheduledDateTime = ScheduledDate.ToDateTime(ScheduledStartTime);
+        var hoursUntilBooking = (scheduledDateTime - DateTime.UtcNow).TotalHours;
+        if (hoursUntilBooking < cutoffHours)
+            throw new BusinessRuleBrokenException(
+                $"Cancellation is not allowed within {cutoffHours} hours of the scheduled time.");
 
         var previous = Status;
         Status = BookingStatus.Cancelled;
@@ -210,7 +217,7 @@ public class Booking : IAggregateRoot, ITenantEntity
             BookingId, TenantId, previous, Status, BookingActor.TenantAdmin, reason ?? "Booking cancelled."));
     }
 
-    public void GuestCancel(string? reason = null)
+    public void GuestCancel(int cutoffHours, string? reason = null)
     {
         if (Status == BookingStatus.Cancelled)
             throw new BusinessRuleBrokenException("Booking is already cancelled.");
@@ -220,6 +227,12 @@ public class Booking : IAggregateRoot, ITenantEntity
 
         if (Status == BookingStatus.NoShow)
             throw new BusinessRuleBrokenException("No-show bookings cannot be cancelled.");
+
+        var scheduledDateTime = ScheduledDate.ToDateTime(ScheduledStartTime);
+        var hoursUntilBooking = (scheduledDateTime - DateTime.UtcNow).TotalHours;
+        if (hoursUntilBooking < cutoffHours)
+            throw new BusinessRuleBrokenException(
+                $"Cancellation is not allowed within {cutoffHours} hours of the scheduled time.");
 
         var previous = Status;
         Status = BookingStatus.Cancelled;
@@ -272,5 +285,11 @@ public class Booking : IAggregateRoot, ITenantEntity
 
         _statusLogs.Add(BookingStatusLog.Create(
             BookingId, TenantId, previous, Status, BookingActor.PaymentGateway, "Payment captured."));
+    }
+
+    public void EnsureAwaitingPayment()
+    {
+        if (Status != BookingStatus.PendingPayment)
+            throw new BusinessRuleBrokenException("Booking is not awaiting payment.");
     }
 }

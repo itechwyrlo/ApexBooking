@@ -60,6 +60,27 @@ public class TenantRequest : IAggregateRoot
         return new TenantRequest(businessName, ownerFullName, ownerEmail, ownerPhone, plan, message);
     }
 
+    public static void EnsureNoPendingRequest(bool alreadyExists)
+    {
+        if (alreadyExists)
+            throw new BusinessRuleBrokenException("A pending request for this email already exists.");
+    }
+
+    public void EnsureSlugIsAvailable(bool slugTaken)
+    {
+        if (slugTaken)
+            throw new BusinessRuleBrokenException("This booking URL slug is already taken.");
+    }
+
+    public void EnsureOwnerEmailIsAvailable(bool existsAsTenant, bool existsAsUser)
+    {
+        if (existsAsTenant)
+            throw new BusinessRuleBrokenException("An organization with this owner email already exists.");
+
+        if (existsAsUser)
+            throw new BusinessRuleBrokenException("This email is already registered to an existing user.");
+    }
+
     public void Approve()
     {
         if (Status != TenantRequestStatus.Pending)

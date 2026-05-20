@@ -1,17 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import axiosInstance from '../../../services/axiosInstance';
-import type { BaseResponse } from '../../../types';
-
-interface DayAvailabilityDto {
-  date: string;
-  isAvailable: boolean;
-}
-
-interface MonthlyAvailabilityDto {
-  year: number;
-  month: number;
-  days: DayAvailabilityDto[];
-}
+import type { MonthlyAvailabilityDto } from '../types';
 
 export const useMonthlyAvailability = (slug: string, serviceId: string | null) => {
   const [availableDays, setAvailableDays] = useState<Set<string> | null>(null);
@@ -25,28 +14,23 @@ export const useMonthlyAvailability = (slug: string, serviceId: string | null) =
     setError(null);
 
     try {
-      const response = await axiosInstance.get<BaseResponse<MonthlyAvailabilityDto>>(
+      const response = await axiosInstance.get<MonthlyAvailabilityDto>(
         `/public/${slug}/services/${serviceId}/monthly-availability`,
         { params: { year, month } }
       );
 
-      if (response.isSuccess && response.data) {
-        const availableDates = response.data.days
-          .filter(d => d.isAvailable)
-          .map(d => d.date);
-        
-        setAvailableDays(new Set(availableDates));
-      } else {
-        setError(response.errors?.[0]?.message || 'Failed to load availability');
-      }
+      const availableDates = response.days
+        .filter(d => d.isAvailable)
+        .map(d => d.date);
+
+      setAvailableDays(new Set(availableDates));
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load availability');
+      setError(err?.message || 'Failed to load availability');
     } finally {
       setIsLoading(false);
     }
   }, [slug, serviceId]);
 
-  // Initial fetch for current month
   useEffect(() => {
     if (slug && serviceId) {
       const now = new Date();

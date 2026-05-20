@@ -6,7 +6,6 @@ import type {
   GatewayProvider,
   GatewayMode,
 } from '../types';
-import type { BaseResponse } from '../../../types';
 
 interface GatewayPrefill {
   gatewayProvider: GatewayProvider;
@@ -21,7 +20,6 @@ const DEFAULT_PREFILL: GatewayPrefill = {
 export const usePlatformPaymentGateway = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // undefined = not yet fetched, null = fetched but no gateway, object = fetched with data
   const [gateway, setGateway] = useState<PlatformPaymentGatewayDto | null | undefined>(undefined);
   const [prefill, setPrefill] = useState<GatewayPrefill>(DEFAULT_PREFILL);
 
@@ -29,22 +27,18 @@ export const usePlatformPaymentGateway = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.get<BaseResponse<PlatformPaymentGatewayDto>>(
+      const result = await axiosInstance.get<PlatformPaymentGatewayDto>(
         '/superadmin/payment-gateway'
       );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to load gateway.');
-        return;
-      }
-      setGateway(result.data ?? null);
-      if (result.data) {
+      setGateway(result ?? null);
+      if (result) {
         setPrefill({
-          gatewayProvider: result.data.gatewayProvider,
-          mode: result.data.mode,
+          gatewayProvider: result.gatewayProvider,
+          mode: result.mode,
         });
       }
-    } catch {
-      setError('Failed to load gateway.');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load gateway.');
     } finally {
       setIsLoading(false);
     }
@@ -56,24 +50,20 @@ export const usePlatformPaymentGateway = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await axiosInstance.post<BaseResponse<PlatformPaymentGatewayDto>>(
+      const result = await axiosInstance.post<PlatformPaymentGatewayDto>(
         '/superadmin/payment-gateway',
         request
       );
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? 'Failed to configure gateway.');
-        return false;
-      }
-      setGateway(result.data ?? null);
-      if (result.data) {
+      setGateway(result ?? null);
+      if (result) {
         setPrefill({
-          gatewayProvider: result.data.gatewayProvider,
-          mode: result.data.mode,
+          gatewayProvider: result.gatewayProvider,
+          mode: result.mode,
         });
       }
       return true;
-    } catch {
-      setError('Failed to configure gateway.');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to configure gateway.');
       return false;
     } finally {
       setIsLoading(false);

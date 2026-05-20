@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../services/axiosInstance';
-import type { ForgotPasswordRequest, ForgotPasswordResponse } from '../types';
+import type { ForgotPasswordRequest, ForgotPasswordResponseData } from '../types';
 
 interface UseForgotPasswordReturn {
   forgotPassword: (email: string) => Promise<void>;
@@ -27,24 +27,17 @@ export const useForgotPassword = (): UseForgotPasswordReturn => {
     setSuccess(null);
 
     try {
-      const result = await axiosInstance.post<ForgotPasswordResponse>('/auth/forgot-password', {
+      const result = await axiosInstance.post<ForgotPasswordResponseData>('/auth/forgot-password', {
         email,
       } as ForgotPasswordRequest);
 
-      if (!result.isSuccess) {
-        setError(result.errors?.[0]?.message || 'Failed to send password reset email. Please try again.');
-        return;
-      }
-
-      setSuccess(result.data?.message || 'Password reset email sent successfully.');
+      setSuccess(result?.message || 'Password reset email sent successfully.');
 
       setTimeout(() => {
         navigate('/login');
       }, 3000);
     } catch (err: any) {
-      setError(
-        err?.response?.data?.errors?.[0]?.message || 'Failed to send password reset email. Please try again.'
-      );
+      setError(err?.message || 'Failed to send password reset email. Please try again.');
     } finally {
       setIsLoading(false);
     }

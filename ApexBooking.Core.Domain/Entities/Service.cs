@@ -243,6 +243,18 @@ public class Service : IAggregateRoot, ITenantEntity
     public bool IsStaffAssigned(StaffId staffId)
         => _serviceStaffs.Any(sr => sr.StaffId == staffId);
 
+    public void EnsureStaffAssigned(StaffId staffId)
+    {
+        if (!IsStaffAssigned(staffId))
+            throw new BusinessRuleBrokenException("Resource not assigned to service.");
+    }
+
+    public static void EnsureNameIsUnique(bool nameExists)
+    {
+        if (nameExists)
+            throw new BusinessRuleBrokenException("A service with this name already exists.");
+    }
+
     /// <summary>
     /// Returns the effective minimum advance booking hours for slot validation.
     /// Uses service-level override if set, otherwise falls back to the tenant setting.
@@ -258,5 +270,23 @@ public class Service : IAggregateRoot, ITenantEntity
     /// </summary>
     public int GetEffectiveMaxAdvanceBookingDays(int tenantDefault)
         => MaxAdvanceBookingDays ?? tenantDefault;
+
+    public void ValidateBookingWindow(DateTime scheduledUtc, DateTime nowUtc, int tenantMinHours, int tenantMaxDays)
+    {
+        var minHours = GetEffectiveMinAdvanceBookingHours(tenantMinHours);
+        var maxDays  = GetEffectiveMaxAdvanceBookingDays(tenantMaxDays);
+
+        if (scheduledUtc < nowUtc.AddHours(minHours))
+            throw new BusinessRuleBrokenException("Booking is too soon.");
+
+        if (scheduledUtc > nowUtc.AddDays(maxDays))
+            throw new BusinessRuleBrokenException("Booking is too far in advance.");
+    }
+
+    public void EnsureDateWithinBookingWindow(DateOnly date, DateOnly earliest, DateOnly latest)
+    {
+        if (date < earliest || date > latest)
+            throw new BusinessRuleBrokenException("Requested date is outside the booking window.");
+    }
 }
 

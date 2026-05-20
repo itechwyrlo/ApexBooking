@@ -3,12 +3,12 @@ using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.SuperAdmin.Commands.AssignExistingUser;
 
 internal sealed class AssignExistingUserCommandHandler
-    : ICommandHandler<AssignExistingUserCommand, BaseResponse<TenantUserDto>>
+    : ICommandHandler<AssignExistingUserCommand, TenantUserDto>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -17,27 +17,23 @@ internal sealed class AssignExistingUserCommandHandler
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<BaseResponse<TenantUserDto>> Handle(
+    public async Task<TenantUserDto> Handle(
         AssignExistingUserCommand command,
         CancellationToken cancellationToken)
     {
         var tenant = await _unitOfWork.TenantRepository.FindBySlugAsync(command.TenantSlug);
         if (tenant is null)
-            return BaseResponse<TenantUserDto>.Failure("Organization not found.");
+            throw new NotFoundException("Organization not found.");
 
         var user = await _unitOfWork.UserRepository.FindByEmailAsync(tenant.TenantId, command.Email);
         if (user is null)
-            return BaseResponse<TenantUserDto>.Failure("No user with this email found in this organization.");
+            throw new NotFoundException("No user with this email found in this organization.");
 
-        if (!Enum.TryParse<UserRole>(command.Role, ignoreCase: true, out var newRole))
-            return BaseResponse<TenantUserDto>.Failure($"Invalid role '{command.Role}'.");
-
-        if (user.Role == newRole)
-            return BaseResponse<TenantUserDto>.Failure($"User already has the '{command.Role}' role.");
+        var newRole = Enum.Parse<UserRole>(command.Role, ignoreCase: true);
 
         user.ChangeRole(newRole);
         await _unitOfWork.CompleteAsync(cancellationToken);
 
-        return BaseResponse<TenantUserDto>.Success(user.ToTenantUserDto());
+        return user.ToTenantUserDto();
     }
 }

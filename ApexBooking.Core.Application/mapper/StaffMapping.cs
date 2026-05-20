@@ -25,6 +25,7 @@ public static class ResourceMappings
         staff.Description,
         staff.Capacity,
         staff.IsActive,
+        staff.PhotoUrl,
         staff.CreatedAt,
         staff.UpdatedAt
     );

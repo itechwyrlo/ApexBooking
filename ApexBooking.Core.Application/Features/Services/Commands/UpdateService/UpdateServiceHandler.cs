@@ -1,18 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Application.Services.Mappings;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
-using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Services.Commands.UpdateService
 {
-    internal sealed class UpdateServiceHandler : ICommandHandler<UpdateServiceCommand, BaseResponse<ServiceDto>>
+    internal sealed class UpdateServiceHandler : ICommandHandler<UpdateServiceCommand, ServiceDto>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _contextService;
@@ -23,7 +18,7 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.UpdateService
             _contextService = contextService;
         }
 
-        public async Task<BaseResponse<ServiceDto>> Handle(UpdateServiceCommand command, CancellationToken ct)
+        public async Task<ServiceDto> Handle(UpdateServiceCommand command, CancellationToken ct)
         {
             var tenantId = _contextService.GetCurrentTenantId();
             var serviceId = new ServiceId(command.ServiceId);
@@ -33,7 +28,7 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.UpdateService
                 includes: s => s.ServiceStaffs).ConfigureAwait(false);
 
             if (service is null || service.TenantId != tenantId)
-                return BaseResponse<ServiceDto>.Failure("Service not found.");
+                throw new NotFoundException("Service not found.");
 
             service.Update(
                 command.Name,
@@ -48,12 +43,12 @@ namespace ApexBooking.Core.Application.Features.Services.Commands.UpdateService
             );
 
             var staffIds = command.StaffIds.Select(id => new StaffId(id)).ToList();
-            if(staffIds.Count > 0) service.ReplaceResources(staffIds);
+            if (staffIds.Count > 0) service.ReplaceResources(staffIds);
 
             _unitOfWork.ServiceRepository.Update(service);
             await _unitOfWork.CompleteAsync(ct);
 
-            return BaseResponse<ServiceDto>.Success(service.ToServiceDto());
+            return service.ToServiceDto();
         }
     }
 }

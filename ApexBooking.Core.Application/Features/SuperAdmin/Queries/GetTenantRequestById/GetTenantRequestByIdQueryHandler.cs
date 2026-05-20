@@ -3,12 +3,12 @@ using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
-using ApexBooking.SharedKernel.Models;
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.SuperAdmin.Queries.GetTenantRequestById;
 
 internal sealed class GetTenantRequestByIdQueryHandler
-    : IQueryHandler<GetTenantRequestByIdQuery, BaseResponse<TenantRequestDetailDto>>
+    : IQueryHandler<GetTenantRequestByIdQuery, TenantRequestDetailDto>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -17,7 +17,7 @@ internal sealed class GetTenantRequestByIdQueryHandler
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<BaseResponse<TenantRequestDetailDto>> Handle(
+    public async Task<TenantRequestDetailDto> Handle(
         GetTenantRequestByIdQuery request,
         CancellationToken cancellationToken)
     {
@@ -25,8 +25,8 @@ internal sealed class GetTenantRequestByIdQueryHandler
             r => r.Id == new TenantRequestId(request.Id));
 
         if (tenantRequest is null)
-            return BaseResponse<TenantRequestDetailDto>.Failure("Request not found.");
+            throw new NotFoundException("Request not found.");
 
-        return BaseResponse<TenantRequestDetailDto>.Success(tenantRequest.ToDetailDto());
+        return tenantRequest.ToDetailDto();
     }
 }

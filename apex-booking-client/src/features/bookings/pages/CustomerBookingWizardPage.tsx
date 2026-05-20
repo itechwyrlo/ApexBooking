@@ -20,6 +20,7 @@ import WizardProgressBar from "../components/WizardProgressBar";
 import WizardSelectionChips from "../components/WizardSelectionChips";
 import { Alert } from "../../../components/ui/Alert";
 import { Button } from "../../../components/ui/Button";
+import { BookingWizardSkeleton } from "../components/BookingWizardSkeleton";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 type SelectedResource = PublicResource | null | "unset";
@@ -85,7 +86,7 @@ const CustomerBookingWizardPage: React.FC = () => {
       setTenantLoading(true);
       try {
         const res = await axiosInstance.get(`/public/${tenant}`);
-        setTenantData(res.data);
+        setTenantData(res);
       } catch (err) {
         console.error("Failed to load tenant", err);
       } finally {
@@ -119,7 +120,7 @@ const CustomerBookingWizardPage: React.FC = () => {
             `/public/${tenant}/services/${selectedService.serviceId}/resources`,
             { params },
           );
-          setResources(res.data || []);
+          setResources(res);
         } catch (err) {
           console.error("Failed to load resources", err);
         }
@@ -231,25 +232,22 @@ const CustomerBookingWizardPage: React.FC = () => {
       };
 
       const res = await axiosInstance.post("/booking", request);
-      if (!res.isSuccess) {
-        setSubmitError(res.errors?.[0]?.message ?? "Failed to create booking.");
-        return;
-      }
 
       setBookingResult({
-        bookingId: res.data.bookingId,
-        bookingReference: res.data.bookingReference,
-        status: res.data.status,
-        priceSnapshot: res.data.priceSnapshot,
-        currencyCode: res.data.currencyCode,
+        bookingId: res.bookingId,
+        bookingReference: res.bookingReference,
+        status: res.status,
+        priceSnapshot: res.priceSnapshot,
+        currencyCode: res.currencyCode,
         serviceName: selectedService.name,
         resourceName:
           selectedResource === null ? "Any Available" : selectedResource.name,
         scheduledDate: selectedDate,
         scheduledStartTime: selectedSlot,
       });
-    } catch {
-      setSubmitError("Failed to create booking.");
+    } catch(err: any) {
+      setSubmitError(`Failed to create booking. ${err}`);
+   
     } finally {
       setSubmitLoading(false);
     }
@@ -262,7 +260,7 @@ const CustomerBookingWizardPage: React.FC = () => {
   };
 
   if (tenantLoading || servicesLoading)
-    return <div className="p-5 text-center">Loading...</div>;
+    return <BookingWizardSkeleton />;
   if (!tenantData)
     return <div className="p-5 text-center">Business not found.</div>;
 
@@ -270,14 +268,8 @@ const CustomerBookingWizardPage: React.FC = () => {
   if (bookingResult && bookingResult.status === "Confirmed") {
     return (
       <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center p-3">
-        <div
-          className="card border-0 shadow-sm p-4 text-center"
-          style={{ maxWidth: 480, width: "100%" }}
-        >
-          <div
-            className="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3"
-            style={{ width: 64, height: 64 }}
-          >
+        <div className="card border-0 shadow-sm p-4 text-center wizard-result-card">
+          <div className="wizard-icon-circle rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3">
             <i className="fas fa-check fa-xl text-success" />
           </div>
           <h5 className="fw-bold mb-1">You're all set!</h5>
@@ -301,18 +293,42 @@ const CustomerBookingWizardPage: React.FC = () => {
     );
   }
 
+  // Render Pending Manual Confirmation
+  if (bookingResult && bookingResult.status === "Pending") {
+    return (
+      <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center p-3">
+        <div className="card border-0 shadow-sm p-4 text-center wizard-result-card">
+          <div className="wizard-icon-circle rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3">
+            <i className="fas fa-clock fa-xl text-info" />
+          </div>
+          <h5 className="fw-bold mb-1">Booking Request Received</h5>
+          <p className="text-muted small mb-3">
+            Your request is awaiting manual confirmation from our team. We'll
+            send you a follow-up email once your appointment has been approved.
+          </p>
+          <div className="bg-light rounded p-3 mb-3">
+            <div className="text-muted small mb-1">Booking Reference</div>
+            <div className="fw-bold fs-5">{bookingResult.bookingReference}</div>
+          </div>
+          <div className="text-muted small">
+            <div>{bookingResult.serviceName}</div>
+            <div>{bookingResult.resourceName}</div>
+            <div>
+              {bookingResult.scheduledDate} at{" "}
+              {formatTo12Hour(bookingResult.scheduledStartTime)}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Render Payment Pending
   if (bookingResult && bookingResult.status === "PendingPayment") {
     return (
       <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center p-3">
-        <div
-          className="card border-0 shadow-sm p-4 text-center"
-          style={{ maxWidth: 480, width: "100%" }}
-        >
-          <div
-            className="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3"
-            style={{ width: 64, height: 64 }}
-          >
+        <div className="card border-0 shadow-sm p-4 text-center wizard-result-card">
+          <div className="wizard-icon-circle rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3">
             <i className="fas fa-credit-card fa-xl text-warning" />
           </div>
           <h5 className="fw-bold mb-2">Payment Required</h5>
@@ -376,7 +392,7 @@ const CustomerBookingWizardPage: React.FC = () => {
 
   return (
     <div className="min-vh-100 bg-light py-4 px-3">
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+      <div className="wizard-page-inner">
         <div className="text-center mb-4">
           {tenantData.logoUrl && (
             <img

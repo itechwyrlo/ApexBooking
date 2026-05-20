@@ -1,0 +1,15 @@
+.apex-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.apex-pill.confirmed  { background-color: #d1fae5; color: #065f46; }
+.apex-pill.pending    { background-color: #fef9c3; color: #854d0e; }
+.apex-pill.cancelled  { background-color: #fee2e2; color: #991b1b; }
+.apex-pill.completed  { background-color: #e0e7ff; color: #3730a3; }
+.apex-pill.noshow     { background-color: #f3f4f6; color: #374151; }

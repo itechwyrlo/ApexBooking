@@ -24,6 +24,7 @@ namespace ApexBooking.Core.Persistence
         private readonly Lazy<IPlatformPaymentGatewayRepository> _platformPaymentGatewayRepository;
         private readonly Lazy<IGuestCancellationTokenRepository> _guestCancellationTokenRepository;
         private readonly Lazy<ITenantRequestRepository> _tenantRequestRepository;
+        private readonly Lazy<INotificationRepository> _notificationRepository;
 
         public IStaffRepository StaffRepository => _staffRepository.Value;
         public IBookingRepository BookingRepository => _bookingRepository.Value;
@@ -35,6 +36,7 @@ namespace ApexBooking.Core.Persistence
         public IPlatformPaymentGatewayRepository PlatformPaymentGatewayRepository => _platformPaymentGatewayRepository.Value;
         public IGuestCancellationTokenRepository GuestCancellationTokenRepository => _guestCancellationTokenRepository.Value;
         public ITenantRequestRepository TenantRequestRepository => _tenantRequestRepository.Value;
+        public INotificationRepository NotificationRepository => _notificationRepository.Value;
 
         public UserManager<User> UserManager { get; }
         public RoleManager<IdentityRole<Guid>> RoleManager { get; }
@@ -64,6 +66,8 @@ namespace ApexBooking.Core.Persistence
                 () => new GuestCancellationTokenRepository(_context));
             _tenantRequestRepository = new Lazy<ITenantRequestRepository>(
                 () => new TenantRequestRepository(_context));
+            _notificationRepository = new Lazy<INotificationRepository>(
+                () => new NotificationRepository(_context));
         }
 
         public async Task<int> CompleteAsync()

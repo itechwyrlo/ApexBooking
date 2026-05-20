@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.Core.Domain.Entities;
+using ApexBooking.Core.Domain.ValueObjects;
 using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Persistence.Mappings
@@ -50,6 +50,21 @@ namespace ApexBooking.Core.Persistence.Mappings
                 .HasColumnName("capacity")
                 .HasDefaultValue(1)
                 .IsRequired();
+
+            builder.Property(r => r.UserId)
+                .HasColumnName("user_id")
+                .IsRequired(false);
+
+            builder.Property(r => r.PhotoUrl)
+                .HasColumnName("photo_url")
+                .HasMaxLength(2048)
+                .IsRequired(false);
+
+            builder.HasOne<User>()
+                .WithOne()
+                .HasForeignKey<Staff>(s => s.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.Property(r => r.IsActive)
                 .HasColumnName("is_active")

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../services/axiosInstance';
-import { useAuth } from '../../../context/AuthContext';
-import type { ResetPasswordRequest, ResetPasswordResponse } from '../types';
+import type { ResetPasswordRequest } from '../types';
 
 interface UseResetPasswordReturn {
   resetPassword: (token: string, newPassword: string, confirmPassword: string) => Promise<void>;
@@ -17,7 +16,6 @@ export const useResetPassword = (): UseResetPasswordReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { setAccessToken } = useAuth();
   const navigate = useNavigate();
 
   const clearError = () => setError(null);
@@ -29,45 +27,18 @@ export const useResetPassword = (): UseResetPasswordReturn => {
     setSuccess(null);
 
     try {
-      const result = await axiosInstance.post<ResetPasswordResponse>('/auth/reset-password', {
+      await axiosInstance.post('/auth/reset-password', {
         token,
         newPassword,
         confirmPassword,
       } as ResetPasswordRequest);
 
-      // Handle BaseResponse structure
-      if (!result.isSuccess) {
-        const errorMessage = result.errors?.[0]?.message || 'Password reset failed. Please try again.';
-        setError(errorMessage);
-        return;
-      }
-
-      const { accessToken } = result.data!;
-
-      // If tokens are returned, user is automatically logged in
-      if (accessToken) {
-        // This single call now handles: 
-        // 1. Storage 2. Authentication State 3. JWT Decoding 4. Setting User Info
-        setAccessToken(accessToken);
-        navigate('/dashboard');
-      } else {
-        setSuccess('Password reset successfully. Please login with your new password.');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      }
+      setSuccess('Password reset successfully. Please login with your new password.');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (err: any) {
-      // Handle BaseResponse error structure
-      const responseData = err.response?.data;
-      let errorMessage = 'Password reset failed. Please try again.';
-      
-      if (responseData?.errors && responseData.errors.length > 0) {
-        errorMessage = responseData.errors[0].message;
-      } else if (responseData?.message) {
-        errorMessage = responseData.message;
-      }
-      
-      setError(errorMessage);
+      setError(err?.message || 'Password reset failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -47,5 +47,13 @@ namespace ApexBooking.Core.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<Staff?> FindByUserIdAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+        {
+            return await Context.Set<Staff>()
+                .FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
+        }
+
     }
 }

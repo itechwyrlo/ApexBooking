@@ -57,7 +57,7 @@ public class ServiceController : ControllerBase
             dto.MaxAdvanceBookingDays
         ));
 
-        return CreatedAtAction(nameof(GetById), new { serviceId = response.Data.Id }, response);
+        return CreatedAtAction(nameof(GetById), new { serviceId = response.Id }, response);
     }
 
     [HttpPatch("{serviceId:guid}")]
@@ -85,8 +85,8 @@ public class ServiceController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Deactivate(Guid serviceId)
     {
-        var response = await _mediator.Send(new DeactivateServiceCommand(serviceId));
-        return Ok(response);
+        await _mediator.Send(new DeactivateServiceCommand(serviceId));
+        return NoContent();
     }
 
    

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import axiosInstance from "../../../services/axiosInstance";
 import { useAuth } from "../../../context/AuthContext";
-import type { AuthResponse } from "../types";
+import type { AuthResponseData } from "../types";
 
 interface JWTPayload {
   role?: string;
@@ -22,18 +22,13 @@ export const useLogin = () => {
     setError(null);
 
     try {
-      const result = await axiosInstance.post<AuthResponse>("/auth/login", {
+      const result = await axiosInstance.post<AuthResponseData>("/auth/login", {
         email,
         password,
       });
 
-      if (!result.isSuccess) {
-        setError(result?.errors?.[0]?.message ?? "Login failed");
-        return;
-      }
-
-      const accessToken = result.data?.accessToken;
-      const tenantSlug = result.data?.tenantSlug;
+      const accessToken = result.accessToken;
+      const tenantSlug = result.tenantSlug;
 
       if (!tenantSlug) {
         setError("Missing tenant slug from server");
@@ -61,8 +56,8 @@ export const useLogin = () => {
       } else {
         navigate(`/t/${tenantSlug}/dashboard`);
       }
-    } catch {
-      setError("Login failed");
+    } catch (err: any) {
+      setError(err?.message ?? "Login failed");
     } finally {
       setIsLoading(false);
     }

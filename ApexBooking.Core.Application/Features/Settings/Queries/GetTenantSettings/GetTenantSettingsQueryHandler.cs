@@ -1,19 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;
-using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel.Models;
-
+using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.Settings.Queries.GetTenantSettings
 {
     internal sealed class GetTenantSettingsQueryHandler
-    : IQueryHandler<GetTenantSettingsQuery, BaseResponse<TenantSettingsDto>>
+        : IQueryHandler<GetTenantSettingsQuery, TenantSettingsDto>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _contextService;
@@ -24,9 +20,7 @@ namespace ApexBooking.Core.Application.Features.Settings.Queries.GetTenantSettin
             _contextService = contextService;
         }
 
-        public async Task<BaseResponse<TenantSettingsDto>> Handle(
-    GetTenantSettingsQuery query,
-    CancellationToken ct)
+        public async Task<TenantSettingsDto> Handle(GetTenantSettingsQuery query, CancellationToken ct)
         {
             var tenantId = _contextService.GetCurrentTenantId();
 
@@ -36,9 +30,9 @@ namespace ApexBooking.Core.Application.Features.Settings.Queries.GetTenantSettin
                     includes: t => t.TenantSettings);
 
             if (tenant is null)
-                return BaseResponse<TenantSettingsDto>.Failure("Tenant settings not found.");
+                throw new NotFoundException("Tenant settings not found.");
 
-            return BaseResponse<TenantSettingsDto>.Success(tenant.TenantSettings.ToSettingsDto());
+            return tenant.TenantSettings.ToSettingsDto();
         }
     }
 }

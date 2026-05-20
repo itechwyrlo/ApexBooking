@@ -42,12 +42,9 @@ const SuperAdminLoginPage: React.FC = () => {
 
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-      <div className="card shadow-sm border-0 p-4" style={{ width: '100%', maxWidth: '400px' }}>
+      <div className="card shadow-sm border-0 p-4 sa-login-card">
         <div className="text-center mb-4">
-          <div
-            className="bg-primary rounded d-flex align-items-center justify-content-center mx-auto mb-3"
-            style={{ width: 44, height: 44 }}
-          >
+          <div className="bg-primary rounded d-flex align-items-center justify-content-center mx-auto mb-3 sa-login-icon">
             <span className="text-white fw-bold">A</span>
           </div>
           <h3 className="fw-bold">Platform Admin Sign In</h3>

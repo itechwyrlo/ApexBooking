@@ -21,43 +21,23 @@ const WizardProgressBar: React.FC<Props> = ({ currentStep }) => {
 
         return (
           <React.Fragment key={step}>
-            <div className="d-flex flex-column align-items-center" style={{ minWidth: 64 }}>
+            <div className="wizard-step-wrapper d-flex flex-column align-items-center">
               <div
-                className="rounded-circle d-flex align-items-center justify-content-center fw-semibold mb-1"
-                style={{
-                  width: 32,
-                  height: 32,
-                  fontSize: 13,
-                  background: isCompleted || isActive ? 'var(--bs-primary)' : '#e9ecef',
-                  color: isCompleted || isActive ? '#fff' : '#adb5bd',
-                  flexShrink: 0,
-                }}
+                className={`wizard-step-circle rounded-circle d-flex align-items-center justify-content-center fw-semibold mb-1${isCompleted ? ' wizard-step-circle--done' : isActive ? ' wizard-step-circle--active' : ''}`}
               >
                 {isCompleted
-                  ? <i className="fas fa-check" style={{ fontSize: 11 }} />
+                  ? <i className="fas fa-check wizard-step-check" />
                   : step}
               </div>
               <span
-                className="text-center"
-                style={{
-                  fontSize: 11,
-                  color: isActive ? 'var(--bs-primary)' : isCompleted ? '#495057' : '#adb5bd',
-                  fontWeight: isActive ? 600 : 400,
-                  lineHeight: 1.2,
-                }}
+                className={`wizard-step-label text-center${isActive ? ' wizard-step-label--active' : isCompleted ? ' wizard-step-label--done' : ''}`}
               >
                 {STEP_LABELS[step]}
               </span>
             </div>
             {step < 5 && (
               <div
-                style={{
-                  flex: 1,
-                  height: 2,
-                  marginBottom: 18,
-                  background: currentStep > step ? 'var(--bs-primary)' : '#e9ecef',
-                  maxWidth: 40,
-                }}
+                className={`wizard-step-connector${currentStep > step ? ' wizard-step-connector--done' : ''}`}
               />
             )}
           </React.Fragment>
