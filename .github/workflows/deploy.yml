@@ -20,6 +20,9 @@ jobs:
           cache: 'npm'
           cache-dependency-path: apex-booking-client/package-lock.json
 
+      - name: Install npm 11
+        run: npm install -g npm@11
+
       - name: Install frontend dependencies
         working-directory: apex-booking-client
         run: npm ci
