@@ -32,4 +32,4 @@ jobs:
           $sourceArg = "-source:contentPath=$publishPath"
           $destArg = "-dest:contentPath=site70197,computerName=$computerName,userName=site70197,password=$password,authType=Basic"
 
-          & $msdeploy -verb:sync $sourceArg $destArg -allowUntrusted
+          & $msdeploy -verb:sync $sourceArg $destArg -allowUntrusted -enableRule:AppOffline
