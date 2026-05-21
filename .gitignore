@@ -49,6 +49,7 @@ ScaffoldingReadMe.txt
 # Frontend
 node_modules/
 ApexBooking.WebApi/wwwroot/
+publish/
 dist/
 .angular
 .cache/
