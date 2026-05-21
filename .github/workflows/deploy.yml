@@ -1,0 +1,30 @@
+name: Deploy to MonsterASP.NET
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish
+        run: dotnet publish ApexBooking.WebApi/ApexBooking.WebApi.csproj -c Release -o ./publish
+
+      - name: Deploy via Web Deploy
+        run: |
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+            -verb:sync `
+            -source:contentPath="${{ github.workspace }}\publish" `
+            -dest:contentPath="site70197",computerName="https://site70197.siteasp.net:8172/msdeploy.axd?site=site70197",userName="site70197",password="${{ secrets.WEBDEPLOY_PASSWORD }}",authType="Basic" `
+            -allowUntrusted
