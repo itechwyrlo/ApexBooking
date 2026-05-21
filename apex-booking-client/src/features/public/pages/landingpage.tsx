@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import PublicNav from "../components/PublicNav";
+import apexbookingLogo from "../../../assets/apexbooking-logo.svg";
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -309,9 +310,7 @@ const LandingPage: React.FC = () => {
           <div className="row g-4 mb-5">
             <div className="col-lg-4">
               <div className="d-flex align-items-center gap-2 mb-3">
-                <div className="apex-logo-icon">
-                  <i className="fas fa-calendar-check" />
-                </div>
+                <img src={apexbookingLogo} alt="ApexBooking" style={{ width: 36, height: 36, borderRadius: 10 }} />
                 <span className="footer-logo-text">ApexBooking</span>
               </div>
               <p className="footer-brand-desc">

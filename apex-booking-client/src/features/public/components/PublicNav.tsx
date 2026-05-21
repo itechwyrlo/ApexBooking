@@ -1,4 +1,5 @@
 import React from 'react';
+import apexbookingLogo from '../../../assets/apexbooking-logo.svg';
 
 interface Props {
   showGetStarted?: boolean;
@@ -7,9 +8,7 @@ interface Props {
 const PublicNav: React.FC<Props> = ({ showGetStarted }) => (
   <nav className="public-nav">
     <a href="/" className="apex-logo">
-      <div className="apex-logo-icon">
-        <i className="fas fa-calendar-check" />
-      </div>
+      <img src={apexbookingLogo} alt="ApexBooking" style={{ width: 36, height: 36, borderRadius: 10 }} />
       <span className="apex-logo-text">ApexBooking</span>
     </a>
     <div className="d-flex align-items-center gap-3">

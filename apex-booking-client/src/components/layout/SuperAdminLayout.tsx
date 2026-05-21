@@ -5,6 +5,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faTachometerAlt, faBuilding, faCreditCard, faBars, faBell, faBellSlash, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { useLogout } from '../../features/auth/hooks/useLogout';
 import { useAuth } from '../../context/AuthContext';
+import apexbookingLogo from '../../assets/apexbooking-logo.svg';
 import { useNotifications } from '../../features/notifications/hooks/useNotifications';
 import { NotificationItem } from '../../features/notifications/components/NotificationItem';
 
@@ -39,12 +40,12 @@ export const SuperAdminLayout: React.FC = () => {
       <aside className={`bg-white border-end d-flex flex-column sa-sidebar${sidebarCollapsed ? ' sa-sidebar-collapsed' : ''}`}>
         {/* Logo / Brand */}
         <div className="border-bottom d-flex align-items-center px-3 sa-sidebar-logo">
-          <div
-            className="bg-primary rounded d-flex align-items-center justify-content-center flex-shrink-0 sa-brand-icon"
+          <img
+            src={apexbookingLogo}
+            alt="ApexBooking"
+            className="sa-brand-icon"
             onClick={() => navigate('/superadmin')}
-          >
-            <span className="text-white fw-bold">A</span>
-          </div>
+          />
           {!sidebarCollapsed && (
             <div className="overflow-hidden">
               <div className="fw-bold text-dark text-nowrap">
