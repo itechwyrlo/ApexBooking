@@ -97,3 +97,15 @@
   padding: 9px 20px;
   font-size: 0.875rem;
 }
+
+@media (max-width: 575px) {
+  .public-nav {
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .public-nav .btn-apex-ghost {
+    display: none;
+  }
+}

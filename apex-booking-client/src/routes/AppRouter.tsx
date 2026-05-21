@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "../context/AuthContext";
 import { ProtectedRoute } from "./ProtectedRoute";
@@ -33,10 +33,14 @@ import CustomerRegisterPage from "../features/bookings/pages/CustomerRegisterPag
 import SettingsPage from "../features/settings/pages/SettingsPage";
 import PaymentSuccessPage from "../features/bookings/pages/PaymentSuccessPage";
 import CancelBookingPage from "../features/bookings/pages/CancelBookingPage";
-import LandingPage from "../features/public/pages/landingpage";
-import PricingPage from "../features/public/pages/PricingPage";
-import RequestAccessPage from "../features/public/pages/RequestAccessPage";
+import LandingPageSkeleton from "../features/public/components/LandingPageSkeleton";
+import PricingPageSkeleton from "../features/public/components/PricingPageSkeleton";
+import RequestFormSkeleton from "../features/public/components/RequestFormSkeleton";
 import SuperAdminLoginPage from "../features/superadmin/pages/SuperAdminLoginPage";
+
+const LandingPage = lazy(() => import("../features/public/pages/landingpage"));
+const PricingPage = lazy(() => import("../features/public/pages/PricingPage"));
+const RequestAccessPage = lazy(() => import("../features/public/pages/RequestAccessPage"));
 import SuperAdminPaymentGatewayPage from "../features/superadmin/pages/SuperAdminPaymentGatewayPage";
 import SuperAdminOverviewPage from "../features/superadmin/pages/SuperAdminOverviewPage";
 import NewOrganizationPage from "../features/superadmin/pages/NewOrganizationPage";
@@ -58,8 +62,8 @@ export const AppRouter: React.FC = () => {
           <Route path="/setup-account" element={<SetupAccountPage />} />
 
           {/* Public marketing routes */}
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/request-access" element={<RequestAccessPage />} />
+          <Route path="/pricing" element={<Suspense fallback={<PricingPageSkeleton />}><PricingPage /></Suspense>} />
+          <Route path="/request-access" element={<Suspense fallback={<RequestFormSkeleton />}><RequestAccessPage /></Suspense>} />
 
           {/* Super admin — public login */}
           <Route path="/superadmin/login" element={<SuperAdminLoginPage />} />
@@ -121,7 +125,7 @@ export const AppRouter: React.FC = () => {
             </Route>
           </Route>
 
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<Suspense fallback={<LandingPageSkeleton />}><LandingPage /></Suspense>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

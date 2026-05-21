@@ -138,3 +138,27 @@
   color: var(--bs-primary);
   background: var(--apex-blue-soft);
 }
+
+/* ── Wide screens (≥1400px) ── */
+@media (min-width: 1400px) {
+  .pricing-page-body {
+    padding-top: 128px;
+    padding-bottom: 100px;
+  }
+}
+
+/* ── Mobile (≤575px) ── */
+@media (max-width: 575px) {
+  .pricing-page-body {
+    padding-top: 96px;
+    padding-bottom: 48px;
+  }
+
+  .pricing-card {
+    padding: 1.5rem;
+  }
+
+  .plan-price {
+    font-size: 2.75rem;
+  }
+}

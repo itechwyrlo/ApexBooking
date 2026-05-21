@@ -106,3 +106,31 @@
   opacity: 0.65;
   cursor: not-allowed;
 }
+
+/* ── Wide screens (≥1400px) ── */
+@media (min-width: 1400px) {
+  .request-page-body {
+    padding-top: 120px;
+    padding-bottom: 100px;
+  }
+}
+
+/* ── Mobile (≤575px) ── */
+@media (max-width: 575px) {
+  .request-page-body {
+    padding-top: 88px;
+    padding-bottom: 40px;
+  }
+
+  .request-card {
+    padding: 1.5rem;
+  }
+}
+
+/* ── Very small phones (≤400px) ── */
+@media (max-width: 400px) {
+  .request-card {
+    padding: 1.25rem 1rem;
+    border-radius: 12px;
+  }
+}

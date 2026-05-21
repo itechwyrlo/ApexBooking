@@ -611,3 +611,54 @@
 .reveal-delay-3 { transition-delay: 0.3s; }
 .reveal-delay-4 { transition-delay: 0.4s; }
 .reveal-delay-5 { transition-delay: 0.5s; }
+
+/* ── Wide screens (≥1400px) ── */
+@media (min-width: 1400px) {
+  .lp-section-lg {
+    padding: 100px 0;
+  }
+}
+
+/* ── Tablet (≤768px) ── */
+@media (max-width: 767px) {
+  .lp-section-lg {
+    padding: 48px 0;
+  }
+
+  .hero-subheadline {
+    max-width: none;
+  }
+
+  .section-subtitle {
+    max-width: none;
+  }
+}
+
+/* ── Mobile (≤575px) ── */
+@media (max-width: 575px) {
+  .lp-section-lg {
+    padding: 36px 0;
+  }
+
+  .hero-section {
+    min-height: auto;
+    padding-top: 80px;
+    padding-bottom: 36px;
+  }
+
+  .feature-card {
+    padding: 1.25rem;
+  }
+
+  .step-number {
+    font-size: 2.5rem;
+  }
+
+  .lp-pricing-card {
+    padding: 1.5rem;
+  }
+
+  .apex-footer {
+    padding: 40px 0 24px;
+  }
+}
