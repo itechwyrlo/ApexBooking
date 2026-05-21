@@ -1,1 +1,84 @@
-/* LoginForm — no custom overrides; all styling via Bootstrap utilities */
+.login-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #f0f7ff 0%, #ffffff 60%, #f8faff 100%);
+  padding: 2rem 0;
+}
+
+.login-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.07);
+  width: 100%;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.75rem;
+}
+
+.login-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.login-brand-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.login-heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.75rem;
+  color: #111827;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.login-subheading {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 1.75rem;
+  line-height: 1.5;
+}
+
+.login-forgot-link {
+  color: var(--bs-primary);
+  text-decoration: none;
+}
+
+.login-forgot-link:hover {
+  color: #0a58ca;
+}
+
+.login-access-link {
+  margin-top: 1.25rem;
+  margin-bottom: 0;
+}
+
+.login-divider {
+  border: none;
+  border-top: 1px solid #e9ecef;
+  margin: 1.5rem 0;
+}
+
+@media (max-width: 575px) {
+  .login-page-wrapper {
+    align-items: flex-start;
+    padding: 1.5rem 1rem;
+  }
+
+  .login-card {
+    padding: 1.75rem 1.5rem;
+    border-radius: 16px;
+  }
+}

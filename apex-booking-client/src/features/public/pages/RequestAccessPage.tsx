@@ -21,7 +21,7 @@ const RequestAccessPage: React.FC = () => {
   const [ownerPhone, setOwnerPhone] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     clearError();
     await submitRequest({ businessName, ownerFullName, ownerEmail, ownerPhone, plan, message: message || undefined });
@@ -53,8 +53,8 @@ const RequestAccessPage: React.FC = () => {
                 <a href="/pricing" className="text-primary ms-1 fw-semibold" style={{ fontSize: '0.75rem' }}>Change</a>
               </div>
               <h2 className="request-title">Request access</h2>
-              <p className="text-muted small">
-                Fill in your details and we'll get you set up quickly.
+              <p className="text-muted small" style={{ lineHeight: 1.65 }}>
+                ApexBooking is an invitation-only platform. Submit your details and our team will review your request within 1–2 business days.
               </p>
             </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useLogin } from "../hooks/useLogin";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
@@ -7,6 +7,7 @@ import { Alert } from "../../../components/ui/Alert";
 import type { ValidationErrors } from "../../../utils/validation";
 import { validateForm, validationRules } from "../../../utils/validation";
 import { CustomerRegisterLink } from "./CustomerRegisterLink";
+import "./LoginForm.styles.css";
 
 interface LoginFormData {
   email: string;
@@ -17,9 +18,12 @@ const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { login, isLoading, error, clearError } = useLogin();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors<LoginFormData>>({});
+
+  const isCustomerPath = /^\/book\/[^/]+\/customer\/login/.test(location.pathname);
 
   useEffect(() => {
     const message = searchParams.get("message");
@@ -40,7 +44,7 @@ const LoginForm: React.FC = () => {
     if (error) setPassword("");
   }, [error]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     clearError();
 
@@ -64,28 +68,34 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div className="login-page-wrapper">
       <div className="container">
         <div className="row justify-content-center">
-          <div className="col-12 col-sm-10 col-md-6 col-lg-5">
-            <div className="card border-0 shadow-sm p-4 p-md-5">
-              <div className="text-center mb-4">
-                <h4 className="fw-bold">Sign in</h4>
-                {successMessage && (
-                  <Alert variant="success" dismissible onDismiss={() => setSuccessMessage(null)} className="mb-3">
-                    {successMessage}
-                  </Alert>
-                )}
-                <CustomerRegisterLink searchParams={searchParams} />
+          <div className="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
+            <div className="login-card">
+              <div className="login-brand">
+                <img src="/apexbooking-logo.svg" alt="ApexBooking" className="login-logo" />
+                <span className="login-brand-name">ApexBooking</span>
               </div>
 
-              <form onSubmit={handleSubmit}>
-                {error && (
-                  <div className="alert alert-danger mb-3" role="alert">
-                    {error}
-                  </div>
-                )}
+              <h2 className="login-heading">Welcome back</h2>
+              <p className="login-subheading">
+                Sign in to continue to your workspace.
+              </p>
 
+              {successMessage && (
+                <Alert variant="success" dismissible onDismiss={() => setSuccessMessage(null)} className="mb-4">
+                  {successMessage}
+                </Alert>
+              )}
+
+              {error && (
+                <div className="alert alert-danger mb-4" role="alert">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <Input
                     label="Email address"
@@ -117,7 +127,7 @@ const LoginForm: React.FC = () => {
                       Remember me
                     </label>
                   </div>
-                  <Link to="/forgot-password" className="small text-decoration-none">
+                  <Link to="/forgot-password" className="small login-forgot-link">
                     Forgot password?
                   </Link>
                 </div>
@@ -126,6 +136,17 @@ const LoginForm: React.FC = () => {
                   Sign in
                 </Button>
               </form>
+
+              <CustomerRegisterLink searchParams={searchParams} />
+
+              {!isCustomerPath && (
+                <p className="text-center small text-muted login-access-link">
+                  Don't have access?{' '}
+                  <Link to="/request-access" className="text-decoration-none fw-semibold">
+                    Request access
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
         </div>

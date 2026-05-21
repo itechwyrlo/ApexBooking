@@ -8,7 +8,8 @@ import { StaffOnlyRoute } from "./StaffOnlyRoute";
 // import { CustomerProtectedRoute } from "./CustomerProtectedRoute";
 import { SuperAdminProtectedRoute } from "./SuperAdminProtectedRoute";
 
-import LoginPage from "../features/auth/pages/LoginPage";
+import LoginPageSkeleton from "../features/auth/components/LoginPageSkeleton";
+const LoginPage = lazy(() => import("../features/auth/pages/LoginPage"));
 import EmailVerificationPage from "../features/auth/pages/EmailVerificationPage";
 import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage";
 import ResetPasswordPage from "../features/auth/pages/ResetPasswordPage";
@@ -54,7 +55,7 @@ export const AppRouter: React.FC = () => {
       <AuthProvider>
         <Routes>
           {/* Public auth routes */}
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<Suspense fallback={<LoginPageSkeleton />}><LoginPage /></Suspense>} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-account" element={<EmailVerificationPage />} />
@@ -71,7 +72,7 @@ export const AppRouter: React.FC = () => {
           {/* Public customer portal */}
           {/* <Route path="/book/:tenant" element={<PublicTenantPage />} /> */}
           <Route path="/book/:tenant/new" element={<CustomerBookingWizardPage />} />
-          <Route path="/book/:tenant/customer/login" element={<LoginPage />} />
+          <Route path="/book/:tenant/customer/login" element={<Suspense fallback={<LoginPageSkeleton />}><LoginPage /></Suspense>} />
           <Route path="/book/:tenant/customer/register" element={<CustomerRegisterPage />} />
           <Route path="/book/:tenant/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/book/:tenant/cancel-booking" element={<CancelBookingPage />} />
