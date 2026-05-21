@@ -10,7 +10,6 @@ import {
   faCog,
   faSignOutAlt,
 } from '@fortawesome/free-solid-svg-icons';
-import apexbookingLogo from '../../assets/apexbooking-logo.svg';
 import { useAuth } from '../../context/AuthContext';
 import { useLogout } from '../../features/auth/hooks/useLogout';
 import { useNotifications } from '../../features/notifications/hooks/useNotifications';
@@ -77,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         >
           <FontAwesomeIcon icon={faBars} />
         </button>
-        <img src={apexbookingLogo} alt="ApexBooking" style={{ width: 22, height: 22, borderRadius: 6 }} />
+        <img src="/apexbooking-logo.svg" alt="ApexBooking" style={{ width: 22, height: 22, borderRadius: 6 }} />
         <span className="apex-brand-text">ApexBooking</span>
       </div>
 
