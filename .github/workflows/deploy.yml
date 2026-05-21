@@ -22,9 +22,14 @@ jobs:
         run: dotnet publish ApexBooking.WebApi/ApexBooking.WebApi.csproj -c Release -o ./publish
 
       - name: Deploy via Web Deploy
+        shell: pwsh
         run: |
-          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
-            -verb:sync `
-            -source:contentPath="${{ github.workspace }}\publish" `
-            -dest:contentPath="site70197",computerName="https://site70197.siteasp.net:8172/msdeploy.axd?site=site70197",userName="site70197",password="${{ secrets.WEBDEPLOY_PASSWORD }}",authType="Basic" `
-            -allowUntrusted
+          $msdeploy = 'C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe'
+          $publishPath = Join-Path $env:GITHUB_WORKSPACE 'publish'
+          $password = '${{ secrets.WEBDEPLOY_PASSWORD }}'
+          $computerName = 'https://site70197.siteasp.net:8172/msdeploy.axd?site=site70197'
+
+          $sourceArg = "-source:contentPath=$publishPath"
+          $destArg = "-dest:contentPath=site70197,computerName=$computerName,userName=site70197,password=$password,authType=Basic"
+
+          & $msdeploy -verb:sync $sourceArg $destArg -allowUntrusted
