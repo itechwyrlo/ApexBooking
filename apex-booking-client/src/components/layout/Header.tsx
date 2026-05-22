@@ -57,7 +57,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     : user?.email?.[0]?.toUpperCase() ?? '?';
 
   const displayName = user?.fullName || user?.email || 'User';
-  const displayRole = user?.role === 'tenantadmin' ? 'Admin' : user?.role ?? '';
+  const displayRole =
+    user?.role === 'tenantadmin' ? 'Admin' :
+    user?.role === 'superadmin' ? 'Super Admin' :
+    user?.role ?? '';
 
   const goTo = (path: string) => {
     setUserMenuOpen(false);
@@ -176,13 +179,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 <div className="fw-semibold" style={{ fontSize: 13 }}>{displayName}</div>
                 <div className="text-muted" style={{ fontSize: 11 }}>{user?.email}</div>
               </div>
-              <button className="apex-user-dropdown-item" onClick={() => goTo('/profile')}>
-                <FontAwesomeIcon icon={faUser} /> Profile
-              </button>
-              <button className="apex-user-dropdown-item" onClick={() => goTo('/settings')}>
-                <FontAwesomeIcon icon={faCog} /> Settings
-              </button>
-              <div className="border-top my-1" />
+              {user?.role !== 'superadmin' && (
+                <>
+                  <button className="apex-user-dropdown-item" onClick={() => goTo('/profile')}>
+                    <FontAwesomeIcon icon={faUser} /> Profile
+                  </button>
+                  <button className="apex-user-dropdown-item" onClick={() => goTo('/settings')}>
+                    <FontAwesomeIcon icon={faCog} /> Settings
+                  </button>
+                  <div className="border-top my-1" />
+                </>
+              )}
               <button
                 className="apex-user-dropdown-item danger"
                 onClick={() => { setUserMenuOpen(false); logout(); }}

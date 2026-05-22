@@ -17,7 +17,6 @@ import VerifyEmailNoticePage from "../features/auth/pages/VerifyEmailNoticePage"
 // import CustomerProfilePage from "../features/auth/pages/CustomerProfilePage";
 import { MainLayout } from "../components/layout/MainLayout";
 // import { CustomerLayout } from "../components/layout/CustomerLayout";
-import { SuperAdminLayout } from "../components/layout/SuperAdminLayout";
 import TenantDashboardPage from "../features/dashboard/pages/TenantDashboardPage";
 import StaffPage from "../features/staff/pages/StaffPage";
 import StaffAvailabilityPage from "../features/staff/pages/StaffAvailabilityPage";
@@ -116,7 +115,7 @@ export const AppRouter: React.FC = () => {
 
           {/* Protected super admin routes */}
           <Route element={<SuperAdminProtectedRoute />}>
-            <Route element={<SuperAdminLayout />}>
+            <Route element={<MainLayout />}>
               <Route path="/superadmin" element={<SuperAdminOverviewPage />} />
               <Route path="/superadmin/organizations" element={<SuperAdminOverviewPage />} />
               <Route path="/superadmin/organizations/new" element={<NewOrganizationPage />} />

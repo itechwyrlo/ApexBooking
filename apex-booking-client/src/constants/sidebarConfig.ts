@@ -9,6 +9,8 @@ import {
   faUser,
   faClock,
   faAddressBook,
+  faBuilding,
+  faCreditCard,
 } from '@fortawesome/free-solid-svg-icons';
 
 export interface SidebarChild {
@@ -27,6 +29,21 @@ export interface SidebarGroup {
 }
 
 export const getSidebarConfig = (role: string): SidebarGroup[] => {
+  if (role === 'superadmin') {
+    return [
+      {
+        id: 'platform',
+        label: 'Platform',
+        isGroup: true,
+        children: [
+          { id: 'overview', label: 'Overview', icon: faTachometerAlt, path: '/superadmin' },
+          { id: 'organizations', label: 'Organizations', icon: faBuilding, path: '/superadmin/organizations' },
+          { id: 'payment-gateway', label: 'Payment Gateway', icon: faCreditCard, path: '/superadmin/payment-gateway' },
+        ],
+      },
+    ];
+  }
+
   if (role === 'staff') {
     return [
       {
