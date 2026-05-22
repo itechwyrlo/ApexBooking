@@ -8,7 +8,7 @@ export default defineConfig({
     strictPort: true,
   },
   build: {
-    sourcemap: true, 
+    // sourcemap: true, 
     // This reaches up one level and then into the WebApi project
     outDir: '../ApexBooking.WebApi/wwwroot',
     emptyOutDir: true, // Cleans the folder before every build

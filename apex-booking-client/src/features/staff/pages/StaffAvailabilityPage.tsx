@@ -212,7 +212,7 @@ const StaffAvailabilityPage: React.FC = () => {
 
                 {day.isAvailable ? (
                   <div className="apex-avail-row-controls">
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex align-items-center gap-2 apex-avail-time-pair">
                       <input
                         type="time"
                         className="form-control form-control-sm apex-avail-time-input"

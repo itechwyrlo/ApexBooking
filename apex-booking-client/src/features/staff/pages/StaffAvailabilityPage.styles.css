@@ -51,6 +51,11 @@
 
   .apex-avail-row-controls {
     flex: 0 0 100%;
+    flex-wrap: wrap;
+  }
+
+  .apex-avail-time-pair {
+    flex: 0 0 100%;
   }
 
   .apex-avail-time-input {
