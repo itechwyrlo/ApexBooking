@@ -27,6 +27,7 @@
   height: 600px;
   background: radial-gradient(circle, rgba(13, 110, 253, 0.08) 0%, transparent 70%);
   border-radius: 50%;
+  pointer-events: none;
 }
 
 .hero-section::after {
@@ -38,6 +39,7 @@
   height: 400px;
   background: radial-gradient(circle, rgba(13, 110, 253, 0.05) 0%, transparent 70%);
   border-radius: 50%;
+  pointer-events: none;
 }
 
 .hero-badge {
