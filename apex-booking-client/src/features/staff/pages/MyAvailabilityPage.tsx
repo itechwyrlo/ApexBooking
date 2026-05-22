@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/Button';
 import { ConfirmModal } from '../../../components/ui/modal/ConfirmModal';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { useStaffAvailability } from '../hooks/useStaffAvailability';
+import { StaffAvailabilityPageSkeleton } from '../components/StaffAvailabilityPageSkeleton';
 import type {
   DaySchedule,
   BreakPeriod,
@@ -46,7 +47,7 @@ const MyAvailabilityPage: React.FC = () => {
     getMyProfile();
   }, [getMyProfile]);
 
-  if (profileLoading) return <div className="p-4 text-center text-muted small">Loading…</div>;
+  if (profileLoading) return <StaffAvailabilityPageSkeleton showBackButton={false} />;
   if (profileError) return <div className="alert alert-danger m-4">{profileError}</div>;
   if (!profile) return null;
 
@@ -158,6 +159,8 @@ const MyAvailabilityContent: React.FC<{ staffId: string }> = ({ staffId }) => {
   const needsTimeRange = (type: ExceptionType) =>
     type === 'UnavailableHours' || type === 'AvailableExtraHours';
 
+  if (savedSchedule === null) return <StaffAvailabilityPageSkeleton showBackButton={false} />;
+
   return (
     <div className="container-fluid px-3 px-md-4 py-4">
       <div className="row mb-4 align-items-center">
@@ -193,7 +196,7 @@ const MyAvailabilityContent: React.FC<{ staffId: string }> = ({ staffId }) => {
               key={day.dayOfWeek}
               className={`px-4 py-3 border-bottom ${!day.isAvailable ? 'bg-light' : ''}`}
             >
-              <div className="d-flex align-items-center gap-3 flex-wrap">
+              <div className="apex-avail-row">
                 <div className="apex-avail-day-col">
                   <div className="form-check mb-0">
                     <input
@@ -210,7 +213,7 @@ const MyAvailabilityContent: React.FC<{ staffId: string }> = ({ staffId }) => {
                 </div>
 
                 {day.isAvailable ? (
-                  <>
+                  <div className="apex-avail-row-controls">
                     <div className="d-flex align-items-center gap-2">
                       <input
                         type="time"
@@ -233,7 +236,7 @@ const MyAvailabilityContent: React.FC<{ staffId: string }> = ({ staffId }) => {
                       <FontAwesomeIcon icon={faPlus} className="me-1" />
                       Add Break
                     </button>
-                  </>
+                  </div>
                 ) : (
                   <span className="text-muted small">Unavailable</span>
                 )}
@@ -242,7 +245,7 @@ const MyAvailabilityContent: React.FC<{ staffId: string }> = ({ staffId }) => {
               {day.isAvailable && day.breaks.length > 0 && (
                 <div className="mt-2 ps-4 d-flex flex-column gap-2">
                   {day.breaks.map((brk, breakIndex) => (
-                    <div key={breakIndex} className="d-flex align-items-center gap-2">
+                    <div key={breakIndex} className="apex-avail-break-row">
                       <span className="text-muted small apex-avail-break-prefix">Break</span>
                       <input
                         type="time"

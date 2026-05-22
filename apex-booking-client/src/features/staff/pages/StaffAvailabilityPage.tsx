@@ -6,6 +6,7 @@ import { Alert } from '../../../components/ui/Alert';
 import { Button } from '../../../components/ui/Button';
 import { ConfirmModal } from '../../../components/ui/modal/ConfirmModal';
 import { useStaffAvailability } from '../hooks/useStaffAvailability';
+import { StaffAvailabilityPageSkeleton } from '../components/StaffAvailabilityPageSkeleton';
 import type {
   DaySchedule,
   BreakPeriod,
@@ -147,6 +148,8 @@ const StaffAvailabilityPage: React.FC = () => {
   const needsTimeRange = (type: ExceptionType) =>
     type === 'UnavailableHours' || type === 'AvailableExtraHours';
 
+  if (savedSchedule === null) return <StaffAvailabilityPageSkeleton showBackButton />;
+
   return (
     <div className="container-fluid px-3 px-md-4 py-4">
       <div className="row mb-4 align-items-center">
@@ -191,7 +194,7 @@ const StaffAvailabilityPage: React.FC = () => {
               key={day.dayOfWeek}
               className={`px-4 py-3 border-bottom ${!day.isAvailable ? 'bg-light' : ''}`}
             >
-              <div className="d-flex align-items-center gap-3 flex-wrap">
+              <div className="apex-avail-row">
                 <div className="apex-avail-day-col">
                   <div className="form-check mb-0">
                     <input
@@ -208,7 +211,7 @@ const StaffAvailabilityPage: React.FC = () => {
                 </div>
 
                 {day.isAvailable ? (
-                  <>
+                  <div className="apex-avail-row-controls">
                     <div className="d-flex align-items-center gap-2">
                       <input
                         type="time"
@@ -231,7 +234,7 @@ const StaffAvailabilityPage: React.FC = () => {
                       <FontAwesomeIcon icon={faPlus} className="me-1" />
                       Add Break
                     </button>
-                  </>
+                  </div>
                 ) : (
                   <span className="text-muted small">Unavailable</span>
                 )}
@@ -240,7 +243,7 @@ const StaffAvailabilityPage: React.FC = () => {
               {day.isAvailable && day.breaks.length > 0 && (
                 <div className="mt-2 ps-4 d-flex flex-column gap-2">
                   {day.breaks.map((brk, breakIndex) => (
-                    <div key={breakIndex} className="d-flex align-items-center gap-2">
+                    <div key={breakIndex} className="apex-avail-break-row">
                       <span className="text-muted small apex-avail-break-prefix">Break</span>
                       <input
                         type="time"
