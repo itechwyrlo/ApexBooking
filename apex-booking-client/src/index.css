@@ -56,7 +56,6 @@
 @import './features/superadmin/pages/OrganizationDetailPage.styles.css';
 @import './features/superadmin/pages/TenantRequestsPage.styles.css';
 @import './features/superadmin/pages/SuperAdminPaymentGatewayPage.styles.css';
-@import './features/superadmin/pages/SetupAccountPage.styles.css';
 @import './features/superadmin/components/AddTeamMemberModal.styles.css';
 
 /* ─── Design tokens ──────────────────────────────────────────── */

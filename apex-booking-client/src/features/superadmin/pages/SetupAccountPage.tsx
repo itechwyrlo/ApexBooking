@@ -17,7 +17,7 @@ const SetupAccountPage: React.FC = () => {
     if (t) setToken(t);
   }, [searchParams]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     clearError();
     if (newPassword !== confirmPassword) return;
@@ -28,58 +28,63 @@ const SetupAccountPage: React.FC = () => {
 
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-      <div className="card shadow-sm border-0 p-4 sa-setup-card">
-        <div className="card-body">
-          <div className="text-center mb-4">
-            <h3 className="fw-bold">Set up your account</h3>
-            <p className="text-muted small">Create a password to activate your account.</p>
-          </div>
+      <div className="container">
+        <div className="row justify-content-center">
+          <div className="col-12 col-sm-10 col-md-6 col-lg-5">
+            <div className="card border-0 shadow-sm p-4 p-md-5">
+              <div className="text-center mb-4">
+                <h4 className="fw-bold">Set up your account</h4>
+                <p className="text-muted small mb-0">Create a password to activate your account.</p>
+              </div>
 
-          {!token ? (
-            <Alert variant="error">
-              Invalid or expired invitation link. Contact your administrator to resend the invitation.
-            </Alert>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              {error && (
-                <div className="mb-3">
-                  <Alert variant="error" dismissible onDismiss={clearError}>{error}</Alert>
-                </div>
+              {!token ? (
+                <Alert variant="error">
+                  Invalid or expired invitation link. Contact your administrator to resend the invitation.
+                </Alert>
+              ) : (
+                <form onSubmit={handleSubmit}>
+                  {error && (
+                    <div className="mb-3">
+                      <Alert variant="error" dismissible onDismiss={clearError}>{error}</Alert>
+                    </div>
+                  )}
+
+                  <div className="mb-3">
+                    <Input
+                      label="Password"
+                      type="password"
+                      placeholder="Create a password"
+                      value={newPassword}
+                      onChange={(val) => { setNewPassword(val); clearError(); }}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <Input
+                      label="Confirm Password"
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={confirmPassword}
+                      onChange={(val) => { setConfirmPassword(val); clearError(); }}
+                      required
+                      error={passwordMismatch ? 'Passwords do not match' : undefined}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    loading={isLoading}
+                    disabled={!!passwordMismatch || !newPassword || !confirmPassword}
+                    className="w-100 py-2 fw-semibold"
+                  >
+                    Activate Account
+                  </Button>
+                </form>
               )}
-
-              <div className="mb-3">
-                <Input
-                  label="Password"
-                  type="password"
-                  placeholder="Create a password"
-                  value={newPassword}
-                  onChange={(val) => { setNewPassword(val); clearError(); }}
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
-                <Input
-                  label="Confirm Password"
-                  type="password"
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(val) => { setConfirmPassword(val); clearError(); }}
-                  required
-                  error={passwordMismatch ? 'Passwords do not match' : undefined}
-                />
-              </div>
-
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-100 py-2 fw-semibold"
-                disabled={isLoading || !!passwordMismatch || !newPassword || !confirmPassword}
-              >
-                {isLoading ? 'Activating...' : 'Activate Account'}
-              </Button>
-            </form>
-          )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
