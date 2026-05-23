@@ -111,10 +111,9 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
             _slotAvailabilityService.ValidateSlotAvailable(
                 service, staff, request.ScheduledDate, activeBookings, nowLocal, minAdvanceHours, request.ScheduledStartTime);
 
-            var year = request.ScheduledDate.Year;
-            var existingBookings = await _unitOfWork.BookingRepository.GetAllAsync(
-                filter: b => b.TenantId == tenantId && b.ScheduledDate.Year == year);
-            var bookingReference = $"BK-{year}-{(existingBookings.Count() + 1):D5}";
+            var year = DateTime.UtcNow.Year;
+            var nextSequence = await _unitOfWork.BookingRepository.GetNextBookingSequenceAsync(tenantId, year, cancellationToken);
+            var bookingReference = $"BK-{year}-{nextSequence:D5}";
 
             var requiresPaymentAtBooking = tenant.TenantPaymentPolicy?.PaymentRequired ?? false;
 

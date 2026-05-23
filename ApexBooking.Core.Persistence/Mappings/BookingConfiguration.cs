@@ -117,8 +117,8 @@ namespace ApexBooking.Core.Persistence.Mappings
             // Index: (tenant_id, scheduled_date) for calendar queries
             builder.HasIndex(b => new { b.TenantId, b.ScheduledDate });
 
-            // Unique constraint on booking_reference
-            builder.HasIndex(b => b.BookingReference).IsUnique();
+            // Unique constraint on booking_reference scoped per tenant
+            builder.HasIndex(b => new { b.TenantId, b.BookingReference }).IsUnique();
         }
     }
 }

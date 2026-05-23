@@ -78,5 +78,27 @@ namespace ApexBooking.Core.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<int> GetNextBookingSequenceAsync(
+            TenantId tenantId,
+            int year,
+            CancellationToken cancellationToken = default)
+        {
+            var prefix = $"BK-{year}-";
+            var references = await Context.Set<Booking>()
+                .Where(b => b.TenantId == tenantId && b.BookingReference.StartsWith(prefix))
+                .Select(b => b.BookingReference)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            if (references.Count == 0)
+                return 1;
+
+            var max = references
+                .Select(r => int.TryParse(r[prefix.Length..], out var n) ? n : 0)
+                .Max();
+
+            return max + 1;
+        }
+
     }
 }
