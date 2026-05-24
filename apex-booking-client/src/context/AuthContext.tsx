@@ -68,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsAuthenticated(true);
 
     sessionStorage.setItem("access_token", token);
+    sessionStorage.setItem("isAuthenticated", "true");
   }, []);
 
   const setTenantSlug = (slug: string) => {
@@ -92,6 +93,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (slug) setTenantSlugState(slug);
 
     setIsInitializing(false);
+  }, [setAccessToken]);
+
+  useEffect(() => {
+    const handleTokenRefreshed = (e: Event) => {
+      const newToken = (e as CustomEvent<string>).detail;
+      if (newToken) setAccessToken(newToken);
+    };
+    window.addEventListener("auth_token_refreshed", handleTokenRefreshed);
+    return () => window.removeEventListener("auth_token_refreshed", handleTokenRefreshed);
   }, [setAccessToken]);
 
   return (

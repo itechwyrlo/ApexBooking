@@ -128,7 +128,7 @@ namespace ApexBooking.Core.Persistence.Migrations
 
                     b.HasKey("BookingId");
 
-                    b.HasIndex("BookingReference")
+                    b.HasIndex("TenantId", "BookingReference")
                         .IsUnique();
 
                     b.HasIndex("TenantId", "ScheduledDate");
