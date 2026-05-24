@@ -1,54 +1,53 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Domain.Services.Cookie;
+using ApexBooking.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 
 namespace ApexBooking.Infrastructure.ExternalServices.Cookie
 {
     public class CookieService : ICookieService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly SecurityOptions _securityOptions;
 
-        public CookieService(IHttpContextAccessor httpContextAccessor)
+        public CookieService(IHttpContextAccessor httpContextAccessor, IOptions<SecurityOptions> securityOptions)
         {
             _httpContextAccessor = httpContextAccessor;
+            _securityOptions = securityOptions.Value;
         }
 
         public string GetRefreshTokenFromCookie()
         {
-            // Access the Request object to read incoming cookies
             var token = _httpContextAccessor.HttpContext?.Request.Cookies["refreshToken"];
-
             return token ?? string.Empty;
         }
 
         public void SetRefreshTokenCookie(string refreshToken)
         {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7)
-            };
-
-            _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+            _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", refreshToken, BuildCookieOptions(expire: false));
         }
 
         public void DeleteRefreshTokenCookie()
         {
-            var cookieOptions = new CookieOptions
+            _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", "", BuildCookieOptions(expire: true));
+        }
+
+        private CookieOptions BuildCookieOptions(bool expire)
+        {
+            var options = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = _securityOptions.RequireHttps,
                 SameSite = SameSiteMode.Strict,
-                // Setting the expiration to the past tells the browser to delete it immediately
-                Expires = DateTime.UtcNow.AddDays(-1)
+                Expires = expire
+                    ? DateTime.UtcNow.AddDays(-1)
+                    : DateTime.UtcNow.AddDays(7)
             };
 
-            _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", "", cookieOptions);
+            if (!string.IsNullOrWhiteSpace(_securityOptions.CookieDomain))
+                options.Domain = _securityOptions.CookieDomain;
+
+            return options;
         }
     }
 }
