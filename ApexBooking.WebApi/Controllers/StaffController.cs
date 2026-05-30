@@ -66,7 +66,7 @@ public class StaffController : ControllerBase
 
     [HttpPost()]
     [Authorize]
-    public async Task<IActionResult> Create(CreateStaffRequestDto dto)
+    public async Task<IActionResult> Create([FromBody] CreateStaffRequestDto dto)
     {
         var staff = await _mediator.Send(new CreateStaffCommand(
             dto.FirstName,
