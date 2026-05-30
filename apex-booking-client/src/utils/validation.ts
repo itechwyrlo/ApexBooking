@@ -77,8 +77,6 @@ export const validationRules: Record<string, ValidationRule[]> = {
     { validate: (v: string) => v.trim().length > 0, message: "Password is required", severity: 'error' },
     { validate: (v: string) => v.length >= 8, message: "Password must be at least 8 characters", severity: 'error' },
     { validate: (v: string) => v.length <= 256, message: "Password cannot exceed 256 characters", severity: 'error' },
-    { validate: (v: string) => /[A-Z]/.test(v), message: "Password must contain at least one uppercase letter", severity: 'error' },
-    { validate: (v: string) => /[0-9]/.test(v), message: "Password must contain at least one digit", severity: 'error' },
   ],
   firstName: [
     { validate: (v: string) => v.trim().length > 0, message: "First name is required", severity: 'error' },

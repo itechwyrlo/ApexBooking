@@ -159,6 +159,7 @@ const CustomerRegisterPage: React.FC = () => {
                     value={formData.password}
                     onChange={(val) => handleInputChange("password", val)}
                     required
+                    showToggle
                   />
                 </div>
 

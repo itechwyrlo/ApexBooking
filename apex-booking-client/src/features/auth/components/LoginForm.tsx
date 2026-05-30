@@ -116,6 +116,7 @@ const LoginForm: React.FC = () => {
                     value={password}
                     onChange={(val) => handleInputChange("password", val)}
                     required
+                    showToggle
                     error={validationErrors.password}
                   />
                 </div>

@@ -99,6 +99,7 @@ const ResetPasswordForm: React.FC = () => {
                       value={newPassword}
                       onChange={(val) => handleInputChange("newPassword", val)}
                       required
+                      showToggle
                       error={validationErrors.newPassword}
                     />
                   </div>
@@ -111,6 +112,7 @@ const ResetPasswordForm: React.FC = () => {
                       value={confirmPassword}
                       onChange={(val) => handleInputChange("confirmPassword", val)}
                       required
+                      showToggle
                       error={passwordMismatch ? "Passwords do not match" : validationErrors.confirmPassword}
                     />
                   </div>

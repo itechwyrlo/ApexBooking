@@ -80,6 +80,7 @@ const SuperAdminLoginPage: React.FC = () => {
               value={password}
               onChange={val => handleChange('password', val)}
               required
+              showToggle
               error={validationErrors.password}
             />
           </div>

@@ -57,6 +57,7 @@ const SetupAccountPage: React.FC = () => {
                       value={newPassword}
                       onChange={(val) => { setNewPassword(val); clearError(); }}
                       required
+                      showToggle
                     />
                   </div>
 
@@ -68,6 +69,7 @@ const SetupAccountPage: React.FC = () => {
                       value={confirmPassword}
                       onChange={(val) => { setConfirmPassword(val); clearError(); }}
                       required
+                      showToggle
                       error={passwordMismatch ? 'Passwords do not match' : undefined}
                     />
                   </div>
