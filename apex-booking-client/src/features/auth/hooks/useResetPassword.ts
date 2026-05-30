@@ -4,7 +4,7 @@ import axiosInstance from '../../../services/axiosInstance';
 import type { ResetPasswordRequest } from '../types';
 
 interface UseResetPasswordReturn {
-  resetPassword: (token: string, newPassword: string, confirmPassword: string) => Promise<void>;
+  resetPassword: (userId: string, token: string, newPassword: string, confirmPassword: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
   success: string | null;
@@ -21,13 +21,14 @@ export const useResetPassword = (): UseResetPasswordReturn => {
   const clearError = () => setError(null);
   const clearSuccess = () => setSuccess(null);
 
-  const resetPassword = async (token: string, newPassword: string, confirmPassword: string) => {
+  const resetPassword = async (userId: string, token: string, newPassword: string, confirmPassword: string) => {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
       await axiosInstance.post('/auth/reset-password', {
+        userId,
         token,
         newPassword,
         confirmPassword,

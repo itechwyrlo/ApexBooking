@@ -59,10 +59,10 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("reset-password")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request, CancellationToken ct)
         {
-            await _mediator.Send(new ResetPasswordCommand(request.Token, request.NewPassword, request.ConfirmPassword));
+            await _mediator.Send(new ResetPasswordCommand(request.UserId, request.Token, request.NewPassword, request.ConfirmPassword));
             return NoContent();
         }
 

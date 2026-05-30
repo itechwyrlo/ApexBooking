@@ -8,6 +8,7 @@ import type { ValidationErrors } from "../../../utils/validation";
 import { validateForm, validationRules } from "../../../utils/validation";
 
 interface ResetPasswordFormData {
+  userId: string;
   token: string;
   newPassword: string;
   confirmPassword: string;
@@ -18,13 +19,16 @@ const ResetPasswordForm: React.FC = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [token, setToken] = useState("");
+  const [userId, setUserId] = useState("");
   const [validationErrors, setValidationErrors] = useState<ValidationErrors<ResetPasswordFormData>>({});
 
   const { resetPassword, isLoading, error, success, clearError, clearSuccess } = useResetPassword();
 
   useEffect(() => {
     const tokenParam = searchParams.get("token");
+    const userIdParam = searchParams.get("userId");
     if (tokenParam) setToken(tokenParam);
+    if (userIdParam) setUserId(userIdParam);
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,7 +38,7 @@ const ResetPasswordForm: React.FC = () => {
 
     if (newPassword !== confirmPassword) return;
 
-    const errors = validateForm({ token, newPassword, confirmPassword }, {
+    const errors = validateForm({ userId, token, newPassword, confirmPassword }, {
       token: validationRules.token,
       newPassword: validationRules.registerPassword,
       confirmPassword: [
@@ -47,7 +51,7 @@ const ResetPasswordForm: React.FC = () => {
       return;
     }
 
-    await resetPassword(token, newPassword, confirmPassword);
+    await resetPassword(userId, token, newPassword, confirmPassword);
   };
 
   const passwordMismatch = newPassword && confirmPassword && newPassword !== confirmPassword;
@@ -69,7 +73,7 @@ const ResetPasswordForm: React.FC = () => {
                 <p className="text-muted small mb-0">Please enter your new credentials below</p>
               </div>
 
-              {!token ? (
+              {!token || !userId ? (
                 <div className="text-center">
                   <div className="alert alert-danger mb-3" role="alert">
                     Invalid or missing reset token.
@@ -121,7 +125,7 @@ const ResetPasswordForm: React.FC = () => {
                     type="submit"
                     variant="primary"
                     loading={isLoading}
-                    disabled={!!passwordMismatch || !token}
+                    disabled={!!passwordMismatch || !token || !userId}
                     className="w-100 py-2 fw-semibold"
                   >
                     Reset Password

@@ -4,5 +4,5 @@ using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Auth.Commands.ResetPassword
 {
-    public sealed record ResetPasswordCommand(string Token, string NewPassword, string ConfirmPassword) : ICommand;
+    public sealed record ResetPasswordCommand(Guid UserId, string Token, string NewPassword, string ConfirmPassword) : ICommand;
 }

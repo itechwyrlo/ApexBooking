@@ -37,6 +37,7 @@ export interface ForgotPasswordResponseData {
 
 // Reset Password Request
 export interface ResetPasswordRequest {
+  userId: string;
   token: string;
   newPassword: string;
   confirmPassword: string;

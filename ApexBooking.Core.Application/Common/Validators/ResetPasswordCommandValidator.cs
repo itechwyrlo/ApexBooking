@@ -10,6 +10,8 @@ public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordComm
 {
     public ResetPasswordCommandValidator()
     {
+        RuleFor(x => x.UserId).NotEmpty().WithMessage("User ID is required.");
+
         RuleFor(x => x.ConfirmPassword).Equal(x => x.NewPassword).WithMessage("Passwords do not match.");
         
         RuleFor(x => x.Token)

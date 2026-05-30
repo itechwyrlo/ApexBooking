@@ -39,12 +39,12 @@ public class AppUrlService : IAppUrlService
             : $"{base_}/setup-account?token={Uri.EscapeDataString(token)}";
     }
 
-    public string GetPasswordResetUrl(string token)
+    public string GetPasswordResetUrl(string userId, string token)
     {
         var base_ = _appSettings.FrontendBaseUrl.TrimEnd('/');
         return string.IsNullOrEmpty(base_)
-            ? $"/reset-password?token={Uri.EscapeDataString(token)}"
-            : $"{base_}/reset-password?token={Uri.EscapeDataString(token)}";
+            ? $"/reset-password?userId={Uri.EscapeDataString(userId)}&token={Uri.EscapeDataString(token)}"
+            : $"{base_}/reset-password?userId={Uri.EscapeDataString(userId)}&token={Uri.EscapeDataString(token)}";
     }
 
     public string GetEmailVerificationUrl(string token)

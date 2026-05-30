@@ -31,7 +31,7 @@ namespace ApexBooking.Core.Application.Features.Auth.Commands.ForgotPassword
                 throw new NotFoundException("Users doesn't exist");
 
             var resetToken = await _unitOfWork.UserRepository.GenerateUserTokenAsync(user, "PasswordReset", "ResetPassword");
-            var resetUrl = _appUrlService.GetPasswordResetUrl(resetToken);
+            var resetUrl = _appUrlService.GetPasswordResetUrl(user.Id.ToString(), resetToken);
 
             await _authNotification.SendPasswordResetEmailAsync(user.Email!, user.FullName, resetUrl, ct);
 

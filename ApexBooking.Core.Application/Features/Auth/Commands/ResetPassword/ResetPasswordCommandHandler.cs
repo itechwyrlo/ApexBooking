@@ -1,6 +1,5 @@
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.Core.Domain.Services.TokenService;
 using ApexBooking.SharedKernel.Exceptions;
 
 namespace ApexBooking.Core.Application.Features.Auth.Commands.ResetPassword
@@ -8,24 +7,15 @@ namespace ApexBooking.Core.Application.Features.Auth.Commands.ResetPassword
     internal sealed class ResetPasswordCommandHandler : ICommandHandler<ResetPasswordCommand>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IUserContextService _userContext;
-        private readonly ITokenService _tokenService;
 
-        public ResetPasswordCommandHandler(
-            IUnitOfWork unitOfWork,
-            IUserContextService userContext,
-            ITokenService tokenService)
+        public ResetPasswordCommandHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _userContext = userContext;
-            _tokenService = tokenService;
         }
 
         public async Task Handle(ResetPasswordCommand command, CancellationToken ct)
         {
-            var userId = _userContext.GetCurrentUserId();
-
-            var currentUser = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+            var currentUser = await _unitOfWork.UserRepository.GetByIdAsync(command.UserId);
             if (currentUser == null)
                 throw new NotFoundException("User not found.");
 
@@ -43,10 +33,6 @@ namespace ApexBooking.Core.Application.Features.Auth.Commands.ResetPassword
                 throw new BusinessRuleBrokenException("Password does not meet the required criteria.");
 
             currentUser.RevokeAllRefreshTokens();
-
-            var jti = _userContext.GetCurrentJti();
-            if (!string.IsNullOrEmpty(jti))
-                await _tokenService.BlacklistJtiAsync(jti, ct);
 
             await _unitOfWork.CompleteAsync(ct);
         }

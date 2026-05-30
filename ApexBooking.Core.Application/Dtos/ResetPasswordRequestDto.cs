@@ -5,6 +5,9 @@ namespace ApexBooking.Core.Application.Dtos
     public record ResetPasswordRequestDto
     {
         [Required]
+        public Guid UserId { get; init; }
+
+        [Required]
         public string Token { get; init; }
 
         [Required]
