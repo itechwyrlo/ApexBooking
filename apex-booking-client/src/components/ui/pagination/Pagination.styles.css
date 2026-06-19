@@ -1,0 +1,17 @@
+.apex-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--bs-gray-200);
+}
+
+.apex-pagination-info {
+  font-size: 12px;
+  color: var(--bs-gray-500);
+}
+
+.apex-pagination .fa-chevron-left,
+.apex-pagination .fa-chevron-right {
+  font-size: 10px;
+}

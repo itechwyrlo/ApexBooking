@@ -1,0 +1,8 @@
+.tr-row-clickable {
+  cursor: pointer;
+}
+
+.tr-message-box {
+  background-color: var(--bs-gray-100);
+  font-size: 13px;
+}

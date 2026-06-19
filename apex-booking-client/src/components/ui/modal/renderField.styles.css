@@ -1,0 +1,17 @@
+.field-dropdown {
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.field-inner-input {
+  outline: none;
+}
+
+.field-multiselect-input {
+  min-width: 120px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}

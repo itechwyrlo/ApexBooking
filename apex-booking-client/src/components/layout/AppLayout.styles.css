@@ -1,0 +1,31 @@
+/* ─── Layout tokens ──────────────────────────────────────────── */
+
+:root {
+  --apex-font: 'DM Sans', system-ui, sans-serif;
+  --apex-sidebar-w: 240px;
+  --apex-sidebar-collapsed-w: 62px;
+  --apex-header-h: 56px;
+}
+
+/* ─── Layout containers ──────────────────────────────────────── */
+
+.apex-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  font-family: var(--apex-font);
+  font-size: 14px;
+}
+
+.apex-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.apex-main {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}

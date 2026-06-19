@@ -1,0 +1,14 @@
+.apex-settings-panel {
+  max-width: 560px;
+}
+
+.apex-refund-input {
+  width: 100%;
+  max-width: 180px;
+}
+
+@media (max-width: 575.98px) {
+  .apex-refund-input {
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,351 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { faPlus, faBan, faEdit } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Button } from "../../../components/ui/Button";
+import { Alert } from "../../../components/ui/Alert";
+import { FormModal } from "../../../components/ui/modal/FormModal";
+import { ConfirmModal } from "../../../components/ui/modal/ConfirmModal";
+import { Pagination } from "../../../components/ui/pagination/Pagination";
+import { Table } from "../../../components/ui/table/table";
+import { ServiceSkeleton } from "../components/ServiceSkeleton";
+import { useServices } from "../hooks/useServices";
+import { useStaff } from "../../staff/hooks/useStaff";
+import type {
+  Service,
+  CreateServiceRequest,
+  UpdateServiceRequest,
+} from "../types";
+import type { Column, ModelSchema } from "../../../components/ui/table/types";
+
+const EMPTY_FORM: CreateServiceRequest = {
+  name: "",
+  description: "",
+  durationMinutes: 60,
+  price: 0,
+  currencyCode: "USD",
+  staffIds: [],
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+};
+
+const PAGE_SIZE = 10;
+
+const ServicesPage: React.FC = () => {
+  const {
+    services,
+    total,
+    isLoading,
+    error,
+    clearError,
+    getAll,
+    create,
+    update,
+    deactivate,
+  } = useServices();
+  const { staff, getAll: getStaff } = useStaff();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [targetService, setTargetService] = useState<Service | null>(null);
+  const [formValue, setFormValue] = useState<CreateServiceRequest>(EMPTY_FORM);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  useEffect(() => {
+    getAll(currentPage, PAGE_SIZE);
+    getStaff();
+  }, [getAll, getStaff, currentPage]);
+
+  const serviceFormSchema = useMemo(
+    (): ModelSchema<CreateServiceRequest>[] => [
+      { key: "name", label: "Name", type: "string", required: true, helpText: "Letters, numbers, spaces, hyphens, parentheses, ampersands, and periods only" },
+      { key: "description", label: "Description", type: "textarea", helpText: "Optional. Up to 1000 characters" },
+      {
+        key: "durationMinutes",
+        label: "Duration (minutes)",
+        type: "number",
+        required: true,
+        helpText: "Between 1 and 480 minutes (8 hours maximum)",
+      },
+      { key: "price", label: "Price", type: "number", required: true, helpText: "Set to 0 for free services" },
+      {
+        key: "currencyCode",
+        label: "Currency",
+        type: "select",
+        required: true,
+        dataSource: {
+          mode: "static",
+          options: [
+            { value: "PHP", label: "PHP - Philippine Peso" },
+            { value: "USD", label: "USD - US Dollar" },
+            { value: "EUR", label: "EUR - Euro" },
+            { value: "GBP", label: "GBP - British Pound" },
+            { value: "SGD", label: "SGD - Singapore Dollar" },
+            { value: "AUD", label: "AUD - Australian Dollar" },
+            { value: "JPY", label: "JPY - Japanese Yen" },
+          ],
+        },
+      },
+      {
+        key: "bufferBeforeMinutes",
+        label: "Buffer Before (minutes)",
+        type: "number",
+        helpText: "Minutes to block before the appointment for preparation (0 = no buffer)",
+      },
+      {
+        key: "bufferAfterMinutes",
+        label: "Buffer After (minutes)",
+        type: "number",
+        helpText: "Minutes to block after the appointment for cleanup (0 = no buffer)",
+      },
+      {
+        key: "staffIds",
+        label: "Staffs",
+        type: "multiselect",
+        required: true,
+        helpText: "Select one or more staff members who can provide this service",
+        dataSource: {
+          mode: "static",
+          options: staff
+            .filter((r) => r.isActive)
+            .map((r) => ({ label: r.firstName, value: r.id })),
+        },
+      },
+    ],
+    [staff],
+  );
+
+  const columns: Column<Service>[] = [
+    {
+      key: "name",
+      header: "Name",
+      render: (value, row) => (
+        <div>
+          <div className="fw-medium">{value}</div>
+          {row.description && (
+            <div className="text-muted small">{row.description}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "durationMinutes",
+      header: "Duration",
+      render: (value) => `${value} min`,
+    },
+    {
+      key: "price",
+      header: "Price",
+      render: (value, row) => `${value.toFixed(2)} ${row.currencyCode}`,
+    },
+    {
+      key: "bufferBeforeMinutes",
+      header: "Buffer Before",
+      render: (value) => `${value} min`,
+    },
+    {
+      key: "bufferAfterMinutes",
+      header: "Buffer After",
+      render: (value) => `${value} min`,
+    },
+    {
+      key: "staffIds",
+      header: "Staff",
+      render: (value) => `${value.length} Staff(s)`,
+    },
+    {
+      key: "isActive",
+      header: "Status",
+      render: (value) => (
+        <span
+          className={`badge ${value ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary"}`}
+        >
+          {value ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+    {
+      key: "id",
+      header: "Actions",
+      render: (_value, row) => (
+        <div className="d-flex justify-content-end gap-2">
+          <button
+            className="btn btn-sm btn-outline-primary"
+            title="Edit"
+            onClick={() => openEdit(row)}
+          >
+            <FontAwesomeIcon icon={faEdit} />
+          </button>
+          {row.isActive && (
+            <button
+              className="btn btn-sm btn-outline-danger"
+              title="Deactivate"
+              onClick={() => openDeactivate(row)}
+            >
+              <FontAwesomeIcon icon={faBan} />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  const openCreate = () => {
+    setEditingService(null);
+    setFormValue(EMPTY_FORM);
+    setShowForm(true);
+  };
+
+  const openEdit = (service: Service) => {
+    setEditingService(service);
+    setFormValue({
+      name: service.name,
+      description: service.description ?? "",
+      durationMinutes: service.durationMinutes,
+      price: service.price,
+      currencyCode: service.currencyCode,
+      staffIds: service.staffIds,
+      bufferBeforeMinutes: service.bufferBeforeMinutes,
+      bufferAfterMinutes: service.bufferAfterMinutes,
+    });
+    setShowForm(true);
+  };
+
+  const openDeactivate = (service: Service) => {
+    setTargetService(service);
+    setShowConfirm(true);
+  };
+
+  const handleSubmit = async (value: CreateServiceRequest): Promise<void> => {
+    if (editingService) {
+      const req: UpdateServiceRequest = {
+        name: value.name,
+        description: value.description,
+        durationMinutes: value.durationMinutes,
+        price: value.price,
+        currencyCode: value.currencyCode,
+        staffIds: value.staffIds,
+        bufferBeforeMinutes: value.bufferBeforeMinutes,
+        bufferAfterMinutes: value.bufferAfterMinutes,
+      };
+      const ok = await update(editingService.id, req);
+      if (ok) {
+        setShowForm(false);
+        setSuccessMessage("Service updated.");
+        await getAll(currentPage, PAGE_SIZE);
+      }
+    } else {
+      const ok = await create(value);
+      if (ok) {
+        setShowForm(false);
+        setSuccessMessage("Service created.");
+        await getAll(currentPage, PAGE_SIZE);
+      }
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!targetService) return;
+    const ok = await deactivate(targetService.id);
+    if (ok) {
+      setShowConfirm(false);
+      setTargetService(null);
+      setSuccessMessage("Service deactivated.");
+      await getAll(currentPage, PAGE_SIZE);
+    }
+  };
+
+  return (
+    <div className="container-fluid px-3 px-md-4 py-4">
+      <div className="row mb-4 align-items-center">
+        <div className="col">
+          <h5 className="fw-bold mb-0">Services</h5>
+          <small className="text-muted">Manage bookable services and their resource assignments.</small>
+        </div>
+        <div className="col-auto">
+          <Button variant="primary" icon={faPlus} onClick={openCreate}>
+            New Service
+          </Button>
+        </div>
+      </div>
+
+      {successMessage && (
+        <Alert
+          variant="success"
+          dismissible
+          onDismiss={() => setSuccessMessage(null)}
+          className="mb-3"
+        >
+          {successMessage}
+        </Alert>
+      )}
+
+      {error && (
+        <div className="alert alert-danger alert-dismissible d-flex align-items-center mb-3" role="alert">
+          {error}
+          <button type="button" className="btn-close ms-auto" onClick={clearError} aria-label="Dismiss" />
+        </div>
+      )}
+
+      <div className="row">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body p-0">
+              {isLoading ? (
+                <ServiceSkeleton />
+              ) : services.length === 0 ? (
+                <div className="p-4 text-center text-muted small">
+                  No services found. Add your first service to get started.
+                </div>
+              ) : (
+                <Table
+                  data={services}
+                  columns={columns}
+                  getRowId={(row) => row.id}
+                />
+              )}
+            </div>
+
+            {total > PAGE_SIZE && (
+              <div className="card-footer bg-white border-top-0">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={PAGE_SIZE}
+                  totalItems={total}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <FormModal
+        isOpen={showForm}
+        title={editingService ? "Edit Service" : "New Service"}
+        fields={serviceFormSchema}
+        value={formValue}
+        onChange={setFormValue}
+        onSubmit={handleSubmit}
+        onClose={() => setShowForm(false)}
+      />
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        title="Deactivate Service"
+        message={`Deactivating "${targetService?.name}" will remove it from the booking flow. Existing bookings are not cancelled automatically.`}
+        onConfirm={handleDeactivate}
+        onCancel={() => {
+          setShowConfirm(false);
+          setTargetService(null);
+        }}
+      />
+    </div>
+  );
+};
+
+export default ServicesPage;

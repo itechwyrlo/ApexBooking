@@ -1,0 +1,6 @@
+@ApexBooking.WebApi_HostAddress = http://localhost:5096
+
+GET {{ApexBooking.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

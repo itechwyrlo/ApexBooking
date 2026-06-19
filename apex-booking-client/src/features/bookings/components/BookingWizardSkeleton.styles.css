@@ -1,0 +1,50 @@
+.apex-wiz-sk-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.apex-wiz-sk-logo {
+  height: 60px;
+  width: 120px;
+  border-radius: 8px;
+}
+
+.apex-wiz-sk-title {
+  height: 24px;
+  width: 200px;
+}
+
+.apex-wiz-sk-subtitle {
+  height: 16px;
+  width: 240px;
+}
+
+.apex-wiz-sk-progress {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.apex-wiz-sk-card-title {
+  height: 16px;
+  width: 120px;
+}
+
+.apex-wiz-sk-card-sub {
+  height: 14px;
+  width: 180px;
+}
+
+.apex-wiz-sk-svc-name {
+  height: 16px;
+  width: 140px;
+}
+
+.apex-wiz-sk-svc-dur {
+  height: 14px;
+  width: 60px;
+}
+
+.apex-wiz-sk-svc-price {
+  height: 18px;
+  width: 80px;
+}

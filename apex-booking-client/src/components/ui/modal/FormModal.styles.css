@@ -1,0 +1,8 @@
+.form-modal-dialog {
+  max-width: 520px;
+}
+
+.form-modal-body {
+  max-height: 65vh;
+  overflow-y: auto;
+}

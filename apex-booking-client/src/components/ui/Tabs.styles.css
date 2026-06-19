@@ -1,0 +1,70 @@
+.apex-tab-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--bs-gray-200);
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.apex-tab-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.apex-tab-btn {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bs-gray-500);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.apex-tab-btn:hover {
+  color: var(--bs-primary);
+}
+
+.apex-tab-btn.active {
+  color: var(--bs-primary);
+  border-bottom-color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.apex-tab-btn .apex-tab-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background-color: var(--bs-gray-200);
+  color: var(--bs-gray-600);
+}
+
+.apex-tab-btn.active .apex-tab-count {
+  background-color: #e8f0fe;
+  color: var(--bs-primary);
+}
+
+.apex-tab-btn:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 479.98px) {
+  .apex-tab-btn .apex-tab-label {
+    display: none;
+  }
+
+  .apex-tab-btn {
+    padding: 0.5rem 0.75rem;
+  }
+}

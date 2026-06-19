@@ -1,0 +1,35 @@
+.apex-bk-sk-name {
+  height: 14px;
+  width: 110px;
+}
+
+.apex-bk-sk-email {
+  height: 12px;
+  width: 150px;
+}
+
+.apex-bk-sk-service {
+  height: 14px;
+  width: 100px;
+}
+
+.apex-bk-sk-staff {
+  height: 14px;
+  width: 80px;
+}
+
+.apex-bk-sk-date {
+  height: 14px;
+  width: 80px;
+}
+
+.apex-bk-sk-time {
+  height: 12px;
+  width: 100px;
+}
+
+.apex-bk-sk-badge {
+  height: 22px;
+  width: 70px;
+  border-radius: 12px;
+}

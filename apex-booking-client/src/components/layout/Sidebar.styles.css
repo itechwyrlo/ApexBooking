@@ -1,0 +1,104 @@
+/* ─── Sidebar container ──────────────────────────────────────── */
+
+.apex-sidebar {
+  width: var(--apex-sidebar-w);
+  background-color: var(--bs-white);
+  border-right: 1px solid var(--bs-gray-200);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.25s ease;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.apex-layout.collapsed .apex-sidebar {
+  width: var(--apex-sidebar-collapsed-w);
+}
+
+/* ─── Nav ────────────────────────────────────────────────────── */
+
+.apex-nav {
+  padding: 0.75rem 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.apex-nav-section {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--bs-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.625rem 1rem 0.25rem;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.apex-layout.collapsed .apex-nav-section {
+  opacity: 0;
+}
+
+.apex-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5625rem 1rem;
+  cursor: pointer;
+  color: var(--bs-gray-600);
+  transition: background-color 0.1s, color 0.1s;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  border-right: 2px solid transparent;
+  user-select: none;
+}
+
+.apex-nav-item:hover {
+  background-color: var(--apex-blue-soft);
+  color: var(--bs-primary);
+}
+
+.apex-nav-item.active {
+  background-color: var(--apex-blue-soft);
+  color: var(--bs-primary);
+  border-right-color: var(--bs-primary);
+}
+
+.apex-nav-item i,
+.apex-nav-item .svg-inline--fa {
+  font-size: 15px;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+
+.apex-nav-item span {
+  transition: opacity 0.2s;
+  overflow: hidden;
+}
+
+.apex-layout.collapsed .apex-nav-item span {
+  opacity: 0;
+  width: 0;
+}
+
+/* ─── Mobile ─────────────────────────────────────────────────── */
+
+@media (max-width: 767.98px) {
+  .apex-sidebar {
+    position: fixed;
+    top: var(--apex-header-h);
+    left: 0;
+    height: calc(100% - var(--apex-header-h));
+    z-index: 150;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    width: var(--apex-sidebar-w) !important;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .apex-layout.mobile-open .apex-sidebar {
+    transform: translateX(0);
+  }
+}
