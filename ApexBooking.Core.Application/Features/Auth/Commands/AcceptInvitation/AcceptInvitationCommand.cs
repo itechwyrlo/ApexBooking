@@ -9,3 +9,4 @@ public sealed record AcceptInvitationCommand(
     string NewPassword,
     string ConfirmPassword
 ) : ICommand<AuthResponseDto>;
+ 
