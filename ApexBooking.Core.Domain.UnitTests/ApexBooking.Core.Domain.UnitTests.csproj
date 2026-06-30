@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="10.0.0"/>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0"/>
+    <PackageReference Include="xunit" Version="2.9.3"/>
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5"/>
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ApexBooking.Core.Domain\ApexBooking.Core.Domain.csproj"/>
+    <ProjectReference Include="..\ApexBooking.Core.Application\ApexBooking.Core.Application.csproj"/>
+    <ProjectReference Include="..\ApexBooking.Core.Persistence\ApexBooking.Core.Persistence.csproj"/>
+    <ProjectReference Include="..\ApexBooking.Infrastructure\ApexBooking.Infrastructure.csproj"/>
+    <ProjectReference Include="..\ApexBooking.WebApi\ApexBooking.WebApi.csproj"/>
+  </ItemGroup>
+</Project>
