@@ -44,7 +44,7 @@ internal sealed class ApproveTenantRequestCommandHandler : ICommandHandler<Appro
 
         var emailExists = await _unitOfWork.TenantRepository.FindByEmailAsync(request.OwnerEmail);
         var emailTaken = await _unitOfWork.UserRepository.FindByEmailAcrossAllTenantsAsync(request.OwnerEmail);
-        request.EnsureOwnerEmailIsAvailable(emailExists is not null, emailTaken is not null);
+        // request.EnsureOwnerEmailIsAvailable(emailExists is not null, emailTaken is not null);
 
         request.Approve();
 
