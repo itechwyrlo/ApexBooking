@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Framework.Core\GenericRepositoryEntityFramework\ApexBooking.GenericRepository.EntityFramework\ApexBooking.GenericRepository.EntityFramework.csproj" />
+    <ProjectReference Include="..\Framework.Core\GenericRepositoryEntityFramework\ApexBooking.GenericRepository.EntityFramework.csproj" />
     <ProjectReference Include="..\ApexBooking.Core.Domain\ApexBooking.Core.Domain.csproj" />
   </ItemGroup>
 </Project>

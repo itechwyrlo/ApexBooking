@@ -21,10 +21,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3" />
       </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Framework.Core\SharedKernel\ApexBooking.SharedKernel.csproj" />
     <ProjectReference Include="..\ApexBooking.Core.Application\ApexBooking.Core.Application.csproj" />
     <ProjectReference Include="..\ApexBooking.Core.Persistence\ApexBooking.Core.Persistence.csproj" />
     <ProjectReference Include="..\ApexBooking.Core.Domain\ApexBooking.Core.Domain.csproj" />
     <ProjectReference Include="..\ApexBooking.Infrastructure\ApexBooking.Infrastructure.csproj" />
-    <ProjectReference Include="..\Framework.Core\SharedKernel\ApexBooking.SharedKernel\ApexBooking.SharedKernel.csproj" />
   </ItemGroup>
 </Project>
