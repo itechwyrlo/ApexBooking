@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;

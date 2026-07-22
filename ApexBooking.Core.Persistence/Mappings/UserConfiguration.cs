@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ApexBooking.Core.Domain.Entities;
-using Microsoft.AspNetCore.Identity;
 using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Persistence.Mappings

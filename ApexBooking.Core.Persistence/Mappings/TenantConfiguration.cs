@@ -1,5 +1,4 @@
 using ApexBooking.Core.Domain.Entities;
-using ApexBooking.Core.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;

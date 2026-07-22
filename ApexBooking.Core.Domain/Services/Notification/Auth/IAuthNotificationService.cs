@@ -1,6 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace ApexBooking.Core.Domain.Services.Notification.Auth
 {
     public interface IAuthNotificationService

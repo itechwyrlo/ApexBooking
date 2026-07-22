@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Services.TokenService;
 using ApexBooking.Core.Persistence.Data;

@@ -2,7 +2,6 @@ using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Application.Services.Mappings;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.SharedKernel.Exceptions;
 using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Application.Features.Public.Queries.GetPublicServices;

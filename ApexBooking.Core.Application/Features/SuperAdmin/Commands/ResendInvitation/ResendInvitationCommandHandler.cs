@@ -1,5 +1,4 @@
 using ApexBooking.Core.Application.Messaging.Abstractions;
-using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.Services.Notification.Auth;
 using ApexBooking.SharedKernel.Exceptions;

@@ -1,6 +1,4 @@
-using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Repositories;
-using Microsoft.AspNetCore.Identity;
 
 namespace ApexBooking.Core.Domain.Interfaces;
 

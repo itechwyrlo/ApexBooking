@@ -4,7 +4,6 @@ using ApexBooking.Core.Domain.Repositories;
 using ApexBooking.Core.Persistence.Data;
 using ApexBooking.Core.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace ApexBooking.Core.Persistence
 {

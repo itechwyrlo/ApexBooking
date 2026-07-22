@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
-using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.SharedKernel.Models;
 using ApexBooking.Core.Application.Resources.Mappings;

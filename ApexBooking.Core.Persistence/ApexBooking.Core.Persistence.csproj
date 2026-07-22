@@ -5,7 +5,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Framework.Core\GenericRepositoryEntityFramework\ApexBooking.GenericRepository.EntityFramework.csproj" />
-    <ProjectReference Include="..\ApexBooking.Core.Domain\ApexBooking.Core.Domain.csproj" />
+    <ProjectReference Include="..\Framework.Core\GenericRepositoryEntityFramework\ApexBooking.GenericRepository.EntityFramework.csproj"/>
+    <ProjectReference Include="..\ApexBooking.Core.Domain\ApexBooking.Core.Domain.csproj"/>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.9"/>
   </ItemGroup>
 </Project>

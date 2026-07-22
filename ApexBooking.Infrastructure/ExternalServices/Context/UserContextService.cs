@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.Core.Domain.ValueObjects;
 using Microsoft.AspNetCore.Http;
 using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 

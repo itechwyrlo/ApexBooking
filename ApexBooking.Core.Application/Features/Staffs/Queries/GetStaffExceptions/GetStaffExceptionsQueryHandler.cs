@@ -2,7 +2,6 @@ using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Features.Staffs.Queries.GetStaffExceptions;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Application.Resources.Mappings;
-using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Models;

@@ -1,5 +1,4 @@
-using System.Security.Claims;
-using ApexBooking.SharedKernel.Services;
+using ApexBooking.Core.Domain.Services.Tenant;
 using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.WebApi.Middleware;
@@ -14,16 +13,7 @@ public class TenantMiddleware
     {
         if (context.User?.Identity?.IsAuthenticated == true)
         {
-            // Super admins are platform-level operators with no tenant affiliation.
-            // They carry role=superadmin but no tenant_id claim.
-            var role = context.User.FindFirst(ClaimTypes.Role)?.Value
-                       ?? context.User.FindFirst("role")?.Value;
-            if (role == "superadmin")
-            {
-                await _next(context);
-                return;
-            }
-
+    
             var tenantIdClaim = context.User.FindFirst("tenant_id")?.Value;
 
             if (string.IsNullOrEmpty(tenantIdClaim) || !Guid.TryParse(tenantIdClaim, out var tenantGuid))
@@ -33,7 +23,8 @@ public class TenantMiddleware
                 return;
             }
 
-            tenantService.TenantId = new TenantId(tenantGuid);
+            tenantService.SetCurrentTenant(new TenantId(tenantGuid));
+
         }
 
         await _next(context);

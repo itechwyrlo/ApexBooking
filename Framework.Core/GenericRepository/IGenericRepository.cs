@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using ApexBooking.SharedKernel;
 using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.GenericRepository.Abstractions;

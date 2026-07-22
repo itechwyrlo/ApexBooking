@@ -12,7 +12,6 @@ using ApexBooking.WebApi.Dtos;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace ApexBooking.WebApi.Controllers
 {

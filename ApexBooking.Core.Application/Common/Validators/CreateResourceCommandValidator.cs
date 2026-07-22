@@ -1,5 +1,4 @@
 using FluentValidation;
-using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Application.Features.Staffs.Commands.CreateStaff;
 
 namespace ApexBooking.Core.Application.Common.Validators;

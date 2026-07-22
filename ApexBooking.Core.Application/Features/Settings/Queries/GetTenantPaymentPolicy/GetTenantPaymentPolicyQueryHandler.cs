@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.mapper;
 using ApexBooking.Core.Application.Messaging.Abstractions;

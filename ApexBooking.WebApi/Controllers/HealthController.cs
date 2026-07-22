@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using ApexBooking.Core.Persistence.Data;
-using ApexBooking.Infrastructure.Configuration;
 
 namespace ApexBooking.WebApi.Controllers;
 

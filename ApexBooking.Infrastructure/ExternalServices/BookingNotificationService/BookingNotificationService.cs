@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Services.EmailNotification;
-using ApexBooking.Core.Domain.Services.Notification;
 using ApexBooking.Core.Domain.Services.Notification.Bookings;
-using MediatR;
 
 namespace ApexBooking.Infrastructure.ExternalServices.BookingNotificationService
 {

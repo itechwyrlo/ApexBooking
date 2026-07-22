@@ -6,8 +6,6 @@ using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
-using ApexBooking.SharedKernel.Models;
-using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Application.Features.Bookings.Commands.CancelBooking;
 

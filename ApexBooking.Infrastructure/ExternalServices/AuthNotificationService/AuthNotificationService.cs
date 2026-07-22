@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using ApexBooking.Core.Domain.Services.EmailNotification;
 using ApexBooking.Core.Domain.Services.Notification.Auth;
 

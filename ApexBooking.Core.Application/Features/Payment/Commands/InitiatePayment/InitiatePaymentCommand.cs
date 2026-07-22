@@ -1,4 +1,3 @@
-using System;
 using ApexBooking.Core.Application.Dtos;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 

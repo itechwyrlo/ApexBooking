@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using ApexBooking.Core.Application.Features.Tenants.Commands.UpdateTenantProfile;
 using ApexBooking.Core.Application.Features.Tenants.Queries.GetTenantProfile;
 using ApexBooking.WebApi.Dtos;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace ApexBooking.WebApi.Controllers
 {

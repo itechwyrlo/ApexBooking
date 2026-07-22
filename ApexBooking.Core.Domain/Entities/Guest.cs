@@ -1,6 +1,5 @@
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
-using ApexBooking.SharedKernel.Models;
 using ApexBooking.SharedKernel.Services;
 using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 

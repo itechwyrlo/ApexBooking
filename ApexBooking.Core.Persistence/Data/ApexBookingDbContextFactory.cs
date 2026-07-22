@@ -1,9 +1,8 @@
-using ApexBooking.SharedKernel.Services;
-using ApexBooking.SharedKernel.ValueObject;
+using ApexBooking.Core.Domain.Services.Tenant;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Persistence.Data
 {
@@ -11,12 +10,12 @@ namespace ApexBooking.Core.Persistence.Data
     {
         public ApexBookingDbContext CreateDbContext(string[] args)
         {
-            var basePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "ApexBooking.WebApi");
+            var basePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "Booking.WebApi");
 
             var userSecretsPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "Microsoft", "UserSecrets",
-                "d44beffb-c57a-438b-8995-5fee3f5a90b8",
+                "1a733462-f06d-46fe-b8e3-41705dbec538",
                 "secrets.json");
 
             var configBuilder = new ConfigurationBuilder()
@@ -27,24 +26,32 @@ namespace ApexBooking.Core.Persistence.Data
 
             var configuration = configBuilder.Build();
 
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
-            if (string.IsNullOrEmpty(connectionString))
-                throw new InvalidOperationException("Connection string 'DefaultConnection' not found in configuration.");
+            var connectionString = configuration.GetConnectionString("Dev_Booking");
 
-            var optionsBuilder = new DbContextOptionsBuilder<ApexBookingDbContext>();
-            optionsBuilder.UseSqlServer(connectionString);
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException("A connection string for 'Dev_Booking' was not found.");
+            }
 
-            var mockTenantService = new MockTenantService();
+            var builder = new DbContextOptionsBuilder<ApexBookingDbContext>();
+            builder.UseSqlServer(connectionString);
 
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var logger = loggerFactory.CreateLogger<ApexBookingDbContext>();
-
-            return new ApexBookingDbContext(optionsBuilder.Options, mockTenantService, logger);
+            return new ApexBookingDbContext(
+                builder.Options,
+                new DesignTimeTenantProvider()
+                // new DummyDomainEventService()
+                );
         }
 
-        private class MockTenantService : ITenantService
+        private sealed class DesignTimeTenantProvider : ITenantService
         {
-            public ValueObjectTenantIdentifier.TenantId? TenantId { get; set; }
+            // Explicitly implement or back the interface property
+            public TenantId CurrentTenant => null!;
+
+            // Implement the required interface method
+            public void SetCurrentTenant(TenantId tenant)
+            {
+            }
         }
     }
 }

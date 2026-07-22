@@ -1,5 +1,4 @@
 using ApexBooking.Infrastructure.Configuration;
-using Microsoft.Extensions.Options;
 
 namespace ApexBooking.WebApi.Extensions;
 

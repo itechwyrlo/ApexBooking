@@ -1,4 +1,3 @@
-using System;
 using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 

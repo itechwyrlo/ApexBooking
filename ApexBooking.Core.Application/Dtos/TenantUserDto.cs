@@ -1,5 +1,3 @@
-using ApexBooking.Core.Domain.Entities;
-
 namespace ApexBooking.Core.Application.Dtos;
 
 public sealed record TenantUserDto(

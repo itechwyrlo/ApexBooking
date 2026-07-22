@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using ApexBooking.Core.Domain.Entities;
+using ApexBooking.Core.Domain.Services.Tenant;
 using ApexBooking.SharedKernel.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -54,11 +55,9 @@ namespace ApexBooking.Core.Persistence.Data
 
         public ApexBookingDbContext(
             DbContextOptions<ApexBookingDbContext> options,
-            ITenantService tenantService,
-            ILogger<ApexBookingDbContext> logger) : base(options)
+            ITenantService tenantService) : base(options)
         {
             _tenantService = tenantService;
-            _logger = logger;
         }
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -98,48 +97,32 @@ namespace ApexBooking.Core.Persistence.Data
                 entity.ToTable("role_claims");
             });
 
-            foreach (var entityType in builder.Model.GetEntityTypes())
-            {
-                if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
-                {
-                    _logger.LogInformation("Applying tenant filter to entity type: {EntityType}", entityType.ClrType.Name);
-                    _logger.LogInformation("Current tenant context: {TenantId}", _tenantService.TenantId?.Value ?? (object)"null");
-                    builder.Entity(entityType.ClrType)
-                        .HasQueryFilter(BuildTenantFilter(entityType.ClrType));
-                }
-            }
-
-
-
+           ApplyGlobalFilters(builder);
 
         }
 
         // Exposed for expression tree access in BuildTenantFilter
-        private TenantId? TenantContext => _tenantService?.TenantId;
+        private TenantId? TenantContext => _tenantService?.CurrentTenant;
 
-        private LambdaExpression BuildTenantFilter(Type entityType)
+        private void ApplyGlobalFilters(ModelBuilder builder)
         {
-            // Only skip at design-time (EF migrations) when no DI container is present
-            if (_tenantService == null)
-                return null;
+            // Automatically apply tenant filter to all ITenantEntity implementations
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
+                {
+                    var parameter = Expression.Parameter(entityType.ClrType, "e");
+                    var companyIdProperty = Expression.Property(parameter, "CompanyId");
+                    var methodCall = Expression.Call(
+                        Expression.Constant(this),
+                        typeof(ApexBookingDbContext).GetMethod(nameof(TenantContext)));
+                    var filter = Expression.Lambda(
+                        Expression.Equal(companyIdProperty, methodCall),
+                        parameter);
 
-            var param = Expression.Parameter(entityType, "e");
-            var entityTenantId = Expression.Property(param, nameof(ITenantEntity.TenantId));
-
-            // Access TenantContext via 'this' — EF Core substitutes the current DbContext
-            // instance at query execution time, so each request reads its own tenant ID.
-            // Using Expression.Constant(_tenantService) directly would permanently capture
-            // the first request's scoped instance (bug fixed here).
-            var dbContextExpr = Expression.Constant(this, typeof(ApexBookingDbContext));
-            var currentTenantId = Expression.Property(dbContextExpr, nameof(TenantContext));
-            var nullTenantId = Expression.Constant(null, typeof(TenantId));
-
-            // TenantContext == null  →  no active tenant (super admin) — skip filter
-            // TenantContext != null  →  e.TenantId == TenantContext
-            var isNoContext = Expression.Equal(currentTenantId, nullTenantId);
-            var isSameTenant = Expression.Equal(entityTenantId, currentTenantId);
-
-            return Expression.Lambda(Expression.OrElse(isNoContext, isSameTenant), param);
+                    builder.Entity(entityType.ClrType).HasQueryFilter(filter);
+                }
+            }
         }
     }
 }

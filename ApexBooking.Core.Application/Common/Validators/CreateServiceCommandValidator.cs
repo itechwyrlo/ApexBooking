@@ -1,5 +1,4 @@
 using FluentValidation;
-using ApexBooking.Core.Application.Features.Services.Commands.CreateService;
 using ApexBooking.Core.Application.Features.service;
 
 namespace ApexBooking.Core.Application.Common.Validators;

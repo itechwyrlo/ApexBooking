@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using ApexBooking.SharedKernel.Services;
+using ApexBooking.Core.Domain.Services.Tenant;
+using ApexBooking.Infrastructure.ExternalServices.Tenant;
 using ApexBooking.WebApi.Extensions;
 
 namespace ApexBooking.WebApi.Dependency

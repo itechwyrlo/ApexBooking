@@ -7,7 +7,6 @@ using ApexBooking.Infrastructure.Hubs;
 using ApexBooking.WebApi.Dependency;
 using ApexBooking.WebApi.Extensions;
 using ApexBooking.WebApi.Middleware;
-using FluentValidation;
 using Microsoft.Extensions.Options;
 using ApexBooking.WebApi.Infrastructure;
 

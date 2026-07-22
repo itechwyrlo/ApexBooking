@@ -1,10 +1,8 @@
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Repositories;
-using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.Core.Persistence.Data;
 using ApexBooking.GenericRepository.EntityFramework;
 using Microsoft.EntityFrameworkCore;
-using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Persistence.Repositories
 {

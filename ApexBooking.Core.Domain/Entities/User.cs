@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;

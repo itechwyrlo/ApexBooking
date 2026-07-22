@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using ApexBooking.SharedKernel.Models;
-using ApexBooking.Core.Domain.ValueObjects;
 using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Application.Dtos

@@ -1,15 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mail;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using ApexBooking.Core.Domain.Services.EmailNotification;
 using ApexBooking.Infrastructure.Configuration;
-using MailKit.Security;
 using Microsoft.Extensions.Configuration;
-using MimeKit;
 using Microsoft.Extensions.Options;
 
 namespace ApexBooking.Infrastructure.ExternalServices.Brevo

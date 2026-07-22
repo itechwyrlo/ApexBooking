@@ -5,13 +5,11 @@ using ApexBooking.Core.Application.Messaging.Abstractions;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Enums;
 using ApexBooking.Core.Domain.Interfaces;
-using ApexBooking.Core.Domain.Services.Notification;
 using ApexBooking.Core.Domain.Services.Notification.Bookings;
 using ApexBooking.Core.Domain.Services.Slot;
 using ApexBooking.Core.Domain.Services.TokenService;
 using ApexBooking.Core.Domain.ValueObjects;
 using ApexBooking.SharedKernel.Exceptions;
-using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Application.Features.Bookings.Commands.CreateBooking
 {
