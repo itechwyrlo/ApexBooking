@@ -1,6 +1,8 @@
 using System.Reflection;
 using ApexBooking.Core.Application.Common.Behaviors;
+using ApexBooking.Core.Application.Common.DomainEvent;
 using ApexBooking.Core.Domain.Services.Slot;
+using ApexBooking.SharedKernel.Models;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +27,9 @@ namespace ApexBooking.Core.Application.Dependency
 
             // Register domain services
             services.AddSingleton<SlotAvailabilityService>();
+
+            // Domain-event dispatch (wraps IDomainEvent -> MediatR notification)
+            services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
             return services;
         }
