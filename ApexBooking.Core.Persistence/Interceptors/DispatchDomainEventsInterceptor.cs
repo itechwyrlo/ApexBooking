@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using SharedKernel.Models;
+using ApexBooking.SharedKernel.Models;
 
 namespace ApexBooking.Core.Persistence.Interceptors
 {

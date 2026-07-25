@@ -7,7 +7,7 @@ using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Domain.Entities;
 
-public class Tenant : IAggregateRoot
+public class Tenant : IAggregateRoot, IHasDomainEvents
 {
     public TenantId TenantId { get; protected set; } = default!;
     public string Slug { get; private set; } = string.Empty;
@@ -29,6 +29,9 @@ public class Tenant : IAggregateRoot
         Status == TenantStatus.Trial &&
         TrialEndsAt.HasValue &&
         TrialEndsAt.Value > DateTime.UtcNow;
+
+    private readonly List<IDomainEvent> _domainEvents = new();
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     // Navigation properties
     private readonly List<User> _users = new();
@@ -212,7 +215,8 @@ public class Tenant : IAggregateRoot
             throw new BusinessRuleBrokenException($"Your {Plan} plan allows a maximum of {limit.Value} services.");
     }
 
-    }
+    public void ClearDomainEvents() => _domainEvents.Clear();
+}
 
 public enum TenantStatus
 {
