@@ -3,6 +3,7 @@ import { Button } from '../../components/common/Button'
 import { Card } from '../../components/common/Card'
 import { EmptyState } from '../../components/common/EmptyState'
 import { PageHeader } from '../../components/common/PageHeader'
+import { PeriodFilter } from '../../components/common/PeriodFilter'
 import { StatTile } from '../../components/common/StatTile'
 import { StaffLineupTimeline } from '../../components/dashboard/StaffLineupTimeline'
 import { CancelRefundPickerModal } from '../../components/dashboard/CancelRefundPickerModal'
@@ -16,6 +17,7 @@ import { useRefundLog } from '../../hooks/useRefundLog'
 import { useTenantRevenue } from '../../hooks/useTenantRevenue'
 import { useStaffPerformance } from '../../hooks/useStaffPerformance'
 import { formatDisplayDate } from '../../utils/formatDateTime'
+import { getPeriodRange, type RevenuePeriod } from '../../utils/dateRanges'
 import { BookingStatus } from '../../types/BookingStatus'
 import type { ITenantBooking } from '../../interfaces/ITenantBooking'
 
@@ -55,8 +57,11 @@ export function OwnerDashboardPage() {
     toDate: todayIso,
   })
   const { entries: refundLog, isLoading: isRefundLogLoading } = useRefundLog()
-  const { revenue, isLoading: isRevenueLoading } = useTenantRevenue(todayIso)
-  const { entries: staffPerformance, isLoading: isStaffPerformanceLoading } = useStaffPerformance(todayIso)
+
+  const [revenuePeriod, setRevenuePeriod] = useState<RevenuePeriod>('today')
+  const revenueRange = getPeriodRange(revenuePeriod)
+  const { revenue, isLoading: isRevenueLoading } = useTenantRevenue(revenueRange)
+  const { entries: staffPerformance, isLoading: isStaffPerformanceLoading } = useStaffPerformance(revenueRange)
   const staffPerformanceByRevenue = [...staffPerformance].sort((a, b) => b.revenueGenerated - a.revenueGenerated)
 
   const [isScanModalOpen, setIsScanModalOpen] = useState(false)
@@ -68,6 +73,10 @@ export function OwnerDashboardPage() {
   return (
     <div>
       <PageHeader title="Business Overview" description={TODAY_LABEL} />
+
+      <div className="d-flex justify-content-end mb-3">
+        <PeriodFilter value={revenuePeriod} onChange={setRevenuePeriod} />
+      </div>
 
       <div className="row g-3 mb-3">
         <div className="col-6 col-md-4">

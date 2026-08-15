@@ -56,8 +56,8 @@ export async function getIdleStaff(): Promise<IIdleStaffMember[]> {
   return response.data
 }
 
-export async function getStaffPerformance(date: string): Promise<IStaffPerformanceEntry[]> {
-  const response = await authClient.get<IStaffPerformanceEntry[]>('/api/Tenant/team/performance', { params: { date } })
+export async function getStaffPerformance(fromDate: string, toDate: string): Promise<IStaffPerformanceEntry[]> {
+  const response = await authClient.get<IStaffPerformanceEntry[]>('/api/Tenant/team/performance', { params: { fromDate, toDate } })
   return response.data
 }
 

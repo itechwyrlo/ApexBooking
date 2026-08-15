@@ -4,5 +4,5 @@ using ApexBooking.Core.Application.Messaging.Abstractions;
 
 namespace ApexBooking.Core.Application.Features.Staff.Queries.GetStaffPerformance
 {
-    public record GetStaffPerformanceQuery(DateOnly Date) : IQuery<IReadOnlyCollection<StaffPerformanceEntryDto>>;
+    public record GetStaffPerformanceQuery(DateOnly FromDate, DateOnly ToDate) : IQuery<IReadOnlyCollection<StaffPerformanceEntryDto>>;
 }

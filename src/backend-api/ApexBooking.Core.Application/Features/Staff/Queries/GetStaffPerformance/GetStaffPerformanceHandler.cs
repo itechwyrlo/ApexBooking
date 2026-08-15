@@ -26,7 +26,7 @@ namespace ApexBooking.Core.Application.Features.Staff.Queries.GetStaffPerformanc
             var tenantId = _tenantEntity.TenantId
                 ?? throw new BusinessRuleBrokenException("Failed to load staff performance. No authenticated tenant context was found.");
 
-            var rows = await _unitOfWork.TenantRepository.GetStaffPerformanceAsync(tenantId, query.Date, cancellationToken);
+            var rows = await _unitOfWork.TenantRepository.GetStaffPerformanceAsync(tenantId, query.FromDate, query.ToDate, cancellationToken);
 
             return rows
                 .OrderByDescending(r => r.RevenueGenerated)
