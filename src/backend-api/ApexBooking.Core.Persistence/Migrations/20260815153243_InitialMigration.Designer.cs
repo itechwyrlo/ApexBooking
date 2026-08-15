@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ApexBooking.Core.Persistence.Migrations
 {
     [DbContext(typeof(ApexBookingDbContext))]
-    [Migration("20260808100434_AddAppearanceToBusinessProfile")]
-    partial class AddAppearanceToBusinessProfile
+    [Migration("20260815153243_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -90,14 +90,41 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnType("int")
                         .HasColumnName("duration_minutes");
 
+                    b.Property<decimal>("InVisitAmountCollected")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("in_visit_amount_collected");
+
                     b.Property<DateTime?>("NoShowAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("no_show_at");
+
+                    b.Property<string>("PayMongoPaymentId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("paymongo_payment_id");
 
                     b.Property<string>("PaymentConfirmedVia")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("payment_confirmed_via");
+
+                    b.Property<string>("RefundStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("refund_status");
+
+                    b.Property<decimal?>("RefundedAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("refunded_amount");
+
+                    b.Property<DateTime?>("RefundedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("refunded_at");
 
                     b.Property<bool>("RequiresUpfrontPayment")
                         .HasColumnType("bit")
@@ -123,9 +150,19 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("service_id");
 
+                    b.Property<decimal?>("ServicePriceAtBooking")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("service_price_at_booking");
+
                     b.Property<Guid>("StaffId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("staff_member_id");
+
+                    b.Property<string>("StaffNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("staff_notes");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -471,10 +508,31 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .HasColumnType("decimal(12,2)")
                         .HasColumnName("deposit_value");
 
-                    b.Property<decimal>("RefundPercent")
+                    b.Property<decimal>("LateCancellationRefundPercent")
+                        .ValueGeneratedOnAdd()
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)")
-                        .HasColumnName("refund_percent");
+                        .HasDefaultValue(0m)
+                        .HasColumnName("late_cancellation_refund_percent");
+
+                    b.Property<decimal>("OnTimeRefundPercent")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(100m)
+                        .HasColumnName("on_time_refund_percent");
+
+                    b.Property<bool>("RefundEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("refund_enabled");
+
+                    b.Property<int>("RefundReviewDeadlineDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(7)
+                        .HasColumnName("refund_review_deadline_days");
 
                     b.Property<string>("RequirementType")
                         .IsRequired()
@@ -495,6 +553,90 @@ namespace ApexBooking.Core.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("payment_policy", (string)null);
+                });
+
+            modelBuilder.Entity("ApexBooking.Core.Domain.Entities.RefundRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("booking_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("currency_code");
+
+                    b.Property<string>("CustomerEwalletName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("customer_ewallet_name");
+
+                    b.Property<string>("CustomerEwalletNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("customer_ewallet_number");
+
+                    b.Property<string>("CustomerEwalletProvider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("customer_ewallet_provider");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("decided_by_user_id");
+
+                    b.Property<string>("ReceiptUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("receipt_url");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<decimal>("RequestedAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("requested_amount");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("TenantId", "Status");
+
+                    b.ToTable("refund_requests", (string)null);
                 });
 
             modelBuilder.Entity("ApexBooking.Core.Domain.Entities.Service", b =>
@@ -981,6 +1123,10 @@ namespace ApexBooking.Core.Persistence.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("PhotoUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -1380,6 +1526,11 @@ namespace ApexBooking.Core.Persistence.Migrations
                                 .HasMaxLength(50)
                                 .HasColumnType("nvarchar(50)")
                                 .HasColumnName("business_type");
+
+                            b1.Property<string>("ContactPhoneNumber")
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)")
+                                .HasColumnName("contact_phone_number");
 
                             b1.Property<string>("Description")
                                 .HasMaxLength(1000)

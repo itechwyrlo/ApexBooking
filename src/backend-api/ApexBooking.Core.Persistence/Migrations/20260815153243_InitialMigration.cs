@@ -23,6 +23,7 @@ namespace ApexBooking.Core.Persistence.Migrations
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastLoginAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PhotoUrl = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -114,6 +115,31 @@ namespace ApexBooking.Core.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "refund_requests",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    tenant_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    booking_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    requested_amount = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: false),
+                    currency_code = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
+                    status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    decided_by_user_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    decided_at = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    rejection_reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    receipt_url = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    customer_ewallet_provider = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    customer_ewallet_number = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    customer_ewallet_name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_refund_requests", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "roles",
                 columns: table => new
                 {
@@ -164,6 +190,9 @@ namespace ApexBooking.Core.Persistence.Migrations
                     logo_url = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
                     business_type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    contact_phone_number = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    theme_palette_id = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    public_page_dark_mode = table.Column<bool>(type: "bit", nullable: false),
                     created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime2", nullable: false),
                     deactivated_at = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -427,7 +456,10 @@ namespace ApexBooking.Core.Persistence.Migrations
                     requirement_type = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     deposit_type = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     deposit_value = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: false),
-                    refund_percent = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
+                    on_time_refund_percent = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false, defaultValue: 100m),
+                    late_cancellation_refund_percent = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false, defaultValue: 0m),
+                    refund_enabled = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    refund_review_deadline_days = table.Column<int>(type: "int", nullable: false, defaultValue: 7),
                     created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -569,16 +601,24 @@ namespace ApexBooking.Core.Persistence.Migrations
                     buffer_after_minutes = table.Column<int>(type: "int", nullable: false),
                     status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     customer_notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    staff_notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     requires_upfront_payment = table.Column<bool>(type: "bit", nullable: false),
                     amount_due = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: false),
                     currency_code = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
                     payment_confirmed_via = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    paymongo_payment_id = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    refund_status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    refunded_amount = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: true),
+                    refunded_at = table.Column<DateTime>(type: "datetime2", nullable: true),
                     cancellation_reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     cancelled_at = table.Column<DateTime>(type: "datetime2", nullable: true),
                     cancelled_by_user_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     service_completed_at = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    no_show_at = table.Column<DateTime>(type: "datetime2", nullable: true),
                     rescheduled_from_booking_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     checked_in_at = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    service_price_at_booking = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: true),
+                    in_visit_amount_collected = table.Column<decimal>(type: "decimal(12,2)", precision: 12, scale: 2, nullable: false, defaultValue: 0m),
                     created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -790,6 +830,16 @@ namespace ApexBooking.Core.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_refund_requests_booking_id",
+                table: "refund_requests",
+                column: "booking_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_refund_requests_tenant_id_status",
+                table: "refund_requests",
+                columns: new[] { "tenant_id", "status" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_role_claims_RoleId",
                 table: "role_claims",
                 column: "RoleId");
@@ -902,6 +952,9 @@ namespace ApexBooking.Core.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");
+
+            migrationBuilder.DropTable(
+                name: "refund_requests");
 
             migrationBuilder.DropTable(
                 name: "role_claims");
