@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { getStaffPerformance } from '../services/teamService'
 import type { IStaffPerformanceEntry } from '../interfaces/IStaffPerformanceEntry'
+import type { IDateRange } from '../utils/dateRanges'
 
 interface IUseStaffPerformanceResult {
   entries: IStaffPerformanceEntry[]
   isLoading: boolean
 }
 
-export function useStaffPerformance(date: string): IUseStaffPerformanceResult {
+export function useStaffPerformance({ fromDate, toDate }: IDateRange): IUseStaffPerformanceResult {
   const [entries, setEntries] = useState<IStaffPerformanceEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -15,7 +16,7 @@ export function useStaffPerformance(date: string): IUseStaffPerformanceResult {
     let isMounted = true
     setIsLoading(true)
 
-    getStaffPerformance(date)
+    getStaffPerformance(fromDate, toDate)
       .then((result) => {
         if (isMounted) setEntries(result)
       })
@@ -29,7 +30,7 @@ export function useStaffPerformance(date: string): IUseStaffPerformanceResult {
     return () => {
       isMounted = false
     }
-  }, [date])
+  }, [fromDate, toDate])
 
   return { entries, isLoading }
 }

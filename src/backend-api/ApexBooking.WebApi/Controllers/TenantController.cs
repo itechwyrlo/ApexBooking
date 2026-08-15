@@ -112,9 +112,9 @@ namespace ApexBooking.WebApi.Controllers
         [HttpGet("team/performance")]
         [Authorize(Roles = "Owner")]
         [ProducesResponseType(typeof(IReadOnlyCollection<StaffPerformanceEntryDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetStaffPerformance([FromQuery] DateOnly date)
+        public async Task<IActionResult> GetStaffPerformance([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate)
         {
-            var result = await _mediator.Send(new GetStaffPerformanceQuery(date));
+            var result = await _mediator.Send(new GetStaffPerformanceQuery(fromDate, toDate));
             return Ok(result);
         }
 
@@ -525,9 +525,9 @@ namespace ApexBooking.WebApi.Controllers
         [HttpGet("bookings/revenue")]
         [Authorize(Roles = "Owner")]
         [ProducesResponseType(typeof(TenantRevenueDto), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetRevenue([FromQuery] DateOnly date)
+        public async Task<IActionResult> GetRevenue([FromQuery] DateOnly fromDate, [FromQuery] DateOnly toDate)
         {
-            var result = await _mediator.Send(new GetTenantRevenueQuery(date));
+            var result = await _mediator.Send(new GetTenantRevenueQuery(fromDate, toDate));
             return Ok(result);
         }
 

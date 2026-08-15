@@ -255,12 +255,14 @@ public class TenantRepository(ApexBookingDbContext context) : GenericRepository<
 
     public async Task<TenantRevenueRow> GetRevenueAsync(
         TenantId tenantId,
-        DateOnly date,
+        DateOnly fromDate,
+        DateOnly toDate,
         CancellationToken cancellationToken = default)
     {
         var eligibleBookings = context.Bookings.AsNoTracking()
             .Where(b => b.TenantId == tenantId
-                && b.ScheduledDate == date
+                && b.ScheduledDate >= fromDate
+                && b.ScheduledDate <= toDate
                 && b.Status != BookingStatus.Cancelled
                 && b.PaymentConfirmedVia != null);
 
@@ -290,7 +292,8 @@ public class TenantRepository(ApexBookingDbContext context) : GenericRepository<
 
     public async Task<IReadOnlyCollection<StaffPerformanceRow>> GetStaffPerformanceAsync(
         TenantId tenantId,
-        DateOnly date,
+        DateOnly fromDate,
+        DateOnly toDate,
         CancellationToken cancellationToken = default)
     {
         return await context.Staffs.AsNoTracking()
@@ -298,9 +301,9 @@ public class TenantRepository(ApexBookingDbContext context) : GenericRepository<
             .Select(m => new StaffPerformanceRow(
                 m.TenantMemberId.Value,
                 m.FirstName + " " + m.LastName,
-                m.Appointments.Count(b => b.ScheduledDate == date && b.Status == BookingStatus.Completed),
+                m.Appointments.Count(b => b.ScheduledDate >= fromDate && b.ScheduledDate <= toDate && b.Status == BookingStatus.Completed),
                 m.Appointments
-                    .Where(b => b.ScheduledDate == date && b.Status == BookingStatus.Completed)
+                    .Where(b => b.ScheduledDate >= fromDate && b.ScheduledDate <= toDate && b.Status == BookingStatus.Completed)
                     .Sum(b => b.AmountDue - (b.RefundStatus == RefundStatus.Refunded ? (b.RefundedAmount ?? 0) : 0)),
                 "PHP"))
             .ToListAsync(cancellationToken);

@@ -24,7 +24,7 @@ namespace ApexBooking.Core.Application.Features.Bookings.Queries.GetTenantRevenu
             var tenantId = _tenantEntity.TenantId
                 ?? throw new BusinessRuleBrokenException("Failed to load revenue. No authenticated tenant context was found.");
 
-            var revenue = await _unitOfWork.TenantRepository.GetRevenueAsync(tenantId, query.Date, cancellationToken);
+            var revenue = await _unitOfWork.TenantRepository.GetRevenueAsync(tenantId, query.FromDate, query.ToDate, cancellationToken);
 
             return new TenantRevenueDto(
                 revenue.OnlineAmount,

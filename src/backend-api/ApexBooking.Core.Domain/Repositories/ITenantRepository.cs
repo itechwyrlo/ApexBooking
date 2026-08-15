@@ -83,12 +83,14 @@ public interface ITenantRepository : IGenericRepository<Tenant>
         TenantId tenantId,
         CancellationToken cancellationToken = default);
 
-    // Powers the Owner Dashboard's Total Shop Revenue widget — today's collected money, split
-    // Online vs. Pay-on-Visit, netted against any succeeded refunds. Same ScheduledDate == today
-    // window GetBookingCountsAsync already uses, for one consistent "today" across every widget.
+    // Powers the Owner Dashboard's Total Shop Revenue widget — collected money for the selected
+    // period (Today/This Week/This Month), split Online vs. Pay-on-Visit, netted against any
+    // succeeded refunds. Same ScheduledDate window GetBookingCountsAsync uses for "today" when
+    // fromDate == toDate.
     Task<TenantRevenueRow> GetRevenueAsync(
         TenantId tenantId,
-        DateOnly date,
+        DateOnly fromDate,
+        DateOnly toDate,
         CancellationToken cancellationToken = default);
 
     // Powers the scanner's checkout preview panel — same flat customer/staff/service join
@@ -99,11 +101,13 @@ public interface ITenantRepository : IGenericRepository<Tenant>
         CancellationToken cancellationToken = default);
 
     // Powers the Owner Dashboard's Staff Performance List — every active staff member, ranked
-    // by today's completed services and net revenue generated (zero for anyone with none, so a
-    // solo-operator tenant just sees their own single row with no special-casing needed).
+    // by completed services and net revenue generated over the selected period (zero for anyone
+    // with none, so a solo-operator tenant just sees their own single row with no special-casing
+    // needed).
     Task<IReadOnlyCollection<StaffPerformanceRow>> GetStaffPerformanceAsync(
         TenantId tenantId,
-        DateOnly date,
+        DateOnly fromDate,
+        DateOnly toDate,
         CancellationToken cancellationToken = default);
 }
 

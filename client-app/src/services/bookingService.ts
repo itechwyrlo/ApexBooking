@@ -32,8 +32,8 @@ export async function getTenantBookingCounts(date: string): Promise<ITenantBooki
   return response.data
 }
 
-export async function getTenantRevenue(date: string): Promise<ITenantRevenue> {
-  const response = await authClient.get<ITenantRevenue>('/api/Tenant/bookings/revenue', { params: { date } })
+export async function getTenantRevenue(fromDate: string, toDate: string): Promise<ITenantRevenue> {
+  const response = await authClient.get<ITenantRevenue>('/api/Tenant/bookings/revenue', { params: { fromDate, toDate } })
   return response.data
 }
 
