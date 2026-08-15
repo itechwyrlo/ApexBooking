@@ -14,6 +14,18 @@ function isRunningStandalone(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches
 }
 
+// iOS/iPadOS Safari never fires beforeinstallprompt (Apple has never implemented the API), so it's
+// the one platform where "installable" has to be detected instead of handed to us by the browser.
+// Restricted to Safari itself — Chrome/Firefox/Edge on iOS are all WebKit under the hood and share
+// the same missing-API limitation, but their in-app "Add to Home Screen" steps differ from Safari's
+// Share-sheet flow, so those UAs are deliberately left unsupported rather than shown wrong steps.
+export function isIosSafari(): boolean {
+  const ua = window.navigator.userAgent
+  const isIosDevice = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Macintosh') && navigator.maxTouchPoints > 1)
+  const isOtherIosBrowser = /CriOS|FxiOS|EdgiOS|OPiOS/.test(ua)
+  return isIosDevice && !isOtherIosBrowser
+}
+
 interface IInstallPromptState {
   deferredPrompt: IBeforeInstallPromptEvent | null
   isInstalled: boolean
