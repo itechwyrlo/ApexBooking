@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>d44beffb-c57a-438b-8995-5fee3f5a90b8</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Framework.Core\SharedKernel\ApexBooking.SharedKernel.csproj" />
+    <ProjectReference Include="..\ApexBooking.Core.Application\ApexBooking.Core.Application.csproj" />
+    <ProjectReference Include="..\ApexBooking.Core.Persistence\ApexBooking.Core.Persistence.csproj" />
+    <ProjectReference Include="..\ApexBooking.Core.Domain\ApexBooking.Core.Domain.csproj" />
+    <ProjectReference Include="..\ApexBooking.Infrastructure\ApexBooking.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

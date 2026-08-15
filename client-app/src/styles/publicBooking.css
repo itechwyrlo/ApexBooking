@@ -1,0 +1,608 @@
+/* ---------------------------------------------------------------------- */
+/* Public booking wizard — "Modern Indigo" identity for the customer-facing */
+/* flow, scoped under .pb-root so it never leaks into or fights the        */
+/* dashboard's own theme.css tokens.                                       */
+/* ---------------------------------------------------------------------- */
+
+.pb-root {
+  --pb-bg: #ffffff;
+  --pb-surface: #ffffff;
+  --pb-header-bg: #f7f8fb;
+  --pb-ink: #1c2130;
+  --pb-ink-soft: #6b7186;
+  --pb-accent: #3454d1;
+  --pb-accent-soft: #e8ecfb;
+  --pb-accent-hover: #2a44ac;
+  --pb-line: #e9ebf1;
+  --pb-danger: #b3261e;
+  --pb-danger-soft: #fbeaea;
+
+  --pb-font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+
+  min-height: 100svh;
+  background-color: var(--pb-bg);
+  color: var(--pb-ink);
+}
+
+.pb-display {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pb-mono {
+  font-family: var(--pb-font-mono);
+  letter-spacing: 0.01em;
+}
+
+.pb-muted {
+  color: var(--pb-ink-soft);
+}
+
+/* Header band ------------------------------------------------------------ */
+
+.pb-header {
+  background-color: var(--pb-header-bg);
+  color: var(--pb-ink);
+  border-bottom: 1px solid var(--pb-line);
+}
+
+.pb-header .pb-brand {
+  color: var(--pb-ink);
+}
+
+.pb-header .pb-brand-dot {
+  background-color: var(--pb-accent);
+}
+
+/* Reserved banner slot for a future tenant-uploaded image; defaults to the
+   flat header background so it's invisible until a banner exists. */
+.pb-header-banner {
+  background-color: var(--pb-header-bg);
+  background-size: cover;
+  background-position: center;
+}
+
+/* Progress — numbered circle stepper ------------------------------------- */
+
+.pb-steps-mobile-label {
+  font-family: var(--pb-font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  color: var(--pb-ink-soft);
+}
+
+.pb-stepper {
+  display: flex;
+  align-items: center;
+}
+
+.pb-stepper-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pb-stepper-circle {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1.5px solid var(--pb-line);
+  background-color: var(--pb-surface);
+  color: var(--pb-ink-soft);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pb-stepper-circle.is-done,
+.pb-stepper-circle.is-current {
+  background-color: var(--pb-accent);
+  border-color: var(--pb-accent);
+  color: #fff;
+}
+
+/* Completed circles are real buttons (jump back to that step) — give them a
+   hover/focus cue distinct from the plain "current" state below. */
+button.pb-stepper-circle.is-done {
+  cursor: pointer;
+}
+
+button.pb-stepper-circle.is-done:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 3px var(--pb-accent-soft);
+}
+
+button.pb-stepper-circle.is-done:focus-visible {
+  outline: 2px solid var(--pb-accent);
+  outline-offset: 2px;
+}
+
+/* The current step gets a soft pulsing ring so it reads as distinct from a
+   completed step at a glance, not just via the number-vs-checkmark swap. */
+.pb-stepper-circle.is-current {
+  animation: pb-stepper-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pb-stepper-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px var(--pb-accent-soft);
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--pb-accent-soft);
+  }
+}
+
+.pb-stepper-bar {
+  flex: 1 1 auto;
+  height: 2px;
+  background-color: var(--pb-line);
+  margin: 0 2px;
+  align-self: flex-start;
+  margin-top: 12px;
+  transition: background-color 0.25s ease;
+}
+
+.pb-stepper-bar.is-done {
+  background-color: var(--pb-accent);
+}
+
+.pb-stepper-label {
+  margin-top: 0.375rem;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pb-ink-soft);
+  text-align: center;
+}
+
+.pb-stepper-label.is-current {
+  color: var(--pb-ink);
+  font-weight: 600;
+}
+
+/* Selectable option cards (branch / service / staff) ---------------------- */
+
+.pb-option {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background-color: var(--pb-surface);
+  border: 1px solid var(--pb-line);
+  border-left: 3px solid transparent;
+  border-radius: 0.75rem;
+  padding: 1rem 1.125rem;
+  box-shadow: 0 1px 3px rgba(20, 25, 40, 0.05);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.pb-option:hover {
+  border-color: var(--pb-accent);
+  box-shadow: 0 6px 16px rgba(20, 25, 40, 0.1);
+  transform: translateY(-2px);
+}
+
+.pb-option:focus-visible {
+  outline: 2px solid var(--pb-accent);
+  outline-offset: 2px;
+}
+
+.pb-option.is-selected {
+  background-color: var(--pb-accent-soft);
+  border-color: var(--pb-accent);
+}
+
+.pb-option-price,
+.pb-option-time {
+  font-family: var(--pb-font-mono);
+  font-size: 0.875rem;
+}
+
+/* Selected-state checkmark badge, top-right corner of the card. */
+.pb-option-check {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--pb-accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Reserved image/icon slot for cards without a photo yet (Service, Branch);
+   Staff already has its own photoUrl-backed circle in StaffStep. */
+.pb-option-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 0.625rem;
+  background-color: var(--pb-accent-soft);
+  flex-shrink: 0;
+}
+
+/* Time-of-day segmented control (Morning / Afternoon / Evening) -------------- */
+
+.pb-segmented {
+  display: inline-flex;
+  width: 100%;
+  gap: 0.25rem;
+  background-color: var(--pb-header-bg);
+  border-radius: 0.625rem;
+  padding: 0.25rem;
+}
+
+.pb-segmented-btn {
+  flex: 1 1 auto;
+  border: none;
+  background: transparent;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--pb-ink-soft);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pb-segmented-btn:hover {
+  color: var(--pb-ink);
+}
+
+.pb-segmented-btn:focus-visible {
+  outline: 2px solid var(--pb-accent);
+  outline-offset: 2px;
+}
+
+.pb-segmented-btn.is-active {
+  background-color: var(--pb-surface);
+  color: var(--pb-ink);
+  box-shadow: 0 1px 2px rgba(20, 25, 40, 0.08);
+}
+
+/* Time slot grid ------------------------------------------------------------ */
+
+.pb-slot {
+  font-family: var(--pb-font-mono);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: var(--pb-surface);
+  border: 1px solid var(--pb-line);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.pb-slot:hover {
+  border-color: var(--pb-accent);
+}
+
+.pb-slot:focus-visible {
+  outline: 2px solid var(--pb-accent);
+  outline-offset: 2px;
+}
+
+.pb-slot.is-selected {
+  background-color: var(--pb-accent);
+  border-color: var(--pb-accent);
+  color: #fff;
+}
+
+/* Calendar ------------------------------------------------------------------ */
+
+.pb-calendar-nav {
+  background-color: var(--pb-surface);
+  border: 1px solid var(--pb-line);
+  border-radius: 0.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pb-ink);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.pb-calendar-nav:hover:not(:disabled) {
+  border-color: var(--pb-accent);
+}
+
+.pb-calendar-nav:focus-visible {
+  outline: 2px solid var(--pb-accent);
+  outline-offset: 2px;
+}
+
+.pb-calendar-nav:disabled {
+  opacity: 0.35;
+}
+
+.pb-calendar-weekday {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pb-ink-soft);
+  text-align: center;
+}
+
+.pb-calendar-day {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 0.5rem;
+  border: 1.5px solid transparent;
+  background-color: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pb-ink);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.pb-calendar-day:hover:not(:disabled):not(.is-selected) {
+  border-color: var(--pb-accent);
+  background-color: var(--pb-accent-soft);
+}
+
+.pb-calendar-day:focus-visible {
+  outline: 2px solid var(--pb-accent);
+  outline-offset: 2px;
+}
+
+.pb-calendar-day.is-today {
+  font-weight: 700;
+  color: var(--pb-accent);
+}
+
+.pb-calendar-day.is-selected {
+  background-color: var(--pb-accent);
+  border-color: var(--pb-accent);
+  color: #fff;
+}
+
+.pb-calendar-day:disabled {
+  color: var(--pb-ink-soft);
+  opacity: 0.4;
+}
+
+/* Primary / secondary buttons ----------------------------------------------- */
+
+.pb-btn-primary {
+  --bs-btn-bg: var(--pb-accent);
+  --bs-btn-border-color: var(--pb-accent);
+  --bs-btn-hover-bg: var(--pb-accent-hover);
+  --bs-btn-hover-border-color: var(--pb-accent-hover);
+  --bs-btn-active-bg: var(--pb-accent-hover);
+  --bs-btn-active-border-color: var(--pb-accent-hover);
+  --bs-btn-disabled-bg: var(--pb-accent);
+  --bs-btn-disabled-border-color: var(--pb-accent);
+  --bs-btn-focus-shadow-rgb: 52, 84, 209;
+  border-radius: 0.625rem;
+  font-weight: 600;
+}
+
+.pb-btn-outline {
+  --bs-btn-color: var(--pb-ink);
+  --bs-btn-border-color: var(--pb-line);
+  --bs-btn-hover-bg: var(--pb-ink);
+  --bs-btn-hover-border-color: var(--pb-ink);
+  border-radius: 0.625rem;
+  font-weight: 600;
+}
+
+.pb-btn-link {
+  color: var(--pb-accent);
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.pb-btn-link:hover,
+.pb-btn-link:focus-visible {
+  color: var(--pb-accent-hover);
+  text-decoration: underline;
+}
+
+.pb-alert-danger {
+  background-color: var(--pb-danger-soft);
+  color: var(--pb-danger);
+  border-radius: 0.625rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Summary card (Review step + Success step) --------------------------------- */
+
+.pb-ticket {
+  background-color: var(--pb-surface);
+  border: 1px solid var(--pb-line);
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(20, 25, 40, 0.05);
+  overflow: hidden;
+}
+
+.pb-ticket-reference {
+  font-family: var(--pb-font-mono);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.pb-ticket-divider {
+  border-top: 1px solid var(--pb-line);
+}
+
+/* "Download Receipt" (success step) — window.print() + Save as PDF, only the ticket
+   card itself should appear on the printed page. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .pb-ticket,
+  .pb-ticket * {
+    visibility: visible;
+  }
+
+  .pb-ticket {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}
+
+.pb-badge-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--pb-accent);
+  background-color: var(--pb-accent-soft);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+}
+
+/* Confirmation checkmark — draws in once on load, doesn't repeat -------------- */
+
+.pb-confirm-check {
+  overflow: visible;
+}
+
+.pb-confirm-check-circle {
+  stroke: var(--pb-accent);
+  stroke-width: 3;
+  fill: var(--pb-accent-soft);
+  stroke-dasharray: 208;
+  stroke-dashoffset: 208;
+  animation: pb-confirm-draw-circle 0.25s ease-out forwards;
+}
+
+.pb-confirm-check-mark {
+  stroke: var(--pb-accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  stroke-dasharray: 46;
+  stroke-dashoffset: 46;
+  animation: pb-confirm-draw-mark 0.2s ease-out 0.22s forwards;
+}
+
+@keyframes pb-confirm-draw-circle {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pb-confirm-draw-mark {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pb-confirm-check-circle,
+  .pb-confirm-check-mark {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Desktop summary panel -------------------------------------------------------- */
+
+.pb-summary-panel-sticky {
+  position: sticky;
+  top: 2rem;
+}
+
+/* Step transition ------------------------------------------------------------ */
+/* Slides in from the direction the wizard is moving: right-to-left when
+   advancing, left-to-right when going back (Edit links, the Back button). */
+
+.pb-step-enter-forward {
+  animation: pb-fade-slide-forward 0.2s ease both;
+}
+
+.pb-step-enter-backward {
+  animation: pb-fade-slide-backward 0.2s ease both;
+}
+
+@keyframes pb-fade-slide-forward {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pb-fade-slide-backward {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pb-step-enter-forward,
+  .pb-step-enter-backward {
+    animation: none;
+  }
+
+  .pb-option:hover {
+    box-shadow: 0 1px 3px rgba(20, 25, 40, 0.05);
+    transform: none;
+  }
+
+  .pb-stepper-circle.is-current {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--pb-accent-soft);
+  }
+
+  button.pb-stepper-circle.is-done:hover {
+    transform: none;
+  }
+}
+
+/* Form inputs ----------------------------------------------------------------- */
+/* Standard input scale + a focus ring using this page's own accent token,
+   consistent with the outline convention already used by every other
+   interactive element here (.pb-option, .pb-slot, .pb-calendar-day). */
+
+.pb-root .form-control,
+.pb-root .form-select {
+  min-height: 42px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9375rem;
+  border-color: var(--pb-line);
+}
+
+.pb-root .form-control:focus,
+.pb-root .form-select:focus {
+  border-color: var(--pb-accent);
+  box-shadow: 0 0 0 0.2rem var(--pb-accent-soft);
+}

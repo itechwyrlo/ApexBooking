@@ -4,11 +4,32 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  deploy:
-    runs-on: windows-latest
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore ApexBooking.sln
+
+      - name: Build
+        run: dotnet build ApexBooking.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test ApexBooking.sln -c Release --no-build --no-restore
+
+  build:
+    needs: verify
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,25 +39,30 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: apex-booking-client/package-lock.json
+          cache-dependency-path: client-app/package-lock.json
 
       - name: Install frontend dependencies
-        working-directory: apex-booking-client
-        run: npm install
+        working-directory: client-app
+        run: npm ci
 
+      # NOTE (repo cleanup audit, 2026-08-15): VITE_API_BASE_URL is the only env var read
+      # anywhere in client-app/src (verified via `grep -r "import.meta.env" client-app/src`).
+      # The VITE_FIREBASE_* and VITE_SIGNALR_HUB_URL secrets previously carried here had no
+      # consumer — Firebase was confirmed fully replaced by SignalR, and the SignalR hub URL
+      # is derived from VITE_API_BASE_URL, not a dedicated variable — so the unused env lines
+      # were dropped. The underlying GitHub repository secrets themselves were left untouched;
+      # see the cleanup audit for the removal evidence.
       - name: Build frontend
-        working-directory: apex-booking-client
+        working-directory: client-app
         run: npm run build
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_VAPID_KEY: ${{ secrets.VITE_FIREBASE_VAPID_KEY }}
-          VITE_SIGNALR_HUB_URL: ${{ secrets.VITE_SIGNALR_HUB_URL }}
+
+      # Copies client-app/dist into src/backend-api/ApexBooking.WebApi/wwwroot — the same
+      # script used locally (scripts/sync-wwwroot.mjs), so CI and local dev share one
+      # reproducible path to a wwwroot-ready SPA build instead of two.
+      - name: Sync frontend build into wwwroot
+        run: node scripts/sync-wwwroot.mjs
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
@@ -44,7 +70,24 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Publish
-        run: dotnet publish ApexBooking.WebApi/ApexBooking.WebApi.csproj -c Release -o ./publish
+        run: dotnet publish src/backend-api/ApexBooking.WebApi/ApexBooking.WebApi.csproj -c Release -o ./publish
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapi-publish
+          path: ./publish
+          retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Download publish artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapi-publish
+          path: ./publish
 
       - name: Deploy via Web Deploy
         shell: pwsh

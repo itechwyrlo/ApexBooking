@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <!-- viewport-fit=cover lets the app paint under the notch/home-indicator safe areas (required
+         for env(safe-area-inset-*) to resolve to anything but 0 on iOS) — needed by the mobile
+         bottom navigation bar added in the protected-app shell (Step 2 of the UI refactor). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="ApexBooking is online booking and scheduling software for local businesses — manage appointments, staff schedules, and customer bookings in one place." />
+    <meta name="theme-color" content="#4f46e5" />
+    <script>
+      // Applies the cached dashboard dark-mode/palette preference before first paint, so
+      // dashboard reloads don't flash light mode / the default indigo before React mounts and
+      // DashboardLayout's own effects run. Dashboard-only by design — dark mode never applies
+      // to the public booking page or any other route, so this only acts on dashboard URLs.
+      (function () {
+        try {
+          if (!/\/dashboard(\/|$)/.test(window.location.pathname)) return
+          var root = document.documentElement
+          if (localStorage.getItem('apexbooking.dashboard.darkMode') === 'true') {
+            root.setAttribute('data-bs-theme', 'dark')
+          }
+          var paletteId = localStorage.getItem('apexbooking.dashboard.paletteId')
+          if (paletteId) {
+            root.setAttribute('data-palette', paletteId)
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <title>ApexBooking</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

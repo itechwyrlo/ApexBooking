@@ -1,0 +1,15 @@
+{
+  "name": "apexbooking",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Root command proxy for the ApexBooking monorepo. The real frontend project lives in client-app/ — this file has no dependencies of its own and only delegates to it.",
+  "scripts": {
+    "postinstall": "npm install --prefix client-app",
+    "dev": "npm run dev --prefix client-app",
+    "build": "npm run build --prefix client-app",
+    "build:wwwroot": "npm run build --prefix client-app && node scripts/sync-wwwroot.mjs",
+    "preview": "npm run preview --prefix client-app",
+    "lint": "npm run lint --prefix client-app",
+    "test:e2e": "npm run test:e2e --prefix client-app"
+  }
+}

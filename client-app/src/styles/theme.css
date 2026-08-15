@@ -1,0 +1,1612 @@
+/* ---------------------------------------------------------------------- */
+/* Design tokens                                                          */
+/* ---------------------------------------------------------------------- */
+
+:root {
+  --color-ink: #14163a;
+  --color-body: #3f4159;
+  --color-muted: #6b6d85;
+  --color-canvas: #f7f7fb;
+  --color-surface: #ffffff;
+  --color-border: #e4e4f0;
+
+  --color-primary: #4f46e5;
+  --color-primary-strong: #4338ca;
+  --color-primary-soft: rgba(79, 70, 229, 0.08);
+  --color-primary-soft-strong: rgba(79, 70, 229, 0.14);
+
+  --color-accent: #f59e0b;
+  --color-accent-soft: rgba(245, 158, 11, 0.12);
+  /* Text-on-accent-soft pairing, same role --color-primary-strong/--color-danger-strong/
+     --color-teal-strong already play for their own families — accent needed one too because
+     --color-accent itself isn't dark enough for AA contrast against --color-accent-soft (unlike
+     danger/success/teal, whose base color already clears it). Was a bare hardcoded #92620a on
+     badge-tone-warning/.alert-warning before Step 10; promoted to a token here so dark mode could
+     give it a real counterpart instead of leaving one fixed hex in a themed rule. */
+  --color-accent-strong: #92620a;
+  --color-success: #16a34a;
+  --color-success-soft: rgba(22, 163, 74, 0.1);
+  --color-danger: #e11d48;
+  --color-danger-strong: #be123c;
+  --color-danger-soft: rgba(225, 29, 72, 0.1);
+
+  --color-teal: #0d9488;
+  --color-teal-strong: #0f766e;
+  --color-teal-soft: rgba(13, 148, 136, 0.1);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  /* Reserved for primary content surfaces (Card) only — deliberately not reused by .modal-content,
+     .rounded-3, or any public-page surface, so this stays a scoped, reversible bump instead of
+     rerounding the whole app. */
+  --radius-xl: 1.25rem;
+
+  --shadow-sm: 0 1px 2px rgba(20, 22, 58, 0.06), 0 1px 1px rgba(20, 22, 58, 0.04);
+  --shadow-md: 0 12px 28px rgba(20, 22, 58, 0.09);
+
+  /* Dashboard-wide monospace token (references, IDs, codes) — was missing here; RefundRequestTable
+     had reached for the public-booking-scoped .pb-mono class instead (its --pb-font-mono variable
+     only exists under .pb-root, so outside it the rule was a silent no-op). Same font stack as
+     .pb-root's own --pb-font-mono and admin.css's hardcoded 'IBM Plex Mono', kept in sync
+     intentionally rather than importing across those domains. */
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Theme palettes — tenant-chosen brand color, light mode                */
+/* One block per id in BusinessProfile.KnownPaletteIds. "indigo" is the   */
+/* default and already matches :root above, so it has no override here.  */
+/* ---------------------------------------------------------------------- */
+
+[data-palette='teal'] {
+  --color-primary: #0d9488;
+  --color-primary-strong: #0f766e;
+  --color-primary-soft: rgba(13, 148, 136, 0.08);
+  --color-primary-soft-strong: rgba(13, 148, 136, 0.14);
+}
+
+[data-palette='rose'] {
+  --color-primary: #db2777;
+  --color-primary-strong: #be185d;
+  --color-primary-soft: rgba(219, 39, 119, 0.08);
+  --color-primary-soft-strong: rgba(219, 39, 119, 0.14);
+}
+
+[data-palette='amber'] {
+  --color-primary: #d97706;
+  --color-primary-strong: #b45309;
+  --color-primary-soft: rgba(217, 119, 6, 0.08);
+  --color-primary-soft-strong: rgba(217, 119, 6, 0.14);
+}
+
+[data-palette='forest'] {
+  --color-primary: #15803d;
+  --color-primary-strong: #166534;
+  --color-primary-soft: rgba(21, 128, 61, 0.08);
+  --color-primary-soft-strong: rgba(21, 128, 61, 0.14);
+}
+
+[data-palette='slate'] {
+  --color-primary: #475569;
+  --color-primary-strong: #334155;
+  --color-primary-soft: rgba(71, 85, 105, 0.08);
+  --color-primary-soft-strong: rgba(71, 85, 105, 0.14);
+}
+
+/* Public booking page palette — .pb-root declares --pb-accent* directly on
+   itself (publicBooking.css), so a rule on [data-palette] alone (which only
+   matches the <html> ancestor) can never reach it: a value a rule assigns
+   directly to an element always wins over one merely inherited from an
+   ancestor, no matter that ancestor rule's specificity. This has to target
+   .pb-root itself, via the actual html[data-palette] -> .pb-root descendant
+   relationship, to actually override it. */
+[data-palette='teal'] .pb-root {
+  --pb-accent: #0d9488;
+  --pb-accent-hover: #0f766e;
+  --pb-accent-soft: #e0f5f3;
+}
+
+[data-palette='rose'] .pb-root {
+  --pb-accent: #db2777;
+  --pb-accent-hover: #be185d;
+  --pb-accent-soft: #fce8f1;
+}
+
+[data-palette='amber'] .pb-root {
+  --pb-accent: #d97706;
+  --pb-accent-hover: #b45309;
+  --pb-accent-soft: #fdf1e0;
+}
+
+[data-palette='forest'] .pb-root {
+  --pb-accent: #15803d;
+  --pb-accent-hover: #166534;
+  --pb-accent-soft: #e2f5e9;
+}
+
+[data-palette='slate'] .pb-root {
+  --pb-accent: #475569;
+  --pb-accent-hover: #334155;
+  --pb-accent-soft: #e9ecf0;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Dark mode — neutrals (plan-gated; see Topbar/Appearance settings)      */
+/* Pairs with Bootstrap's own data-bs-theme="dark" (flips all bs-* utility */
+/* classes/components automatically) — this block only re-points this     */
+/* app's own custom --color-* tokens, which Bootstrap doesn't know about. */
+/* ---------------------------------------------------------------------- */
+
+[data-bs-theme='dark'] {
+  --color-ink: #f4f4fa;
+  --color-body: #cbccdc;
+  --color-muted: #8f92ab;
+  --color-canvas: #14162a;
+  --color-surface: #1c1e38;
+  /* Was #2f3252, "fixed" to #4b4f7d — both computed out to under 1.6:1 contrast
+     against canvas/surface (WCAG wants >=3:1 for UI component boundaries), so
+     the first attempt was still nearly invisible; I'd eyeballed it instead of
+     computing it. This value is checked: ~3.3:1 against --color-surface and
+     ~3.6:1 against --color-canvas. Affects every border in the app, since it's
+     the one token everything uses: form fields, cards, tables, dividers,
+     radio/checkbox outlines. */
+  --color-border: #6b6fa0;
+
+  --color-accent: #fbbf24;
+  --color-accent-soft: rgba(251, 191, 36, 0.16);
+  /* Light mode's #92620a composited against --color-accent-soft here measures ~2.4:1 (fails AA's
+     4.5:1) — the dark-mode soft tint is a darker, more saturated composite than light mode's pale
+     one, so the same dark-brown text that worked at 4.5:1 in light mode doesn't in dark. Reusing
+     --color-accent's own dark-mode value (already defined one line up) rather than picking a new
+     color: measures ~7.7:1 against the same composited background, same amber/gold hue as the
+     background itself (same warning-tone identity as every other mode/palette). */
+  --color-accent-strong: #fbbf24;
+  --color-success: #4ade80;
+  --color-success-soft: rgba(74, 222, 128, 0.16);
+  --color-danger: #fb7185;
+  --color-danger-strong: #f43f5e;
+  --color-danger-soft: rgba(251, 113, 133, 0.16);
+
+  --color-teal: #2dd4bf;
+  --color-teal-strong: #5eead4;
+  --color-teal-soft: rgba(45, 212, 191, 0.16);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24), 0 1px 1px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 12px 28px rgba(0, 0, 0, 0.32);
+}
+
+/* Dark mode — per-palette primary (lighter tints read better on dark backgrounds
+   than the saturated light-mode shades above, so these aren't just re-used). */
+
+[data-bs-theme='dark'] {
+  --color-primary: #818cf8;
+  --color-primary-strong: #a5b4fc;
+  --color-primary-soft: rgba(129, 140, 248, 0.16);
+  --color-primary-soft-strong: rgba(129, 140, 248, 0.24);
+}
+
+[data-palette='teal'][data-bs-theme='dark'] {
+  --color-primary: #2dd4bf;
+  --color-primary-strong: #5eead4;
+  --color-primary-soft: rgba(45, 212, 191, 0.16);
+  --color-primary-soft-strong: rgba(45, 212, 191, 0.24);
+}
+
+[data-palette='rose'][data-bs-theme='dark'] {
+  --color-primary: #f472b6;
+  --color-primary-strong: #f9a8d4;
+  --color-primary-soft: rgba(244, 114, 182, 0.16);
+  --color-primary-soft-strong: rgba(244, 114, 182, 0.24);
+}
+
+[data-palette='amber'][data-bs-theme='dark'] {
+  --color-primary: #fbbf24;
+  --color-primary-strong: #fcd34d;
+  --color-primary-soft: rgba(251, 191, 36, 0.16);
+  --color-primary-soft-strong: rgba(251, 191, 36, 0.24);
+}
+
+[data-palette='forest'][data-bs-theme='dark'] {
+  --color-primary: #4ade80;
+  --color-primary-strong: #86efac;
+  --color-primary-soft: rgba(74, 222, 128, 0.16);
+  --color-primary-soft-strong: rgba(74, 222, 128, 0.24);
+}
+
+[data-palette='slate'][data-bs-theme='dark'] {
+  --color-primary: #94a3b8;
+  --color-primary-strong: #cbd5e1;
+  --color-primary-soft: rgba(148, 163, 184, 0.16);
+  --color-primary-soft-strong: rgba(148, 163, 184, 0.24);
+}
+
+/* Icons are flat single-tone <img> assets (stroke baked into the SVG file, not
+   currentColor), so they can't inherit a text token the way real text does.
+   Their fixed slate-gray stroke reads fine on light surfaces but is too low-
+   contrast against dark ones, so this inverts every icon to light in dark mode
+   — safe app-wide since every icon in this set uses the same monochrome style. */
+[data-bs-theme='dark'] img[src^='/assets/icons/'] {
+  filter: brightness(0) invert(1) opacity(0.82);
+}
+
+/* Tells the browser to paint its own OS-rendered form-control chrome (a <select>'s
+   dropdown popup, an <input type="date">'s calendar popup, scrollbars) in dark UI —
+   CSS background-color/color on the element itself can't reach that native chrome at
+   all, this is the only way to get it. */
+[data-bs-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Base surfaces & typography                                             */
+/* ---------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------- */
+/* Confirmed typography & spacing hierarchy (documentation only — no new  */
+/* utility classes; these are the existing Bootstrap utilities already in */
+/* consistent use across the app, written down as the standard).         */
+/*                                                                        */
+/* Typography (Bootstrap fs- and fw- utilities):                         */
+/*   Page title       -> fs-3 fw-bold        (PageHeader.tsx)            */
+/*   Modal title       -> fs-5                (Modal.tsx)                */
+/*   Card/section head -> fs-6 fw-semibold    (every dashboard/list card) */
+/*   Supporting text   -> text-muted, often + small                      */
+/*   Eyebrow/label     -> text-eyebrow (defined below) or                */
+/*                        sidebar-section-label-style uppercase small     */
+/*                                                                        */
+/* Spacing:                                                               */
+/*   Page padding      -> p-3 (mobile) / p-md-4 (desktop)  (DashboardLayout main) */
+/*   Card grid gap      -> row g-3                                        */
+/*   Section spacing    -> mb-3 (related group) / mb-4 (distinct section) */
+/*   Card internal pad  -> Bootstrap's default .card-body (1.25rem)       */
+/* ---------------------------------------------------------------------- */
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+
+.display-5,
+.display-6 {
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  color: var(--color-body);
+}
+
+.text-eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.01em;
+}
+
+.text-muted {
+  color: var(--color-muted) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Bootstrap component re-theming (compiled CSS -> local var overrides)   */
+/* ---------------------------------------------------------------------- */
+
+.btn {
+  --bs-btn-border-radius: var(--radius-sm);
+  --bs-btn-focus-box-shadow: 0 0 0 0.2rem var(--color-primary-soft-strong);
+  font-weight: 600;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--color-primary);
+  --bs-btn-border-color: var(--color-primary);
+  --bs-btn-hover-bg: var(--color-primary-strong);
+  --bs-btn-hover-border-color: var(--color-primary-strong);
+  --bs-btn-active-bg: var(--color-primary-strong);
+  --bs-btn-active-border-color: var(--color-primary-strong);
+  --bs-btn-disabled-bg: var(--color-primary);
+  --bs-btn-disabled-border-color: var(--color-primary);
+  --bs-btn-focus-shadow-rgb: 79, 70, 229;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--color-primary);
+  --bs-btn-border-color: var(--color-primary);
+  --bs-btn-hover-bg: var(--color-primary);
+  --bs-btn-hover-border-color: var(--color-primary);
+  --bs-btn-active-bg: var(--color-primary);
+  --bs-btn-active-border-color: var(--color-primary);
+  --bs-btn-focus-shadow-rgb: 79, 70, 229;
+}
+
+/* Every secondary/icon/light button hovers to the same soft gray tone across
+   the whole app (tenant, superadmin, landing, auth, public booking all load
+   this file) — never a solid dark/black fill. */
+.btn-outline-secondary {
+  --bs-btn-color: var(--color-body);
+  --bs-btn-border-color: var(--color-border);
+  --bs-btn-hover-color: var(--color-ink);
+  --bs-btn-hover-bg: var(--color-canvas);
+  --bs-btn-hover-border-color: var(--color-border);
+  --bs-btn-active-color: var(--color-ink);
+  --bs-btn-active-bg: var(--color-canvas);
+  --bs-btn-active-border-color: var(--color-border);
+}
+
+/* Bootstrap's .btn-light is a fixed light-gray button style, not a token —
+   left alone it stays light in dark mode, and an icon inverted white by the
+   dark-mode icon rule above becomes invisible against it (NotificationBell,
+   the profile menu toggle). Repointed at the surface tokens so it flips too. */
+.btn-light {
+  --bs-btn-color: var(--color-body);
+  --bs-btn-bg: var(--color-surface);
+  --bs-btn-border-color: var(--color-surface);
+  --bs-btn-hover-color: var(--color-ink);
+  --bs-btn-hover-bg: var(--color-canvas);
+  --bs-btn-hover-border-color: var(--color-border);
+  --bs-btn-active-color: var(--color-ink);
+  --bs-btn-active-bg: var(--color-canvas);
+  --bs-btn-active-border-color: var(--color-border);
+}
+
+.btn-link {
+  --bs-btn-color: var(--color-primary);
+  --bs-btn-hover-color: var(--color-primary-strong);
+}
+
+.btn-danger {
+  --bs-btn-bg: var(--color-danger);
+  --bs-btn-border-color: var(--color-danger);
+  --bs-btn-hover-bg: var(--color-danger-strong);
+  --bs-btn-hover-border-color: var(--color-danger-strong);
+  --bs-btn-active-bg: var(--color-danger-strong);
+  --bs-btn-active-border-color: var(--color-danger-strong);
+  --bs-btn-disabled-bg: var(--color-danger);
+  --bs-btn-disabled-border-color: var(--color-danger);
+  --bs-btn-focus-shadow-rgb: 225, 29, 72;
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--color-danger);
+  --bs-btn-border-color: var(--color-danger);
+  --bs-btn-hover-bg: var(--color-danger);
+  --bs-btn-hover-border-color: var(--color-danger);
+  --bs-btn-active-bg: var(--color-danger);
+  --bs-btn-active-border-color: var(--color-danger);
+  --bs-btn-focus-shadow-rgb: 225, 29, 72;
+}
+
+/* Icon-only action button (table row actions, toolbar controls) */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+}
+
+.btn-icon.btn-sm {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+/* RowActions' own icon buttons (inline actions + the overflow trigger) get a larger touch target
+   below the table-stack breakpoint — .btn-icon's base 28px/32px stays untouched everywhere else
+   in the app (Topbar, NotificationBell, etc. are out of this step's table-actions-only scope);
+   this is scoped to just the buttons RowActions renders. Desktop density is unaffected. */
+@media (max-width: 767.98px) {
+  .row-action-btn.btn-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+/* Step 10: every other icon-only button gets the same mobile-only touch-target bump the rule
+   above already gives RowActions — closing the gap the comment above named (Topbar's hamburger,
+   sidebar-collapse toggle, and dark-mode toggle; EditTeamMemberModal's per-row "Remove" break
+   button; any future .btn-icon consumer). NotificationBell isn't affected — it was never a
+   .btn-icon consumer; it already sizes itself via its own inline 40x40 style, unrelated to this
+   rule. A separate rule rather than widening the selector above, so RowActions' own rule and
+   comment stay exactly as they were — nothing about its behavior changes. Desktop/tablet
+   (>=768px) is untouched either way; table/list density there is unaffected. */
+@media (max-width: 767.98px) {
+  .btn-icon,
+  .btn-icon.btn-sm {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+/* Standard 3-color action-icon system used by RowActions everywhere a table
+   or list row has inline icon actions: green = edit, red = delete, gray =
+   view, blue = other positive/primary workflow actions (approve, admit,
+   retry, etc). Soft tint at rest, solid fill on hover; the icon itself
+   inverts to white on hover via a filter, since these are <img>-based icons
+   (a single-tone stroke, not currentColor-driven inline SVG) rather than
+   trying to hit an exact color match at rest. */
+.action-icon {
+  border-color: transparent !important;
+  transition: background-color 0.15s ease;
+}
+
+.action-icon-edit {
+  background-color: var(--color-success-soft) !important;
+}
+
+.action-icon-delete {
+  background-color: var(--color-danger-soft) !important;
+}
+
+.action-icon-view {
+  background-color: var(--color-border) !important;
+}
+
+.action-icon-primary {
+  background-color: var(--color-primary-soft) !important;
+}
+
+.action-icon-edit:hover:not(:disabled) {
+  background-color: var(--color-success) !important;
+}
+
+.action-icon-delete:hover:not(:disabled) {
+  background-color: var(--color-danger) !important;
+}
+
+.action-icon-view:hover:not(:disabled) {
+  background-color: var(--color-body) !important;
+}
+
+.action-icon-primary:hover:not(:disabled) {
+  background-color: var(--color-primary) !important;
+}
+
+.action-icon:hover:not(:disabled) img {
+  filter: brightness(0) invert(1);
+}
+
+.card {
+  --bs-card-border-radius: var(--radius-xl);
+  --bs-card-inner-border-radius: var(--radius-xl);
+  --bs-card-bg: var(--color-surface);
+}
+
+/* Every <table> in the app (BookingTable, TeamMemberTable, CustomerTable, etc.) uses
+   plain Bootstrap `.table` with no other class carrying app-specific styling — without
+   this, it renders on Bootstrap's own default colors instead of this app's tokens,
+   invisible in light mode (they're both ~white) but a stark mismatch once dark mode
+   repaints everything else around it. */
+.table {
+  --bs-table-bg: var(--color-surface);
+  --bs-table-color: var(--color-body);
+  --bs-table-border-color: var(--color-border);
+  --bs-table-striped-bg: var(--color-canvas);
+  --bs-table-striped-color: var(--color-body);
+  --bs-table-hover-bg: var(--color-canvas);
+  --bs-table-hover-color: var(--color-ink);
+}
+
+.shadow-sm {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.shadow {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.text-primary {
+  color: var(--color-primary) !important;
+}
+
+.border-primary {
+  border-color: var(--color-primary) !important;
+}
+
+.badge.text-bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.badge.text-bg-secondary {
+  background-color: var(--color-border) !important;
+  color: var(--color-body) !important;
+}
+
+.badge-tone-neutral {
+  background-color: var(--color-border);
+  color: var(--color-body);
+}
+
+.badge-tone-primary {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.badge-tone-success {
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.badge-tone-warning {
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.badge-tone-danger {
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.badge-tone-teal {
+  background-color: var(--color-teal-soft);
+  color: var(--color-teal-strong);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Trend pill — "+8% from last week"-style comparison indicator            */
+/* Layout only; color comes from the existing badge-tone-* classes so it   */
+/* inherits dark mode and (harmlessly, since only success/danger/neutral   */
+/* are used) tenant-palette switching for free.                            */
+/* ---------------------------------------------------------------------- */
+
+.trend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.trend-pill-sm {
+  padding: 0.1rem 0.4rem;
+  font-size: 0.6875rem;
+}
+
+.trend-pill-icon {
+  flex-shrink: 0;
+}
+
+/* A single "trending up" glyph, mirrored for the down state, instead of shipping two near-
+   identical icon assets. */
+.trend-pill-icon-down {
+  transform: scaleY(-1);
+}
+
+.trend-pill-label {
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Stat tile — emphasized variant (Step 6)                                */
+/* The one "headline" tile in a related metric group (e.g. Total Revenue  */
+/* among Online/Pay-on-Visit) — a tone-tinted card background rather than */
+/* a different size, so it stays visually part of the same tile group.    */
+/* The icon chip switches to a surface-colored circle so it keeps         */
+/* contrast against the now-tinted card (its usual soft-tone chip would   */
+/* otherwise nearly match the card's own soft-tone background).           */
+/* ---------------------------------------------------------------------- */
+
+.stat-tile-emphasized {
+  --bs-card-bg: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-soft-strong);
+}
+
+.stat-tile-emphasized .stat-tile-value {
+  color: var(--color-primary-strong);
+}
+
+.stat-tile-emphasized .stat-tile-icon-chip {
+  background-color: var(--color-surface) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Thin capacity/progress indicator — Bootstrap .progress, restyled.       */
+/* No React wrapper: apply directly (`<div class="progress progress-thin">`)  */
+/* wherever a real fill/capacity value exists. Not used decoratively.      */
+/* ---------------------------------------------------------------------- */
+
+.progress-thin {
+  --bs-progress-height: 0.375rem;
+  --bs-progress-border-radius: 999px;
+  --bs-progress-bg: var(--color-border);
+}
+
+.progress-thin .progress-bar {
+  background-color: var(--color-primary);
+  border-radius: 999px;
+}
+
+/* Bootstrap's own compiled .alert-* colors, left un-re-themed until Step 9 — every alert in the
+   app (public/auth pages; protected pages use an inline text-danger pattern instead) was rendering
+   stock Bootstrap red/yellow/green, not this app's brand tokens. Same soft-bg/strong-text pairing
+   the badge-tone-* system already uses, so an alert and a badge of the same tone read as the same
+   color. Only the three variants the app actually uses; not creating alert-info/alert-primary the
+   app has no call site for. --color-* tokens already flip for dark mode (theme.css's [data-bs-theme
+   ='dark'] block) — these rules inherit that for free, same as every other token-based rule here. */
+.alert-danger {
+  --bs-alert-bg: var(--color-danger-soft);
+  --bs-alert-color: var(--color-danger);
+  --bs-alert-border-color: transparent;
+}
+
+.alert-warning {
+  --bs-alert-bg: var(--color-accent-soft);
+  /* Matches badge-tone-warning's own text color exactly (theme.css above) — both reach for the
+     same --color-accent-strong token rather than picking independently. Was a literal hex before
+     Step 10 (see that token's own comment for why dark mode needed it promoted to a token). */
+  --bs-alert-color: var(--color-accent-strong);
+  --bs-alert-border-color: transparent;
+}
+
+.alert-success {
+  --bs-alert-bg: var(--color-success-soft);
+  --bs-alert-color: var(--color-success);
+  --bs-alert-border-color: transparent;
+}
+
+.bg-light {
+  background-color: var(--color-canvas) !important;
+}
+
+/* Bootstrap's .bg-white utility is a fixed color (#fff), not a token — every
+   usage in this app is a chrome surface (sidebar, topbar, footer, side panel)
+   that must flip with dark mode, so it's repointed at the surface token. */
+.bg-white {
+  background-color: var(--color-surface) !important;
+}
+
+.form-control,
+.form-select {
+  --bs-border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-body);
+}
+
+/* --color-canvas is the darkest token in dark mode (meant for page background,
+   not component de-emphasis) — using it here made disabled fields jump much
+   darker than everything around them, disproportionately more than the same
+   pairing does in light mode (where canvas is only a subtle off-white).
+   Opacity scales the same way in both themes instead. */
+.form-control:disabled,
+.form-select:disabled {
+  background-color: var(--color-surface);
+  color: var(--color-muted);
+  opacity: 0.65;
+}
+
+.form-control:focus,
+.form-select:focus {
+  /* Bootstrap's own compiled CSS has a same-named .form-control:focus rule that
+     sets background-color: var(--bs-body-bg) (its own dark gray, not our
+     token). That rule outranks our non-focus base .form-control rule by
+     specificity (:focus adds a pseudo-class) regardless of stylesheet order,
+     so background has to be re-asserted here too, not just on the base rule. */
+  background-color: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 0.2rem var(--color-primary-soft-strong);
+}
+
+
+/* Browser/OS password-manager autofill paints its own yellow/blue background
+   that ignores our .form-control styles; this keeps the field's existing
+   surface color and text color instead of letting the browser override them. */
+.form-control:-webkit-autofill,
+.form-control:-webkit-autofill:hover,
+.form-control:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-body);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
+  box-shadow: 0 0 0 1000px var(--color-surface) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Checkboxes/switches otherwise fall back to Bootstrap's stock blue instead
+   of this app's own primary token. */
+.form-check-input {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.form-check-input:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.form-check-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 0.2rem var(--color-primary-soft-strong);
+}
+
+.nav-pills {
+  --bs-nav-pills-border-radius: var(--radius-sm);
+  --bs-nav-pills-link-active-bg: var(--color-primary);
+}
+
+/* Plain Bootstrap .nav-tabs (EditTeamMemberModal's Details/Working Schedule/Breaks
+   tabs, and similar) — same gap as .table above: never got a token override, so it
+   ran on Bootstrap's own default tab colors in every mode. */
+.nav-tabs {
+  --bs-nav-tabs-border-color: var(--color-border);
+  --bs-nav-tabs-link-hover-border-color: var(--color-border) var(--color-border) var(--color-border);
+  --bs-nav-tabs-link-active-color: var(--color-primary);
+  --bs-nav-tabs-link-active-bg: var(--color-surface);
+  --bs-nav-tabs-link-active-border-color: var(--color-border) var(--color-border) var(--color-surface);
+}
+
+.nav-tabs .nav-link {
+  color: var(--color-muted);
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--color-ink);
+}
+
+.rounded-3 {
+  border-radius: var(--radius-lg) !important;
+}
+
+/* Bootstrap's own dark-mode default for .modal-content is a generic gray, not
+   this app's indigo-tinted --color-surface — left alone, the modal body reads
+   as a visibly different, less-purple dark shade than its own form fields
+   (which already use --color-surface), making inputs look like mismatched
+   boxes floating on top of it instead of blending into the same surface. */
+.modal-content {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  border-radius: var(--radius-lg);
+}
+
+/* Header border only appears once the body has scrolled under it, so it
+   reads as a "you've scrolled" cue rather than a permanent divider. */
+.modal-header {
+  border-bottom-color: transparent;
+  padding: 1.25rem 1.5rem 1rem;
+  transition: border-color 0.15s ease;
+}
+
+.modal-header.modal-header-scrolled {
+  border-bottom-color: var(--color-border);
+}
+
+.modal-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-footer {
+  border-top-color: var(--color-border);
+  padding: 1.25rem 1.5rem;
+  gap: 0.5rem;
+}
+
+.modal-dialog-scrollable .modal-body {
+  scrollbar-gutter: stable;
+}
+
+/* Action row at the bottom of an in-body modal form (kept inside <form> so
+   native submit continues to work; styled to read as a footer bar). */
+.modal-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 1.5rem -1.5rem -1.25rem;
+  padding: 1.25rem 1.5rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Standard dashboard input scale — was modal-only; every form-control/form-select in the app
+   should meet the same minimum touch-friendly height, not just the ones inside a modal.
+   Excludes Bootstrap's own .form-control-sm/.form-select-sm modifier so intentionally compact
+   fields (e.g. BranchModal's/EditTeamMemberModal's working-hours TimeSelects) keep their smaller
+   size instead of being forced up to the standard height. */
+.form-control:not(.form-control-sm),
+.form-select:not(.form-select-sm) {
+  min-height: 40px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+}
+
+/* Open/close transition for the shared Modal component. */
+.modal-dialog-transition {
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.modal-dialog-transition.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modal-backdrop-transition {
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.modal-backdrop-transition.is-visible {
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-dialog-transition,
+  .modal-backdrop-transition {
+    transition: none;
+  }
+}
+
+/* Toggle-revealed form field: collapses to zero height instead of just
+   disabling, using the grid 0fr -> 1fr technique to animate to natural
+   content height without measuring it in JS. */
+.collapsible-field {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.2s ease, opacity 0.2s ease;
+}
+
+.collapsible-field.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.collapsible-field-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapsible-field {
+    transition: none;
+  }
+}
+
+.offcanvas-start {
+  --bs-offcanvas-width: min(300px, 85vw);
+  border-radius: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.dropdown-menu {
+  --bs-dropdown-border-radius: var(--radius-md);
+  --bs-dropdown-border-color: var(--color-border);
+  --bs-dropdown-link-active-bg: var(--color-primary);
+  /* Bootstrap's default dropdown z-index (1000) sits below .bottom-nav's fixed bar (1030, see
+     Step 2) — a RowActions overflow menu opened on the last row of a mobile table would render
+     partially behind it. Raised above every fixed shell chrome layer in the app. */
+  --bs-dropdown-zindex: 1040;
+}
+
+.breadcrumb {
+  --bs-breadcrumb-divider-color: var(--color-muted);
+  --bs-breadcrumb-item-active-color: var(--color-body);
+}
+
+.breadcrumb-item a {
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Pagination                                                             */
+/* ---------------------------------------------------------------------- */
+
+.pagination {
+  --bs-pagination-border-color: var(--color-border);
+  --bs-pagination-color: var(--color-body);
+  --bs-pagination-hover-bg: var(--color-canvas);
+  --bs-pagination-hover-border-color: var(--color-border);
+  --bs-pagination-hover-color: var(--color-ink);
+  --bs-pagination-active-bg: var(--color-primary);
+  --bs-pagination-active-border-color: var(--color-primary);
+  --bs-pagination-disabled-color: var(--color-muted);
+  --bs-pagination-disabled-bg: transparent;
+  --bs-pagination-border-radius: var(--radius-sm);
+  --bs-pagination-focus-box-shadow: 0 0 0 0.2rem var(--color-primary-soft-strong);
+  gap: 0.25rem;
+}
+
+.pagination .page-link {
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600;
+  min-width: 2.25rem;
+  text-align: center;
+}
+
+.pagination .page-item.active .page-link {
+  border-radius: 999px !important;
+}
+
+@media (max-width: 575.98px) {
+  .pagination {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.pagination-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  color: var(--color-muted);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Focus visibility                                                       */
+/* ---------------------------------------------------------------------- */
+
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.sidebar-link:focus-visible,
+.tab-link:focus-visible,
+.dropdown-item:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Brand surfaces                                                         */
+/* ---------------------------------------------------------------------- */
+
+.bg-gradient-brand {
+  background: linear-gradient(160deg, var(--color-primary) 0%, var(--color-primary-strong) 100%);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Skeleton loading                                                       */
+/* ---------------------------------------------------------------------- */
+
+.skeleton {
+  display: block;
+  background-color: var(--color-border);
+  border-radius: var(--radius-sm);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Refined data table (desktop)                                           */
+/* ---------------------------------------------------------------------- */
+
+.table-refined thead th {
+  background-color: var(--color-canvas);
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
+.table-refined tbody td {
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table-refined tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table-refined tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.table-refined tbody tr:hover {
+  background-color: var(--color-canvas);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-refined tbody tr {
+    transition: none;
+  }
+}
+
+
+/* ---------------------------------------------------------------------- */
+/* List content transition (pagination / filtering)                      */
+/* ---------------------------------------------------------------------- */
+
+@keyframes list-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.list-fade-in {
+  animation: list-fade-in 0.18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .list-fade-in {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Responsive table stacking (mobile)                                     */
+/* ---------------------------------------------------------------------- */
+
+@media (max-width: 767.98px) {
+  /* Headers stay in the accessibility tree (Bootstrap's own screen-reader-only "visually-hidden"
+     clip technique, same one Button/SidebarNavItem already use elsewhere) instead of the previous
+     `display: none`, which removed the column names from assistive tech entirely — not just
+     visually hid them. A screen reader user now hears each column name once, in reading order,
+     ahead of the stacked row values below (which already carry a redundant, generated-content
+     visual label via the data-label rule further down — CSS ::before content isn't reliably
+     exposed to every AT, so this is the more dependable of the two, not a replacement for it).
+     This does not restore full table/row/cell ARIA-role navigation — that's independently lost
+     because this block overrides <table>/<tr>/<td>'s display away from table/table-row/table-cell,
+     which strips their implicit ARIA roles in Chromium/Firefox regardless of <thead>'s own
+     visibility. Restoring that would mean adding explicit role="table"/"row"/"cell" attributes to
+     every table-stack table's markup across ~10 files — a separate, larger change, deliberately
+     not made here (see the Step 10 audit's §B.2 and §I for the full reasoning). */
+  .table-stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .table-stack,
+  .table-stack tbody,
+  .table-stack tr {
+    display: block;
+    width: 100%;
+  }
+
+  .table-stack tr {
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .table-stack tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .table-stack td {
+    display: block;
+    padding: 0.3rem 0;
+    border: 0 !important;
+    text-align: left !important;
+  }
+
+  .table-stack td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    margin-bottom: 0.2rem;
+  }
+
+  /* The "Actions" cell is a control area, not a data field — its pseudo-label above adds noise
+     without adding information (every button inside already carries its own specific
+     aria-label). One shared rule for every table instead of a per-table override, since all nine
+     action-bearing tables already use the same literal data-label="Actions" convention. Also
+     right-aligns the action group specifically: the general td rule above forces left-align
+     (correct for data values), which would otherwise left-align a lone dropdown trigger — the
+     multi-button case already right-aligns itself via .table-actions' own flex justify-content.
+     Placed after the two general rules above (same specificity, later wins) rather than relying
+     on !important stacking order alone. */
+  .table-stack td[data-label='Actions'] {
+    text-align: right !important;
+  }
+
+  .table-stack td[data-label='Actions']::before {
+    display: none;
+  }
+}
+
+/* A fixed-width truncated cell value (e.g. RefundRequestTable's PayMongo reference) only needs
+   its cap on desktop, where it's genuinely competing for narrow column width — once table-stack
+   turns the row into a full-width block on mobile, that same value has the room to show in full. */
+.table-cell-truncate {
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .table-cell-truncate {
+    max-width: 140px;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Number inputs without spinner controls                                */
+/* ---------------------------------------------------------------------- */
+
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Sidebar navigation                                                     */
+/* ---------------------------------------------------------------------- */
+
+.sidebar-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  padding: 0 0.75rem;
+}
+
+.sidebar-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-body);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-link:hover {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.sidebar-link.active {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-weight: 700;
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: -0.75rem;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 3px;
+  border-radius: 999px;
+  background-color: var(--color-primary);
+}
+
+.sidebar-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Bottom navigation (mobile primary nav, <992px — see AppShell/BottomNav) */
+/* Active state reuses the sidebar's own visual language (soft-primary     */
+/* pill + strong-primary text) rather than recoloring the icon — icons are */
+/* flat single-tone <img> assets that can't take a color the way text can, */
+/* exactly the same constraint .sidebar-link.active already works around.  */
+/* ---------------------------------------------------------------------- */
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1030;
+  display: flex;
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.bottom-nav-item {
+  flex: 1 1 0;
+  min-width: 44px;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.375rem 0.25rem;
+  border: 0;
+  background-color: transparent;
+  color: var(--color-muted);
+  text-decoration: none;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.bottom-nav-item.active {
+  color: var(--color-primary-strong);
+}
+
+.bottom-nav-item-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 26px;
+  border-radius: 999px;
+  transition: background-color 0.15s ease;
+}
+
+.bottom-nav-item.active .bottom-nav-item-icon-wrap {
+  background-color: var(--color-primary-soft);
+}
+
+/* Reserves space at the end of the content column (after Footer) equal to the bottom nav's
+   height + the device safe area, so the fixed bar never overlaps page content — applied once at
+   the shell level so every page gets correct clearance without per-page CSS. */
+@media (max-width: 991.98px) {
+  .app-shell-content-with-bottom-nav {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Scrollable underline tabs (mobile section navigation)                  */
+/* ---------------------------------------------------------------------- */
+
+.tabs-scroll {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--color-border);
+  scrollbar-width: none;
+}
+
+.tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-link {
+  flex: 0 0 auto;
+  padding: 0.625rem 0.125rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  /* Reset native <button> chrome — this class also renders on plain <button>
+     elements (ModalTabs), not just <a>/<NavLink> (SettingsLayout), and only
+     <a> is border/background-free by default. */
+  background-color: transparent;
+  appearance: none;
+  border-radius: 0;
+}
+
+.tab-link:hover {
+  color: var(--color-ink);
+}
+
+.tab-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.tab-link.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Icon tooltip (hover + keyboard focus, not just native title)          */
+/* ---------------------------------------------------------------------- */
+
+.icon-tooltip {
+  position: relative;
+}
+
+.icon-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  background-color: var(--color-ink);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 20;
+}
+
+.icon-tooltip:hover::after,
+.icon-tooltip:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-tooltip::after {
+    transition: opacity 0.15s ease;
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Calendar                                                               */
+/* ---------------------------------------------------------------------- */
+
+.calendar-day-cell {
+  transition: background-color 0.15s ease;
+}
+
+.calendar-day-cell--clickable:hover {
+  background-color: var(--color-canvas) !important;
+}
+
+.calendar-chip {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.calendar-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  filter: brightness(0.96);
+}
+
+.calendar-chip-payment-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+  flex-shrink: 0;
+  background-color: currentColor;
+}
+
+.calendar-chip-payment-dot--pending {
+  background-color: transparent;
+  border: 1px solid currentColor;
+}
+
+.calendar-overflow-pill {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  border: 1px dashed var(--color-border);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  background-color: transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.calendar-overflow-pill:hover {
+  background-color: var(--color-canvas);
+  border-color: var(--color-primary);
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-chip:hover {
+    transform: none;
+  }
+}
+
+/* Booking status stepper — same visual language (dots, connecting-line fill,
+   current-step ring) as the public booking wizard's stepper, re-implemented
+   with this app's own dashboard tokens since that one is scoped to .pb-root. */
+
+.booking-stepper {
+  display: flex;
+  align-items: flex-start;
+}
+
+.booking-stepper-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.booking-stepper-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1.5px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-muted);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.booking-stepper-circle.is-done {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.booking-stepper-circle.is-current {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  animation: booking-stepper-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes booking-stepper-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px var(--color-primary-soft-strong);
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--color-primary-soft);
+  }
+}
+
+.booking-stepper-bar {
+  flex: 1 1 auto;
+  height: 2px;
+  background-color: var(--color-border);
+  margin: 0 4px;
+  margin-top: 13px;
+  transition: background-color 0.25s ease;
+}
+
+.booking-stepper-bar.is-done {
+  background-color: var(--color-primary);
+}
+
+.booking-stepper-label {
+  margin-top: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.booking-stepper-label.is-current {
+  color: var(--color-ink);
+}
+
+.booking-stepper-timestamp {
+  font-size: 0.6875rem;
+  color: var(--color-muted);
+  text-align: center;
+  margin-top: 0.1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booking-stepper-circle.is-current {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--color-primary-soft-strong);
+  }
+}
+
+/* Side panel open/close transition, same mount-delay technique as the
+   Modal component: slide in from the right + backdrop fade. */
+
+.side-panel-transition {
+  transform: translateX(100%);
+  transition: transform 0.22s ease-out;
+}
+
+.side-panel-transition.is-visible {
+  transform: translateX(0);
+}
+
+.side-panel-backdrop-transition {
+  opacity: 0;
+  transition: opacity 0.22s ease-out;
+}
+
+.side-panel-backdrop-transition.is-visible {
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-panel-transition {
+    transition: opacity 0.22s ease-out;
+    transform: none;
+  }
+  .side-panel-transition:not(.is-visible) {
+    opacity: 0;
+  }
+  .side-panel-transition.is-visible {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Landing page display type                                             */
+/* ---------------------------------------------------------------------- */
+
+.font-display {
+  font-family: 'Manrope', 'Inter', sans-serif;
+}
