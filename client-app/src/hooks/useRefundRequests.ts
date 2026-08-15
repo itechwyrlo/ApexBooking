@@ -11,16 +11,21 @@ interface IUseRefundRequestsResult {
   refetch: () => void
 }
 
-export function useRefundRequests(params: IPageParams = {}): IUseRefundRequestsResult {
+export function useRefundRequests(params: IPageParams = {}, { enabled = true }: { enabled?: boolean } = {}): IUseRefundRequestsResult {
   const [requests, setRequests] = useState<IRefundRequest[]>([])
   const [total, setTotal] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(enabled)
   const [error, setError] = useState<string | null>(null)
   const [refreshToken, setRefreshToken] = useState(0)
 
   const refetch = useCallback(() => setRefreshToken((token) => token + 1), [])
 
   useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false)
+      return
+    }
+
     let isMounted = true
     setIsLoading(true)
     setError(null)
@@ -43,7 +48,7 @@ export function useRefundRequests(params: IPageParams = {}): IUseRefundRequestsR
       isMounted = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.pageNumber, params.pageSize, refreshToken])
+  }, [params.pageNumber, params.pageSize, refreshToken, enabled])
 
   return { requests, total, isLoading, error, refetch }
 }

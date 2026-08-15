@@ -9,8 +9,8 @@ interface IUseRefundReviewReminderResult {
   isLoading: boolean
 }
 
-export function useRefundReviewReminder(): IUseRefundReviewReminderResult {
-  const { requests, isLoading } = useRefundRequests()
+export function useRefundReviewReminder(enabled: boolean): IUseRefundReviewReminderResult {
+  const { requests, isLoading } = useRefundRequests({}, { enabled })
 
   const dueSoonCount = useMemo(() => {
     const now = Date.now()

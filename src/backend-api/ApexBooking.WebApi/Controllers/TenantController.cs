@@ -398,8 +398,11 @@ namespace ApexBooking.WebApi.Controllers
             return NoContent();
         }
 
+        // Staff included — read-only branding data (theme palette, dark-mode flag, plan) used by
+        // DashboardLayout to theme the shell for every role, not just management. Update stays
+        // management-only.
         [HttpGet("appearance")]
-        [Authorize(Policy = "ManagementOnly")]
+        [Authorize(Roles = "Owner,Admin,Staff")]
         [ProducesResponseType(typeof(AppearanceDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAppearance()
         {
