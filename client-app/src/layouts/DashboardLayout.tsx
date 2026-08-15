@@ -22,7 +22,7 @@ export function DashboardLayout() {
   const { user } = useAuth()
   const { hasAccess } = usePermissions()
   const canReviewRefunds = user !== null && (user.roles.includes(Role.Owner) || user.roles.includes(Role.Admin))
-  const { dueSoonCount } = useRefundReviewReminder()
+  const { dueSoonCount } = useRefundReviewReminder(canReviewRefunds)
 
   // Personal preference, but gated by the tenant's plan — a Basic-plan tenant's dashboard
   // always renders light, even if a stale preference from a prior Professional plan lingers
