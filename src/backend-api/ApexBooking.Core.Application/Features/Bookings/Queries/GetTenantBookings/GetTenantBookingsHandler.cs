@@ -15,11 +15,13 @@ namespace ApexBooking.Core.Application.Features.Bookings.Queries.GetTenantBookin
     public class GetTenantBookingsHandler : IQueryHandler<GetTenantBookingsQuery, QueryResult<TenantBookingSummary>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserContextService _userContext;
         private readonly ITenantEntity _tenantEntity;
 
-        public GetTenantBookingsHandler(IUnitOfWork unitOfWork, ITenantEntity tenantEntity)
+        public GetTenantBookingsHandler(IUnitOfWork unitOfWork, IUserContextService userContext, ITenantEntity tenantEntity)
         {
             _unitOfWork = unitOfWork;
+            _userContext = userContext;
             _tenantEntity = tenantEntity;
         }
 
@@ -28,11 +30,27 @@ namespace ApexBooking.Core.Application.Features.Bookings.Queries.GetTenantBookin
             var tenantId = _tenantEntity.TenantId
                 ?? throw new BusinessRuleBrokenException("Failed to load appointments. No authenticated tenant context was found.");
 
+            var tenant = await _unitOfWork.TenantRepository.GetAsync(
+                predicate: t => t.TenantId == tenantId,
+                includes: [t => t.Members]);
+
+            if (tenant is null)
+                throw new BusinessRuleBrokenException("Failed to load appointments. Workspace environment could not be verified.");
+
+            var currentUserId = _userContext.GetCurrentUserId();
+            var currentMember = tenant.Members.FirstOrDefault(m => m.UserId == currentUserId);
+
+            // Staff can only ever see their own bookings — the caller's membership overrides
+            // whatever (if anything) the client passed as staffId.
+            var staffId = currentMember is { Role: SystemRole.Staff }
+                ? currentMember.TenantMemberId.Value
+                : query.StaffId;
+
             var pagedResult = await _unitOfWork.TenantRepository.GetBookingsPageAsync(
                 tenantId,
                 query.param,
                 query.BranchId is { } branchId ? new BranchId(branchId) : null,
-                query.StaffId is { } staffId ? new TenantMemberId(staffId) : null,
+                staffId is { } resolvedStaffId ? new TenantMemberId(resolvedStaffId) : null,
                 query.Status,
                 query.FromDate,
                 query.ToDate,

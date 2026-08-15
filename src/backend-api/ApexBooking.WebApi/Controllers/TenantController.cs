@@ -67,9 +67,15 @@ using ApexBooking.Core.Application.Features.TimeOffs.Queries.GetTimeOffRequests;
 
 namespace ApexBooking.WebApi.Controllers
 {
+    // NOTE: There is deliberately no class-level [Authorize] policy here. Every action below
+    // carries its own explicit [Authorize], because ASP.NET Core ANDs a class-level [Authorize]
+    // together with any method-level [Authorize] instead of letting the method override it — a
+    // class-level "ManagementOnly" policy previously made every "Owner,Admin,Staff" override on
+    // Staff-facing actions (time-off, walk-in booking, checkout, etc.) silently 403 for Staff
+    // despite the code visibly intending to allow them. Keep every action's authorization
+    // self-contained; do not reintroduce a class-level [Authorize].
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "ManagementOnly")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -85,6 +91,7 @@ namespace ApexBooking.WebApi.Controllers
         // ── Task 1: Team Roster Provisioning Endpoints ───────────────────────
 
         [HttpPost("add-team")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddTeam([FromBody] AddTeamCommand command)
@@ -94,6 +101,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("team")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(QueryResult<TeamMemberSummary>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetTeam([FromQuery] QueryObjectParams param)
         {
@@ -102,6 +110,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("team/idle")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(IReadOnlyCollection<IdleStaffDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetIdleStaff()
         {
@@ -119,6 +128,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPut("team/{tenantMemberId:guid}")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateTeamMember([FromRoute] Guid tenantMemberId, [FromBody] UpdateTeamMemberCommand command)
@@ -128,6 +138,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("team/{tenantMemberId:guid}/removal-impact")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(TeamMemberRemovalImpact), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetTeamMemberRemovalImpact([FromRoute] Guid tenantMemberId)
         {
@@ -136,6 +147,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpDelete("team/{tenantMemberId:guid}")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(TeamMemberRemovalResult), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> RemoveTeamMember([FromRoute] Guid tenantMemberId)
@@ -147,6 +159,7 @@ namespace ApexBooking.WebApi.Controllers
         // ── Task 2: Schedule & Availability Management Endpoints ───────────────
 
         [HttpGet("team/{tenantMemberId:guid}/schedule")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(IReadOnlyCollection<DayScheduleSummary>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetTeamMemberSchedule([FromRoute] Guid tenantMemberId)
@@ -156,6 +169,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPut("team/schedule")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateWeeklySchedule([FromBody] UpdateWeeklyScheduleCommand command)
@@ -165,6 +179,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("team/{tenantMemberId:guid}/breaks")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(IReadOnlyCollection<StaffBreakSummary>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetStaffBreaks([FromRoute] Guid tenantMemberId)
@@ -174,6 +189,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("team/break")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(object), StatusCodes.Status200OK)] // Returns { id: Guid }
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddStaffBreak([FromBody] AddStaffBreakCommand command)
@@ -183,6 +199,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpDelete("team/{tenantMemberId:guid}/break/{breakId:guid}")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> RemoveStaffBreak([FromRoute] Guid tenantMemberId, [FromRoute] Guid breakId)
@@ -192,8 +209,9 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         // ── Team Time-Off Requests ───────────────────────────────────────────────
-        // GET/POST time-off override the class-level ManagementOnly policy so every role can
-        // submit and review their own requests; approve/reject are Owner-only.
+        // GET/POST time-off allow every role so everyone can submit and review their own
+        // requests; approve/reject are Owner-only. Each carries its own complete [Authorize] —
+        // there is no class-level policy for it to be layered against (see note at top of file).
 
         [HttpGet("team/time-off")]
         [Authorize(Roles = "Owner,Admin,Staff")]
@@ -247,6 +265,7 @@ namespace ApexBooking.WebApi.Controllers
         // ── Task 3: Service Catalog Management Endpoints ──────────────────────
 
         [HttpPost("services")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(object), StatusCodes.Status201Created)] // Returns { id: Guid }
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateService([FromBody] CreateServiceCommand command)
@@ -256,6 +275,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPut("services")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -266,6 +286,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("services")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(QueryResult<ServiceCatalogSummary>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetServices([FromQuery] QueryObjectParams param)
         {
@@ -286,6 +307,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("services/{serviceId:guid}/staff")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(IReadOnlyCollection<StaffAssignmentSummary>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetServiceStaff([FromRoute] Guid serviceId)
@@ -295,6 +317,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("services/{serviceId:guid}/staff")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AssignStaffToService([FromRoute] Guid serviceId, [FromBody] AssignStaffToServiceCommand command)
@@ -304,6 +327,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpDelete("services/{serviceId:guid}/staff/{tenantMemberId:guid}")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UnassignStaffFromService([FromRoute] Guid serviceId, [FromRoute] Guid tenantMemberId)
@@ -315,6 +339,7 @@ namespace ApexBooking.WebApi.Controllers
         // ── Client Management Endpoints ─────────────────────────────────────────
 
         [HttpGet("customers")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(QueryResult<CustomerSummary>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCustomers([FromQuery] QueryObjectParams param)
         {
@@ -334,6 +359,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("customers/{customerId:guid}/bookings")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(QueryResult<CustomerBookingSummary>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetCustomerBookings([FromRoute] Guid customerId, [FromQuery] QueryObjectParams param)
@@ -354,6 +380,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("profile")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(BusinessProfileDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetBusinessProfile()
         {
@@ -362,6 +389,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPut("profile")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateBusinessProfile([FromBody] UpdateBusinessProfileCommand command)
@@ -371,6 +399,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("appearance")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(AppearanceDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAppearance()
         {
@@ -379,6 +408,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPut("appearance")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateAppearance([FromBody] UpdateAppearanceCommand command)
@@ -389,7 +419,10 @@ namespace ApexBooking.WebApi.Controllers
 
         // ── Branch Management Endpoints ────────────────────────────────────────
 
+        // Staff included but scoped: the handler returns only the caller's own assigned branch
+        // for Staff, and every branch for Owner/Admin (see GetAllBranchesHandler).
         [HttpGet("branches")]
+        [Authorize(Roles = "Owner,Admin,Staff")]
         [ProducesResponseType(typeof(IReadOnlyCollection<BranchAdminSummary>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetBranches()
         {
@@ -398,6 +431,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("branches/{branchId:guid}")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(BranchDetailDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetBranch([FromRoute] Guid branchId)
@@ -407,6 +441,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("branches")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(object), StatusCodes.Status201Created)] // Returns { id: Guid }
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddBranch([FromBody] AddBranchCommand command)
@@ -416,6 +451,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPut("branches/{branchId:guid}")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateBranchProfile([FromRoute] Guid branchId, [FromBody] UpdateBranchProfileCommand command)
@@ -425,6 +461,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPut("branches/{branchId:guid}/hours")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateBranchOperatingHours([FromRoute] Guid branchId, [FromBody] UpdateBranchOperatingHoursCommand command)
@@ -434,6 +471,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("policy/booking")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(BookingPolicyDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetBookingPolicy()
         {
@@ -442,6 +480,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPut("policy/booking")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateBookingPolicy([FromBody] UpdateBookingPolicyCommand command)
@@ -450,7 +489,10 @@ namespace ApexBooking.WebApi.Controllers
             return NoContent();
         }
 
+        // Staff included — read-only (no sensitive gateway/merchant fields on this DTO, just
+        // deposit/refund policy values Staff needs to know at checkout). Update stays management-only.
         [HttpGet("policy/payment")]
+        [Authorize(Roles = "Owner,Admin,Staff")]
         [ProducesResponseType(typeof(PaymentPolicyDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPaymentPolicy()
         {
@@ -459,6 +501,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPut("policy/payment")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdatePaymentPolicy([FromBody] UpdatePaymentPolicyCommand command)
@@ -500,7 +543,11 @@ namespace ApexBooking.WebApi.Controllers
 
         // ── Appointments / Bookings Management Endpoints ────────────────────────
 
+        // Staff included but scoped: the handler forces staffId to the caller's own membership
+        // for Staff, ignoring any staffId query param, so Staff only ever sees their own bookings
+        // (see GetTenantBookingsHandler).
         [HttpGet("bookings")]
+        [Authorize(Roles = "Owner,Admin,Staff")]
         [ProducesResponseType(typeof(QueryResult<TenantBookingSummary>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetBookings(
             [FromQuery] QueryObjectParams param,
@@ -515,6 +562,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("bookings/counts")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(TenantBookingCountsDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetBookingCounts([FromQuery] DateOnly date)
         {
@@ -532,6 +580,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpGet("bookings/{bookingId:guid}/reassignable-staff")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(typeof(IReadOnlyCollection<ReassignableStaffDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetReassignableStaff([FromRoute] Guid bookingId)
         {
@@ -602,6 +651,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("bookings/{bookingId:guid}/complete")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CompleteBooking([FromRoute] Guid bookingId, CancellationToken cancellationToken)
@@ -611,6 +661,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("bookings/{bookingId:guid}/reassign")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ReassignBooking([FromRoute] Guid bookingId, [FromBody] ReassignBookingCommand command, CancellationToken cancellationToken)
@@ -620,6 +671,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("bookings/{bookingId:guid}/collect-payment")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CollectPayment([FromRoute] Guid bookingId, CancellationToken cancellationToken)
@@ -639,6 +691,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("bookings/{bookingId:guid}/cancel")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CancelBooking([FromRoute] Guid bookingId, [FromBody] CancelBookingCommand command)
@@ -648,6 +701,7 @@ namespace ApexBooking.WebApi.Controllers
         }
 
         [HttpPost("bookings/{bookingId:guid}/no-show")]
+        [Authorize(Policy = "ManagementOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> MarkBookingNoShow([FromRoute] Guid bookingId)
