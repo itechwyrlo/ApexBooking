@@ -1,0 +1,403 @@
+/* ---------------------------------------------------------------------- */
+/* Request Access page shell                                              */
+/* ---------------------------------------------------------------------- */
+
+.request-access-topbar {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.request-access-shell {
+  background: var(--color-canvas);
+  min-height: 100vh;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Progress tracker                                                       */
+/* ---------------------------------------------------------------------- */
+
+.progress-tracker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.progress-tracker__step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-tracker__label {
+  color: var(--color-muted);
+  padding-bottom: 0.2rem;
+  border-bottom: 2px solid transparent;
+}
+
+.progress-tracker__label--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.progress-tracker__separator {
+  color: var(--color-border);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Plan summary card                                                      */
+/* ---------------------------------------------------------------------- */
+
+.plan-summary-card {
+  margin-bottom: 1.5rem;
+}
+
+.plan-summary-card__strip {
+  cursor: pointer;
+}
+
+.plan-summary-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.plan-summary-card__chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.plan-summary-card__chevron--open {
+  transform: rotate(180deg);
+}
+
+.plan-summary-card__change-link {
+  display: inline-block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  margin-top: 0.5rem;
+}
+
+.plan-summary-card__change-link:hover {
+  text-decoration: underline;
+}
+
+.plan-summary-card__features {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  transition: max-height 0.2s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+
+.plan-summary-card__features--expanded {
+  max-height: 220px;
+  opacity: 1;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .plan-summary-card {
+    position: sticky;
+    top: 96px;
+    margin-bottom: 0;
+  }
+
+  .plan-summary-card__strip {
+    cursor: default;
+  }
+
+  .plan-summary-card__chevron {
+    display: none;
+  }
+
+  .plan-summary-card__features,
+  .plan-summary-card__features--expanded {
+    max-height: none;
+    opacity: 1;
+    margin-top: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-summary-card__features {
+    transition: opacity 0.2s ease;
+  }
+
+  .plan-summary-card__chevron {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Form section header                                                    */
+/* ---------------------------------------------------------------------- */
+
+.form-section-header {
+  margin-bottom: 1rem;
+}
+
+.form-section-header__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-section-header__divider {
+  margin: 0.5rem 0 0;
+  border-top: 1px solid var(--color-border);
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Business type chip selector                                            */
+/* ---------------------------------------------------------------------- */
+
+.business-type-chip {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-body);
+  text-align: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.business-type-chip--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Slug validation hint                                                   */
+/* ---------------------------------------------------------------------- */
+
+.slug-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  margin-top: 0.375rem;
+  animation: slug-hint-fade-in 0.15s ease-out;
+}
+
+.slug-hint--valid {
+  color: var(--color-success);
+}
+
+.slug-hint--invalid {
+  color: var(--color-danger);
+}
+
+@keyframes slug-hint-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slug-hint {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Pending confirmation card                                              */
+/* ---------------------------------------------------------------------- */
+
+.pending-card {
+  width: 100%;
+  max-width: 480px;
+}
+
+.pending-card__intro {
+  animation: pending-fade-in 0.2s ease-out;
+}
+
+@keyframes pending-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pending-card__badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  background: linear-gradient(160deg, var(--color-primary) 0%, var(--color-teal) 100%);
+}
+
+.pending-card__copy {
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+.pending-card__copy li {
+  position: relative;
+  padding-left: 1.125rem;
+}
+
+.pending-card__copy li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-muted);
+}
+
+.pending-card__support-link {
+  display: inline-block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.pending-card__support-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending-card__intro {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Status stepper                                                         */
+/* ---------------------------------------------------------------------- */
+
+.status-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+.status-stepper__step {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.status-stepper__dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--color-border);
+}
+
+.status-stepper__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+.status-stepper__connector {
+  width: 20px;
+  height: 2px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.status-stepper__step--complete .status-stepper__dot {
+  background: var(--color-success);
+}
+
+.status-stepper__step--complete .status-stepper__label {
+  color: var(--color-body);
+}
+
+.status-stepper__step--active .status-stepper__dot {
+  background: var(--color-primary);
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+.status-stepper__step--active .status-stepper__label {
+  color: var(--color-primary);
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--color-primary-soft-strong);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-stepper__step--active .status-stepper__dot {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+  }
+}
+
+/* At 320px the 3-step row (dots + nowrap labels + connectors, sized for >=375px) needs ~290px but
+   only has ~248px available inside RequestAccessPendingPage's card padding — a real ~42px
+   overflow, confirmed in Step 9's Playwright run and reconfirmed in the Step 10 audit. Fixed by
+   shrinking the decorative chrome (dots, connectors, gaps) at this width, not the label text — the
+   three step names ("Submitted"/"Under Review"/"Approved") stay full-length and just as readable,
+   only smaller, so the stepper's meaning isn't affected. 375px and up are already confirmed
+   overflow-free with the base sizing above and are untouched by this query. */
+@media (max-width: 374.98px) {
+  .status-stepper {
+    gap: 0.25rem;
+  }
+
+  .status-stepper__step {
+    gap: 0.25rem;
+  }
+
+  .status-stepper__dot {
+    width: 14px;
+    height: 14px;
+  }
+
+  .status-stepper__label {
+    font-size: 0.6875rem;
+  }
+
+  .status-stepper__connector {
+    width: 10px;
+  }
+}

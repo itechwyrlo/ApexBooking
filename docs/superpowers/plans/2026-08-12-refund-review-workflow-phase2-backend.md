@@ -92,6 +92,8 @@ namespace ApexBooking.Core.Application.Features.RefundRequests.Queries.GetPendin
         bool IsAutoRefundEligible,
         RefundRequestStatus Status,
         string? RejectionReason,
+        string? CustomerEwalletProvider,
+        string? CustomerEwalletNumber,
         DateTime CreatedAt,
         DateTime DueDate
     );
@@ -100,7 +102,12 @@ namespace ApexBooking.Core.Application.Features.RefundRequests.Queries.GetPendin
 }
 ```
 
-(Note: `AmountPaid`/`PayMongoPaymentId` are added here now, ahead of Task 2, to keep this a single DTO edit rather than two.)
+(Note: `AmountPaid`/`PayMongoPaymentId`/`CustomerEwalletProvider`/`CustomerEwalletNumber`
+are all added here now, ahead of Tasks 2 and 4, to keep this a single DTO
+edit rather than three. The e-wallet fields are `null` until the customer
+submits them via Task 4's `SubmitRefundEwalletDetailsCommand` — the review
+page's Mark as Sent action (LocalFlow frontend plan Task 2) reads them to
+show staff where to send the money.)
 
 `GetPendingRefundRequestsHandler.cs` — full replacement. Note `DueDate` is
 **not** a stored field on `RefundRequest` — it's computed here from
@@ -174,6 +181,8 @@ namespace ApexBooking.Core.Application.Features.RefundRequests.Queries.GetPendin
                     request.IsAutoRefundEligible,
                     request.Status,
                     request.RejectionReason,
+                    request.CustomerEwalletProvider,
+                    request.CustomerEwalletNumber,
                     request.CreatedAt,
                     request.CreatedAt.AddDays(deadlineDays)));
             }
@@ -635,6 +644,13 @@ namespace ApexBooking.Core.Application.Features.PublicBookings.Commands.SubmitRe
 
 - [ ] **Step 5: Controller**
 
+Un-prefixed by design, matching `BookingsController`'s existing
+`/api/public/bookings/cancel/{token}` (`GET`) and `/api/public/bookings/cancel`
+(`POST`) actions exactly — the token resolves its own tenant, so no `{slug}`
+segment is needed anywhere in the API path (the *frontend page URL* still
+carries the slug for branding/routing; the API call underneath it doesn't
+need to):
+
 ```csharp
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Features.PublicBookings.Commands.SubmitRefundEwalletDetails;
@@ -646,7 +662,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ApexBooking.WebApi.Controllers
 {
     [ApiController]
-    [Route("api/public/{slug}/refund-status")]
+    [Route("api/public/refund-status")]
     [AllowAnonymous]
     public class RefundStatusController : ControllerBase
     {
@@ -657,22 +673,22 @@ namespace ApexBooking.WebApi.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] string token)
+        [HttpGet("{token}")]
+        public async Task<IActionResult> Get(string token)
         {
             var result = await _mediator.Send(new GetRefundStatusQuery(token));
             return Ok(result);
         }
 
         [HttpPost("ewallet")]
-        public async Task<IActionResult> SubmitEwalletDetails([FromQuery] string token, [FromBody] SubmitRefundEwalletDetailsBody body)
+        public async Task<IActionResult> SubmitEwalletDetails([FromBody] SubmitRefundEwalletDetailsBody body)
         {
-            await _mediator.Send(new SubmitRefundEwalletDetailsCommand(token, body.Provider, body.Number));
+            await _mediator.Send(new SubmitRefundEwalletDetailsCommand(body.Token, body.Provider, body.Number));
             return NoContent();
         }
     }
 
-    public record SubmitRefundEwalletDetailsBody(string Provider, string Number);
+    public record SubmitRefundEwalletDetailsBody(string Token, string Provider, string Number);
 }
 ```
 

@@ -93,22 +93,23 @@ command handlers call them with the incoming self-service values (keeping
 ### Password change
 
 New `IApplicationUserService.ChangePasswordAsync(userId, currentPassword, newPassword, CancellationToken)`,
-implemented in `ApplicationUserService` following the exact pattern already used by
-`ResetPasswordAsync`:
+implemented in `ApplicationUserService`:
 1. Load the user with `.Include(x => x.RefreshTokens)`
 2. `UserManager.ChangePasswordAsync(user, currentPassword, newPassword)` — verifies the
    current password internally; on failure, throw `BusinessRuleBrokenException` with the
    joined `IdentityResult.Errors`
-3. `user.RevokeAllRefreshTokens(utcNow)` — every other session is logged out, a
-   deliberate security default on password change
-4. Issue a fresh access token (`ITokenService.GenerateAccessToken`) + refresh token for
-   *this* session, via the same `_context.Add(newRefreshToken)` +
-   `_userManager.UpdateAsync(user)` sequence `ResetPasswordAsync` already uses (the
-   comment there explains why the explicit `_context.Add` is required — `UpdateAsync`'s
-   internal `Context.Update(user)` would otherwise mis-track the new `RefreshToken` as
-   `Modified` instead of `Added`, since its Id is a client-generated Guid)
-5. Return the same `PasswordResetResult(UserId, Email, FullName, AccessToken, RefreshToken)`
-   record type `ResetPasswordAsync` already returns — no new result shape needed
+3. `user.RevokeAllRefreshTokens(utcNow)`, `_userManager.UpdateAsync(user)` — **every
+   session is logged out, including the one that just changed the password.**
+
+**Revised from the original draft of this section** (caught during implementation
+planning): reissuing a fresh access token for the *current* session, the way
+`ResetPasswordAsync` does, needs the session's `Slug` and `TenantMemberId` to build a
+faithful `TokenDescriptor` — and `IUserContextService` doesn't expose either, nor does
+anything else reachable from the Application layer today. Rather than growing
+`IUserContextService`'s surface for this one call site, `ChangeMyPasswordCommand` simply
+does a full logout on password change (standard, secure default — "changing your
+password signs you out everywhere"). It returns no tokens; the frontend treats a
+successful call as requiring re-login, the same as any other session expiry.
 
 ### Photo storage
 
@@ -149,7 +150,7 @@ a tenant), `AccountController` must also serve SuperAdmin, who belongs to no ten
 | `PUT /api/account/me` | `UpdateMyProfileCommand(FirstName, LastName, PhoneNumber) : ICommand` | Updates `ApplicationUser` via `IApplicationUserService.UpdateProfileAsync`; if the caller has a `TenantMember` in the current tenant, also calls `TenantMember.UpdateProfile(...)`. `CustomJobTitle`/`Role` untouched |
 | `POST /api/account/me/photo` (multipart/form-data) | `UpdateMyProfilePhotoCommand(Stream, ContentType, Extension) : ICommand<string>` | Controller validates content-type (`image/jpeg`, `image/png`, `image/webp`) and size (≤5MB) before dispatch; handler saves via `IFileStorageService`, updates `ApplicationUser.PhotoUrl`, syncs `TenantMember.UpdatePhoto` if applicable, deletes the old file best-effort. Returns the new URL |
 | `DELETE /api/account/me/photo` | `RemoveMyProfilePhotoCommand : ICommand` | Clears `PhotoUrl` on both records, deletes the file best-effort |
-| `POST /api/account/me/change-password` | `ChangeMyPasswordCommand(CurrentPassword, NewPassword, ConfirmPassword) : ICommand<PasswordResetResult>` | See "Password change" above |
+| `POST /api/account/me/change-password` | `ChangeMyPasswordCommand(CurrentPassword, NewPassword, ConfirmPassword) : ICommand` | See "Password change" above — no tokens returned, every session (including the caller's) is logged out |
 
 **New `IApplicationUserService` methods** (implemented in `ApplicationUserService` via
 `UserManager`, never raw `DbContext`, per existing convention): `UpdateProfileAsync`,
@@ -192,9 +193,10 @@ refactor:
   - `uploadMyProfilePhoto(file: File): Promise<string>` — builds `FormData`, posts
     multipart
   - `removeMyProfilePhoto(): Promise<void>`
-  - `changeMyPassword(values: IChangePasswordValues): Promise<void>` — calls
-    `setAccessToken(...)` from `authClient` on success, mirroring `resetPassword`'s
-    existing token-rotation handling in `authService.ts`
+  - `changeMyPassword(values: IChangePasswordValues): Promise<void>` — on success, the
+    caller's session is revoked server-side same as everyone else's; the caller (outside
+    this spec's scope) is expected to treat the resolved promise as "log out now," the
+    same handling as any other session-expiry path
 
 **Deliberately untouched**: `IUser.ts`, `AuthContext`, and the JWT/`TokenDescriptor`.
 Avatars do not belong in the JWT — they would go stale between token refreshes and
@@ -218,7 +220,7 @@ how the rest of this codebase is verified today.
 
 ## Rollout note
 
-`ChangeMyPasswordCommand` revoking all other sessions is a real, user-visible behavior
-change the first time it ships — worth a one-line mention in release notes, nothing
-more. No other rollout considerations (no data backfill, no feature flag needed — every
-new field is nullable and every new endpoint is additive).
+`ChangeMyPasswordCommand` logging the caller out along with every other session is a
+real, user-visible behavior change the first time it ships — worth a one-line mention in
+release notes, nothing more. No other rollout considerations (no data backfill, no
+feature flag needed — every new field is nullable and every new endpoint is additive).
