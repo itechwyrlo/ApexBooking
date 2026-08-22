@@ -46,6 +46,21 @@ namespace ApexBooking.Infrastructure.ExternalServices.PayMongo
                 && CryptographicOperations.FixedTimeEquals(providedSignature, expectedSignature);
         }
 
+        public bool TryGetTimestamp(string? signatureHeader, out DateTimeOffset timestamp)
+        {
+            timestamp = default;
+
+            if (string.IsNullOrWhiteSpace(signatureHeader))
+                return false;
+
+            var parts = ParseSignatureHeader(signatureHeader);
+            if (!parts.TryGetValue("t", out var raw) || !long.TryParse(raw, out var unixSeconds))
+                return false;
+
+            timestamp = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
+            return true;
+        }
+
         private static Dictionary<string, string> ParseSignatureHeader(string signatureHeader)
         {
             var result = new Dictionary<string, string>();

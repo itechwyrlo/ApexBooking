@@ -49,6 +49,14 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.InitiateBookin
             var tenantId = _tenantEntity.TenantId
                 ?? throw new BusinessRuleBrokenException("Booking transaction failed. No tenant context could be resolved for this request.");
 
+            // Acquired BEFORE any read — the collision check inside PlaceCustomerBooking below is
+            // only race-free while this lock is held for the entire critical section (this same
+            // DbContext, through to CompleteAsync). Resource key matches the exact staff+date
+            // dimension Tenant.PlaceBooking's collision predicate uses.
+            var lockResourceKey = $"booking:{tenantId.Value}:{command.StaffId}:{command.ScheduledDate:yyyyMMdd}";
+            await using var lockScope = await _unitOfWork.AcquireBookingLockAsync(
+                lockResourceKey, TimeSpan.FromSeconds(5), cancellationToken);
+
             var tenant = await _unitOfWork.TenantRepository.GetAsync(
                 predicate: t => t.TenantId == tenantId,
                 includes: [t => t.PaymentPolicy!, t => t.PaymentCredential!, t => t.BookingPolicy!,
@@ -173,8 +181,18 @@ namespace ApexBooking.Core.Application.Features.Bookings.Commands.InitiateBookin
 
             // 🌟 TRANSACTION COMMIT LINE:
             // If payment wasn't required, the BookingScheduledDomainEvent raised inside the factory
-            // is intercepted and executed completely during this Save method automatically!
+            // is intercepted and executed completely during this Save method automatically! This
+            // SaveChangesAsync call joins the lock's already-open transaction (EF Core does not open
+            // a second one while Database.CurrentTransaction is set) — it does not commit on its own.
             await _unitOfWork.CompleteAsync(cancellationToken);
+
+            // Commits the transaction the lock lives in — sp_getapplock's Transaction-owned lock
+            // releases automatically as part of this. NOTE: the PayMongo external call above (step
+            // 7, CreatePaymentSourceAsync) runs while this transaction/lock is still open — this is
+            // pre-existing ordering (CompleteAsync already ran after that call before this change)
+            // and is out of scope to restructure here; it does mean the lock's hold time includes
+            // one outbound HTTPS call when upfront payment is required.
+            await lockScope.CommitAsync(cancellationToken);
 
             // 🌟 Issue the signed QR boarding-pass token so the wizard's success screen can render it on-the-spot
             var ticketToken = _ticketTokenService.Issue(new TicketPayload(booking.BookingId, tenant.TenantId, branch.BranchId));

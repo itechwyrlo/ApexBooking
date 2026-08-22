@@ -72,6 +72,12 @@ namespace ApexBooking.Core.Domain.Entities
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
 
+        // EF Core concurrency token (SQL Server `rowversion`, DB-generated on every UPDATE) — lets
+        // ExpireStalePendingBookingsJob and a live webhook confirming payment race safely: whichever
+        // SaveChanges commits second throws DbUpdateConcurrencyException instead of silently
+        // clobbering the other's write. See BookingConfiguration for the mapping.
+        public byte[] RowVersion { get; private set; } = Array.Empty<byte>();
+
         private readonly List<IDomainEvent> _domainEvents = new();
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
         public void ClearDomainEvents() => _domainEvents.Clear();
@@ -256,6 +262,31 @@ namespace ApexBooking.Core.Domain.Entities
 
             Status = BookingStatus.Scheduled;
             UpdatedAt = DateTime.UtcNow;
+        }
+
+        // ── Stale Checkout Reclaim ──────────────────────────────────────────────
+        // Called by ExpireStalePendingBookingsJob once a PendingPayment checkout has sat unpaid
+        // past the stale-payment window. Frees the staff/date slot for the collision check in
+        // Tenant.PlaceBooking by moving this booking out of PendingPayment entirely — a live
+        // webhook landing on the same row after this point (ConfirmPayment requires
+        // Status == PendingPayment) will fail its own status guard instead of silently succeeding,
+        // and RowVersion (see BookingConfiguration) is what makes the reverse race — a webhook that
+        // wins moments before this job's SaveChanges — surface as a safe DbUpdateConcurrencyException.
+        public void ExpirePendingPayment()
+        {
+            if (Status != BookingStatus.PendingPayment)
+                throw new BusinessRuleBrokenException("Only appointments pending payment can be expired.");
+
+            Status = BookingStatus.Expired;
+            UpdatedAt = DateTime.UtcNow;
+
+            AddDomainEvent(new BookingExpiredDomainEvent(
+                TenantId: this.TenantId,
+                BookingId: this.BookingId.Value,
+                BookingReference: this.BookingReference,
+                CustomerId: this.CustomerId.Value,
+                ExpiredAt: UpdatedAt
+            ));
         }
 
         // ── Minimalist Lean Administration Domain State Machines ──────────────

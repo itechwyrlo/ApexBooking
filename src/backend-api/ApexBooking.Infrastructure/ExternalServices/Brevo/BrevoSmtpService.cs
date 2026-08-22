@@ -41,7 +41,11 @@ namespace ApexBooking.Infrastructure.ExternalServices.Brevo
         }
         public async Task SendEmailAsync(string to, string subject, string content)
         {
-            var client = _httpClientFactory.CreateClient();
+            // Named client ("Brevo", registered in InfrastructureDependencies with an explicit
+            // timeout) rather than the untyped default — a hung Brevo connection would otherwise
+            // tie up a Hangfire worker for the default HttpClient timeout (100s) before ever
+            // reaching the retry path below.
+            var client = _httpClientFactory.CreateClient("Brevo");
 
             // Set Required Headers
            client.DefaultRequestHeaders.Add("api-key", _config["BrevoSmtp:Key"]);
@@ -68,12 +72,32 @@ namespace ApexBooking.Infrastructure.ExternalServices.Brevo
 
             var stringContent = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-            var response = await client.PostAsync("https://api.brevo.com/v3/smtp/email", stringContent);
+            HttpResponseMessage response;
+            try
+            {
+                response = await client.PostAsync("https://api.brevo.com/v3/smtp/email", stringContent);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                // Network failure or client-side timeout — always worth retrying, Brevo never even
+                // saw the request.
+                throw new EmailDeliveryException($"Brevo API request failed: {ex.Message}", isTransient: true, ex);
+            }
 
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
-                throw new InvalidOperationException($"Brevo API error ({(int)response.StatusCode}): {error}");
+                var statusCode = (int)response.StatusCode;
+
+                // 429 (rate limited) and 5xx (Brevo-side outage) are worth retrying — the same
+                // request will likely succeed once the condition clears. Anything else (400 bad
+                // payload, 401 bad API key, malformed recipient, etc.) will fail identically on
+                // every retry, so it's classified as permanent — see EmailDeliveryException and
+                // OutboxRelayService, which fails those fast instead of spending the outbox
+                // message's full retry budget on something that can never succeed.
+                var isTransient = statusCode == 429 || statusCode >= 500;
+
+                throw new EmailDeliveryException($"Brevo API error ({statusCode}): {error}", isTransient);
             }
         }
     }

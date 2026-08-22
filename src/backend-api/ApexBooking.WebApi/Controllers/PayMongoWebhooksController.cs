@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ApexBooking.Core.Application.Features.Bookings.Commands.ProcessPaymentWebhook;
@@ -15,7 +15,7 @@ namespace ApexBooking.WebApi.Controllers
 {
     [ApiController]
     [Route("api/public/webhooks")]
-    [AllowAnonymous] 
+    [AllowAnonymous]
     public class PayMongoWebhooksController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -51,7 +51,7 @@ namespace ApexBooking.WebApi.Controllers
                 var resourceAttributes = payload.Data.Attributes.Data.Attributes;
 
                 // 3. Verify that the payment transaction status registers as fully "paid" before moving forward
-                if (resourceAttributes.Status.Equals("paid", System.StringComparison.OrdinalIgnoreCase))
+                if (resourceAttributes.Status.Equals("paid", StringComparison.OrdinalIgnoreCase))
                 {
                     // Raw body + signature header travel down to the handler, which verifies them
                     // against the tenant's own webhook secret before trusting anything above.
@@ -61,19 +61,30 @@ namespace ApexBooking.WebApi.Controllers
                     // id, e.g. "link_..." — confirmed via sandbox webhook capture 2026-08-11).
                     var payment = resourceAttributes.Payments.FirstOrDefault();
                     var payMongoPaymentId = payment?.Data.Id;
-                    await _mediator.Send(new ProcessPaymentWebhookCommand(resourceAttributes.Remarks, payMongoPaymentId, jsonText, signatureHeader));
+                    var paidAmountInCentavos = payment?.Data.Attributes.AmountInCentavos;
+                    await _mediator.Send(new ProcessPaymentWebhookCommand(
+                        resourceAttributes.Remarks, payMongoPaymentId, jsonText, signatureHeader, payload.Data.Id, paidAmountInCentavos));
                 }
 
                 // 4. Return an immediate standard HTTP 200 OK success response back to PayMongo's servers.
                 // This signals that your backend safely captured the event, preventing PayMongo from continually resending the alert.
                 return Ok();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to process PayMongo webhook callback. Raw payload: {RawPayload}", jsonText);
+                // DPA: never log the raw webhook payload (or any header) — it can carry
+                // customer-identifying and payment-adjacent data. A SHA-256 hash plus a fresh
+                // correlation id is enough to match this failure against PayMongo's own delivery
+                // logs or a support ticket without persisting the content itself.
+                var correlationId = Guid.NewGuid();
+                var bodyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(jsonText)));
+
+                _logger.LogError(ex,
+                    "Failed to process PayMongo webhook callback. CorrelationId: {CorrelationId}, BodySha256: {BodyHash}",
+                    correlationId, bodyHash);
 
                 // Fail safely: Deliver an HTTP 400 bad request indicator to trigger an automatic gateway fallback loop
-                return BadRequest("Failed to process payment callback event cleanly.");
+                return BadRequest($"Failed to process payment callback event cleanly. Reference: {correlationId}");
             }
         }
     }

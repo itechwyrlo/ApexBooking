@@ -135,3 +135,14 @@ public record BookingRefundRejectedDomainEvent(
     string RejectionReason,
     DateTime OccurredAt
 ) : IReliableDomainEvent;
+
+// Raised when a PendingPayment checkout goes stale and is reclaimed by
+// ExpireStalePendingBookingsJob (Booking.ExpirePendingPayment) — drives a customer-facing notice
+// that their slot was released. Reliable: the notice is an external email call.
+public record BookingExpiredDomainEvent(
+    TenantId TenantId,
+    Guid BookingId,
+    string BookingReference,
+    Guid CustomerId,
+    DateTime ExpiredAt
+) : IReliableDomainEvent;

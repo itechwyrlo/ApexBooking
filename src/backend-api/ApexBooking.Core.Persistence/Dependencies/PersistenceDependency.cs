@@ -33,6 +33,7 @@ namespace ApexBooking.Core.Persistence.Dependencies
             services.AddScoped<IPlatformQueries, Services.PlatformQueries>();
             services.AddScoped<IOutboxStore, Services.OutboxStore>();
             services.AddScoped<IRefundRequestStore, Services.RefundRequestStore>();
+            services.AddScoped<IProcessedPaymentEventStore, Services.ProcessedPaymentEventStore>();
 
             services.Configure<SuperAdminSeedOptions>(configuration.GetSection("SuperAdminSeed"));
 

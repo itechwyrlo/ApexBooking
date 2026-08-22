@@ -3,6 +3,7 @@ using ApexBooking.Core.Application.Common.Outbox;
 using ApexBooking.Core.Domain.Entities;
 using ApexBooking.Core.Domain.Events;
 using ApexBooking.Core.Domain.Services;
+using ApexBooking.Core.Domain.Services.EmailNotification;
 using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
@@ -17,7 +18,7 @@ public class OutboxRelayServiceTests
         private readonly HashSet<Guid> _alreadyClaimed = new();
 
         public List<Guid> Processed { get; } = new();
-        public List<(Guid Id, string Error)> Failed { get; } = new();
+        public List<(Guid Id, string Error, bool IsTransient)> Failed { get; } = new();
 
         public void Seed(OutboxMessage message) => _messages[message.Id] = message;
         public void SimulateAlreadyClaimedBySomeoneElse(Guid id) => _alreadyClaimed.Add(id);
@@ -39,9 +40,9 @@ public class OutboxRelayServiceTests
             return Task.CompletedTask;
         }
 
-        public Task MarkFailedAsync(Guid id, string error, CancellationToken cancellationToken = default)
+        public Task MarkFailedAsync(Guid id, string error, bool isTransient = true, CancellationToken cancellationToken = default)
         {
-            Failed.Add((id, error));
+            Failed.Add((id, error, isTransient));
             return Task.CompletedTask;
         }
 
@@ -68,8 +69,15 @@ public class OutboxRelayServiceTests
         public List<object> Published { get; } = new();
         public bool ThrowOnPublish { get; set; }
 
+        // Lets a test simulate a specific handler failure (e.g. EmailDeliveryException with a
+        // known IsTransient value) rather than always the generic "boom" — ThrowOnPublish stays
+        // for the existing tests that don't care about the exception's type.
+        public Exception? ExceptionToThrow { get; set; }
+
         public Task Publish(object notification, CancellationToken cancellationToken = default)
         {
+            if (ExceptionToThrow is not null)
+                throw ExceptionToThrow;
             if (ThrowOnPublish)
                 throw new InvalidOperationException("boom");
 
@@ -80,6 +88,8 @@ public class OutboxRelayServiceTests
         public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
             where TNotification : INotification
         {
+            if (ExceptionToThrow is not null)
+                throw ExceptionToThrow;
             if (ThrowOnPublish)
                 throw new InvalidOperationException("boom");
 
@@ -152,6 +162,35 @@ public class OutboxRelayServiceTests
         var failure = Assert.Single(store.Failed);
         Assert.Equal(message.Id, failure.Id);
         Assert.Contains("boom", failure.Error);
+        Assert.True(failure.IsTransient); // an unclassified exception defaults to retryable
+    }
+
+    [Fact]
+    public async Task A_transient_EmailDeliveryException_is_marked_failed_as_retryable()
+    {
+        var store = new FakeOutboxStore();
+        var publisher = new SpyPublisher { ExceptionToThrow = new EmailDeliveryException("Brevo 503", isTransient: true) };
+        var relay = new OutboxRelayService(store, publisher, NullLogger<OutboxRelayService>.Instance);
+        var (message, _) = SeedTenantCreatedMessage(store);
+
+        await relay.ReplayAsync(new[] { message.Id });
+
+        var failure = Assert.Single(store.Failed);
+        Assert.True(failure.IsTransient);
+    }
+
+    [Fact]
+    public async Task A_permanent_EmailDeliveryException_is_marked_failed_without_retry_budget()
+    {
+        var store = new FakeOutboxStore();
+        var publisher = new SpyPublisher { ExceptionToThrow = new EmailDeliveryException("malformed recipient", isTransient: false) };
+        var relay = new OutboxRelayService(store, publisher, NullLogger<OutboxRelayService>.Instance);
+        var (message, _) = SeedTenantCreatedMessage(store);
+
+        await relay.ReplayAsync(new[] { message.Id });
+
+        var failure = Assert.Single(store.Failed);
+        Assert.False(failure.IsTransient);
     }
 
     [Fact]

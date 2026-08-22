@@ -142,6 +142,11 @@ namespace ApexBooking.Core.Persistence.Mappings
                 .HasConversion(id => id != null ? id.Value : (Guid?)null, v => v != null ? new BookingId(v.Value) : null)
                 .HasColumnName("rescheduled_from_booking_id");
 
+            // 5b. Concurrency token — SQL Server `rowversion`, auto-generated, never set by app code.
+            builder.Property(b => b.RowVersion)
+                .HasColumnName("row_version")
+                .IsRowVersion();
+
             // 6. Audit & Ignores
             builder.Property(b => b.CreatedAt).HasColumnName("created_at").IsRequired();
             builder.Property(b => b.UpdatedAt).HasColumnName("updated_at").IsRequired();

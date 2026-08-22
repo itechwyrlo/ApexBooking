@@ -434,7 +434,13 @@ namespace ApexBooking.Core.Domain.Entities
             bool collidesWithExistingBooking = _bookings.Any(b =>
                 b.StaffId == staffId
                 && b.ScheduledDate == date
-                && b.Status == BookingStatus.Scheduled
+                // PendingPayment must block the slot too — otherwise two customers can both reach
+                // checkout for the same staff/time before either one pays (see
+                // 2026-08-18-payment-booking-security-hardening-design.md, Module 2). The
+                // InitiateBookingHandler-held sp_getapplock (IUnitOfWork.AcquireBookingLockAsync)
+                // is what makes this check race-free against a second concurrent request; this
+                // predicate is what makes it correct once only one request is in here at a time.
+                && (b.Status == BookingStatus.Scheduled || b.Status == BookingStatus.PendingPayment)
                 && b.ScheduledStartTime < newBlockEnd
                 && b.ScheduledEndTime > startTime);
             if (collidesWithExistingBooking)
