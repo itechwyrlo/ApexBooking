@@ -13,6 +13,10 @@ namespace ApexBooking.Core.Domain.Enums
         NoShow = 4,
 
         // The appointment was called off ahead of time by the user or administrator
-        Cancelled = 5
+        Cancelled = 5,
+
+        // A PendingPayment checkout was abandoned past the stale-payment window and the slot was
+        // reclaimed by ExpireStalePendingBookingsJob — see Booking.ExpirePendingPayment().
+        Expired = 6
     }
 }

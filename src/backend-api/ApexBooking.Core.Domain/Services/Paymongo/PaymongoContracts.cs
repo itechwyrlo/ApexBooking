@@ -60,6 +60,12 @@ namespace ApexBooking.Core.Domain.Services.Paymongo
 
     public class WebhookData
     {
+        // PayMongo's own Event resource id (e.g. "evt_..."), used as the idempotency ledger key
+        // (see ProcessedPaymentEvent). Distinct from WebhookResource.Id below, which is the nested
+        // Link/Payment resource's own id, not the delivery envelope's.
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
         [JsonPropertyName("attributes")]
         public WebhookAttributes Attributes { get; set; } = new();
     }
@@ -126,6 +132,15 @@ namespace ApexBooking.Core.Domain.Services.Paymongo
         // the outer WebhookAttributes.Type ("link.payment.paid", the event type).
         [JsonPropertyName("source")]
         public PaymentSource Source { get; set; } = new();
+
+        // The actually-settled amount, in centavos (PHP * 100) — same unit as
+        // LinkAttributes.AmountInCentavos. Signature verification only proves PayMongo sent this
+        // payload; it says nothing about whether the amount matches what the booking actually owes
+        // (a stale Link, a dashboard edit, or an upstream pricing bug could all produce a
+        // validly-signed "paid" event for the wrong amount). ProcessPaymentWebhookCommandHandler
+        // compares this against Booking.AmountDue before confirming payment.
+        [JsonPropertyName("amount")]
+        public long AmountInCentavos { get; set; }
     }
 
     public class PaymentSource

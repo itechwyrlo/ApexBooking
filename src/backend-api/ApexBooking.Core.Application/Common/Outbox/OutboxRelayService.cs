@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ApexBooking.Core.Application.Common.DomainEvent;
 using ApexBooking.Core.Domain.Services;
+using ApexBooking.Core.Domain.Services.EmailNotification;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -68,8 +69,15 @@ public sealed class OutboxRelayService : IOutboxRelayService
         }
         catch (Exception ex)
         {
+            // A handler that throws EmailDeliveryException.IsTransient == false (a malformed
+            // recipient, a rejected payload — something that will fail identically no matter how
+            // many times it's retried) fails the message permanently right away instead of burning
+            // its retry budget; anything else (including a plain unclassified exception) is treated
+            // as transient, matching the previous behavior.
+            var isTransient = ex is not EmailDeliveryException { IsTransient: false };
+
             _logger.LogError(ex, "Outbox message {OutboxMessageId} ({EventType}) failed to replay.", id, message.EventType);
-            await _store.MarkFailedAsync(id, ex.Message, cancellationToken).ConfigureAwait(false);
+            await _store.MarkFailedAsync(id, ex.Message, isTransient, cancellationToken).ConfigureAwait(false);
         }
     }
 }

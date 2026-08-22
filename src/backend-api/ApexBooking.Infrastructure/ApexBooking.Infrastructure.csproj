@@ -17,10 +17,15 @@
     <PackageReference Include="Hangfire.SqlServer" Version="1.8.14" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ApexBooking.Core.Domain\ApexBooking.Core.Domain.csproj" />
+    <!-- Needed for InfrastructureDependencies.cs's AddDataProtection().PersistKeysToDbContext<ApexBookingDbContext>()
+         wiring — ApexBookingDbContext (and the DataProtection.EntityFrameworkCore package it
+         implements IDataProtectionKeyContext against) both live in Core.Persistence. -->
+    <ProjectReference Include="..\ApexBooking.Core.Persistence\ApexBooking.Core.Persistence.csproj" />
   </ItemGroup>
 
 

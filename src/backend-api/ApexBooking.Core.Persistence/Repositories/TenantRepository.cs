@@ -58,6 +58,15 @@ public class TenantRepository(ApexBookingDbContext context) : GenericRepository<
             .FirstOrDefaultAsync(t => t.TenantId == tenantId, cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Tenant>> GetTenantsWithStalePendingBookingsAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default)
+    {
+        return await context.Tenants
+            .IgnoreQueryFilters()
+            .Include(t => t.Bookings)
+            .Where(t => t.Bookings.Any(b => b.Status == BookingStatus.PendingPayment && b.CreatedAt <= cutoffUtc))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Tenant?> GetForWalkInAvailabilityAsync(TenantId tenantId, CancellationToken cancellationToken = default)
     {
         return await context.Tenants

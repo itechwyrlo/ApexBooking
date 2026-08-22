@@ -72,7 +72,23 @@ app.Use(async (context, next) =>
 app.UseExceptionHandler();
 
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // The Vite build content-hashes everything under /assets (e.g. index-BTqUe2Ao.js) — a new
+        // deploy produces new filenames, so these are safe to cache forever. Everything else
+        // (index.html, sw.js, registerSW.js, manifest.webmanifest) is the opposite: it's what
+        // POINTS AT those hashed filenames, and must always be revalidated — otherwise a stale
+        // cached index.html after a deploy can reference a bundle filename the new build already
+        // deleted, breaking the app until the user hard-refreshes.
+        var isImmutableAsset = ctx.Context.Request.Path.StartsWithSegments("/assets");
+
+        ctx.Context.Response.Headers["Cache-Control"] = isImmutableAsset
+            ? "public,max-age=31536000,immutable"
+            : "no-cache";
+    }
+});
 
 app.UseRouting();
 

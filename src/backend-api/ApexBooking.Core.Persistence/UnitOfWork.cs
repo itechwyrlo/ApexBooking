@@ -4,11 +4,15 @@ using ApexBooking.Core.Domain.Events;
 using ApexBooking.Core.Domain.Interfaces;
 using ApexBooking.Core.Domain.Repositories;
 using ApexBooking.Core.Domain.Services;
+using ApexBooking.Core.Persistence.Concurrency;
 using ApexBooking.Core.Persistence.Data;
 using ApexBooking.Core.Persistence.Identity;
 using ApexBooking.Core.Persistence.Repositories;
+using ApexBooking.SharedKernel.Exceptions;
 using ApexBooking.SharedKernel.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ApexBooking.Core.Persistence
@@ -130,6 +134,57 @@ namespace ApexBooking.Core.Persistence
                     "IOutboxTrigger.NotifyAsync failed for {Count} outbox message(s); falling back to the recurring sweep.",
                     outboxMessageIds.Count);
             }
+        }
+
+        public async Task<bool> TryCompleteAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await CompleteAsync(cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            {
+                return false;
+            }
+        }
+
+        // SQL Server error 2601 = duplicate key on a unique index, 2627 = duplicate key on a
+        // unique/primary key constraint — both mean "a row with this key already exists", the only
+        // case TryCompleteAsync's caller should treat as benign rather than a real failure.
+        private static bool IsUniqueConstraintViolation(DbUpdateException ex) =>
+            ex.InnerException is SqlException { Number: 2601 or 2627 };
+
+        public async Task<IBookingLockScope> AcquireBookingLockAsync(string resourceKey, TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            try
+            {
+                // sp_getapplock returns via RETURN (0/1 success, <0 failure — timeout, deadlock
+                // victim, or parameter error) rather than a result set, so the failure path is
+                // surfaced as a raised error inside the same batch rather than an inspected return
+                // value. LockOwner='Transaction' ties the lock's lifetime to this transaction: it
+                // releases automatically on commit OR rollback, with no separate release call needed.
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $@"DECLARE @lockResult int;
+                       EXEC @lockResult = sp_getapplock
+                           @Resource = {resourceKey},
+                           @LockMode = 'Exclusive',
+                           @LockOwner = 'Transaction',
+                           @LockTimeout = {(int)timeout.TotalMilliseconds};
+                       IF @lockResult < 0
+                           THROW 51000, 'Could not acquire booking slot lock.', 1;",
+                    cancellationToken);
+            }
+            catch (SqlException)
+            {
+                await transaction.RollbackAsync(CancellationToken.None);
+                await transaction.DisposeAsync();
+                throw new BusinessRuleBrokenException("This time slot is currently being booked by someone else. Please try again.");
+            }
+
+            return new BookingLockScope(transaction);
         }
 
         public ValueTask DisposeAsync()

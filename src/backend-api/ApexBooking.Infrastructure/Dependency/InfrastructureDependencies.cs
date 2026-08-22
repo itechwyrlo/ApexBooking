@@ -10,9 +10,11 @@ using ApexBooking.Infrastructure.ExternalServices.AuthNotificationService;
 using ApexBooking.Infrastructure.ExternalServices.Brevo;
 using ApexBooking.Infrastructure.ExternalServices.Context;
 using ApexBooking.Infrastructure.ExternalServices.Cookie;
+using ApexBooking.Infrastructure.ExternalServices.DataProtection;
 using ApexBooking.Infrastructure.ExternalServices.Realtime;
 using ApexBooking.Infrastructure.Hubs;
 using ApexBooking.SharedKernel.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +42,18 @@ namespace ApexBooking.Infrastructure.Dependency
         public static IServiceCollection AddInfrastructureService(this IServiceCollection service, IConfiguration config)
         {
             service.AddHttpContextAccessor();
+
+            // Persists the Data Protection key ring into SQL Server via ApexBookingDbContext,
+            // instead of the default local-disk key store — required for correctness once this app
+            // runs on more than one instance, and for TenantPaymentCredential encryption (see
+            // ISecretProtector) to survive a redeploy. AddIdentity() (AuthenticationExtensions.cs)
+            // already implicitly calls AddDataProtection() for its own token providers; this call
+            // reconfigures that same registration's key-storage mechanism — AddDataProtection() is
+            // safe to call more than once.
+            service.AddDataProtection()
+                .PersistKeysToDbContext<ApexBooking.Core.Persistence.Data.ApexBookingDbContext>()
+                .SetApplicationName("ApexBooking");
+
             service.AddScoped<IUserContextService, UserContextService>();
             service.AddScoped<ITenantEntity, HttpContextTenantIdProvider>();
             service.AddScoped<ITenantResolver, TenantResolver>();
@@ -52,6 +66,9 @@ namespace ApexBooking.Infrastructure.Dependency
             service.AddHttpClient<IPayMongoService, PayMongoService>();
             service.AddSingleton<IPayMongoWebhookSignatureVerifier, PayMongoWebhookSignatureVerifier>();
             service.AddScoped<INotificationService, BrevoSmtpService>();
+            // Named/timed client for BrevoSmtpService — see its doc comment for why the untyped
+            // default (100s timeout) is a problem for a background worker.
+            service.AddHttpClient("Brevo", client => client.Timeout = TimeSpan.FromSeconds(15));
             service.AddScoped<IAuthNotificationService, AuthNotificationService>();
             service.AddTransient<IBookingNotificationService, BookingNotificationService>();
             service.AddTransient<ITenantLifecycleNotificationService, TenantLifecycleNotificationService>();
@@ -59,6 +76,7 @@ namespace ApexBooking.Infrastructure.Dependency
             service.AddScoped<IFileStorageService, LocalDiskFileStorageService>();
             service.AddScoped<IAppUrlService, AppUrlService>();
             service.AddSingleton<ITicketTokenService, HmacTicketTokenService>();
+            service.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
             service.AddSingleton<IQrCodeGenerator, QrCoderQrCodeGenerator>();
             service.AddSingleton<ICancellationTokenService, HmacCancellationTokenService>();
 

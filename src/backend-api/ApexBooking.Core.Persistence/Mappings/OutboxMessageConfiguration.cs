@@ -46,8 +46,12 @@ public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage
             .HasColumnName("last_error")
             .HasMaxLength(2000);
 
+        builder.Property(m => m.NextAttemptAtUtc)
+            .HasColumnName("next_attempt_at_utc");
+
         // Both entry points (immediate trigger's TryClaimAsync-by-id, and the recurring sweep's
-        // GetPendingIdsAsync) filter on Status; the sweep also orders by OccurredAtUtc.
+        // GetPendingIdsAsync) filter on Status; the sweep also orders by OccurredAtUtc and now
+        // filters on NextAttemptAtUtc for backed-off retries (see OutboxMessage.MarkFailed).
         builder.HasIndex(m => new { m.Status, m.OccurredAtUtc });
     }
 }

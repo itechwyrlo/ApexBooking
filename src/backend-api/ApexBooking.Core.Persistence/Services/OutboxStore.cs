@@ -21,8 +21,11 @@ public sealed class OutboxStore : IOutboxStore
 
     public async Task<IReadOnlyList<Guid>> GetPendingIdsAsync(int batchSize, CancellationToken cancellationToken = default)
     {
+        var now = DateTime.UtcNow;
+
         return await _context.OutboxMessages
-            .Where(m => m.Status == OutboxMessageStatus.Pending)
+            .Where(m => m.Status == OutboxMessageStatus.Pending
+                && (m.NextAttemptAtUtc == null || m.NextAttemptAtUtc <= now))
             .OrderBy(m => m.OccurredAtUtc)
             .Take(batchSize)
             .Select(m => m.Id)
@@ -56,13 +59,17 @@ public sealed class OutboxStore : IOutboxStore
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task MarkFailedAsync(Guid id, string error, CancellationToken cancellationToken = default)
+    public async Task MarkFailedAsync(Guid id, string error, bool isTransient = true, CancellationToken cancellationToken = default)
     {
         var message = await _context.OutboxMessages.FindAsync([id], cancellationToken);
         if (message is null)
             return;
 
-        message.MarkFailed(error);
+        if (isTransient)
+            message.MarkFailed(error);
+        else
+            message.MarkFailedPermanently(error);
+
         await _context.SaveChangesAsync(cancellationToken);
     }
 

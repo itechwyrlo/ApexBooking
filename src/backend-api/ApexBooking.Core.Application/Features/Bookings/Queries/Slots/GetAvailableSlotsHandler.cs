@@ -84,6 +84,8 @@ namespace ApexBooking.Core.Application.Features.Bookings.Queries.Slots
                 ?? tenant.BookingPolicy?.MinAdvanceBookingHours
                 ?? 0;
 
+            var nowBranchLocal = BranchTimeZoneConverter.ToBranchLocalTime(DateTime.UtcNow, branch.TimeZoneId);
+
             // 5. Build the immutable request bundle object
             var requestPayload = new SlotGenerationRequest(
                 TargetDate: query.TargetDate,
@@ -94,7 +96,7 @@ namespace ApexBooking.Core.Application.Features.Bookings.Queries.Slots
                 StaffBreaks: staff.Breaks,
                 ExistingBookings: dailyBookings,
                 MinAdvanceBookingHours: minAdvanceBookingHours,
-                NowBranchLocal: BranchTimeZoneConverter.ToBranchLocalTime(DateTime.UtcNow, branch.TimeZoneId),
+                NowBranchLocal: nowBranchLocal,
                 StaffIsOnApprovedTimeOff: staff.HasApprovedTimeOff(query.TargetDate)
             );
 
@@ -107,7 +109,9 @@ namespace ApexBooking.Core.Application.Features.Bookings.Queries.Slots
                 RawTime: time
             )).ToList();
 
-            var unavailableReason = BuildUnavailableReason(generationResult.Reason, branch, staff, targetDay, minAdvanceBookingHours);
+            var unavailableReason = BuildUnavailableReason(
+                generationResult.Reason, branch, staff, targetDay, minAdvanceBookingHours,
+                query.TargetDate, nowBranchLocal, businessHours, staffHours);
 
             return new AvailableSlotsResult(slotResponses, unavailableReason);
         }
@@ -119,18 +123,43 @@ namespace ApexBooking.Core.Application.Features.Bookings.Queries.Slots
             Branch branch,
             TenantMember staff,
             DayOfWeek targetDay,
-            int minAdvanceBookingHours)
+            int minAdvanceBookingHours,
+            DateOnly targetDate,
+            DateTime nowBranchLocal,
+            DayScheduleEntry businessHours,
+            DayScheduleEntry staffHours)
         {
-            return reason switch
+            if (reason != SlotUnavailabilityReason.TooSoonToBook)
             {
-                SlotUnavailabilityReason.None => null,
-                SlotUnavailabilityReason.BranchClosed => $"{branch.BranchName} is closed on {targetDay}s.",
-                SlotUnavailabilityReason.StaffNotScheduled => $"{staff.FirstName} doesn't work on {targetDay}s.",
-                SlotUnavailabilityReason.StaffOnApprovedTimeOff => $"{staff.FirstName} is on approved time off this day.",
-                SlotUnavailabilityReason.TooSoonToBook => $"This service requires at least {minAdvanceBookingHours} hour(s) advance notice.",
-                SlotUnavailabilityReason.FullyBooked => "All appointments are booked for this day. Try another date.",
-                _ => null
-            };
+                return reason switch
+                {
+                    SlotUnavailabilityReason.None => null,
+                    SlotUnavailabilityReason.BranchClosed => $"{branch.BranchName} is closed on {targetDay}s.",
+                    SlotUnavailabilityReason.StaffNotScheduled => $"{staff.FirstName} doesn't work on {targetDay}s.",
+                    SlotUnavailabilityReason.StaffOnApprovedTimeOff => $"{staff.FirstName} is on approved time off this day.",
+                    SlotUnavailabilityReason.FullyBooked => "All appointments are booked for this day. Try another date.",
+                    _ => null
+                };
+            }
+
+            // TooSoonToBook is ambiguous on its own: zero slots today can mean either "it's
+            // genuinely still too early relative to the advance-notice policy" or "the wall clock
+            // has simply moved past today's working window already." A customer picking today's
+            // date deserves to know which — otherwise a 0-hour policy reads as "book anytime" while
+            // the page shows nothing. Only today's date carries this ambiguity: a future date with
+            // no slots is unambiguously the advance-notice policy at work.
+            bool isTargetToday = targetDate == DateOnly.FromDateTime(nowBranchLocal);
+            if (!isTargetToday)
+                return $"This service requires at least {minAdvanceBookingHours} hour(s) advance notice.";
+
+            TimeOnly effectiveStart = staffHours.StartTime > businessHours.StartTime ? staffHours.StartTime : businessHours.StartTime;
+            TimeOnly effectiveEnd = staffHours.EndTime < businessHours.EndTime ? staffHours.EndTime : businessHours.EndTime;
+            string window = $"{DateTime.Today.Add(effectiveStart.ToTimeSpan()):h:mm tt}–{DateTime.Today.Add(effectiveEnd.ToTimeSpan()):h:mm tt}";
+            string nowText = $"{DateTime.Today.Add(nowBranchLocal.TimeOfDay):h:mm tt}";
+
+            return minAdvanceBookingHours > 0
+                ? $"It's currently {nowText}. {staff.FirstName} is available {window} today, and this service needs at least {minAdvanceBookingHours} hour(s) advance notice — no time remains today. Please choose another date."
+                : $"It's currently {nowText}, and today's booking window ({window}) has already ended. Please choose another date.";
         }
     }
 }

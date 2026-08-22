@@ -31,6 +31,13 @@ public class OutboxMessage
     public int RetryCount { get; private set; }
     public string? LastError { get; private set; }
 
+    // Earliest moment this message is eligible for another attempt — null means "eligible now"
+    // (the initial Pending state, and any state other than a backed-off Pending). MarkFailed sets
+    // this to an exponentially-growing delay so a message that just failed doesn't get retried on
+    // literally the next sweep tick a few seconds later; OutboxStore.GetPendingIdsAsync filters on
+    // it. See MarkFailed's doc comment for the schedule.
+    public DateTime? NextAttemptAtUtc { get; private set; }
+
     protected OutboxMessage() { }
 
     private OutboxMessage(string eventType, string payload, DateTime occurredAtUtc)
@@ -59,17 +66,42 @@ public class OutboxMessage
         Status = OutboxMessageStatus.Processed;
         ProcessedAtUtc = DateTime.UtcNow;
         LastError = null;
+        NextAttemptAtUtc = null;
     }
 
     // Reverts Processing -> Pending for another attempt, unless MaxRetryCount is now exhausted, in
     // which case it lands in the terminal Failed state for manual retry (SuperAdmin failed-jobs view).
+    // Each retry backs off exponentially from the recurring sweep's own polling interval (1m, 2m,
+    // 4m, 8m for RetryCount 1-4) instead of being retried on the very next ~1-minute sweep tick —
+    // a transient outage (e.g. Brevo returning 503/429) that outlasts a couple of minutes no longer
+    // burns the entire retry budget inside the first 5 minutes.
     public void MarkFailed(string error)
     {
         RetryCount++;
         LastError = error;
-        Status = RetryCount >= MaxRetryCount
-            ? OutboxMessageStatus.Failed
-            : OutboxMessageStatus.Pending;
+
+        if (RetryCount >= MaxRetryCount)
+        {
+            Status = OutboxMessageStatus.Failed;
+            NextAttemptAtUtc = null;
+            return;
+        }
+
+        Status = OutboxMessageStatus.Pending;
+        NextAttemptAtUtc = DateTime.UtcNow.AddMinutes(Math.Pow(2, RetryCount - 1));
+    }
+
+    // For a failure classified as non-transient (e.g. INotificationService's
+    // EmailDeliveryException.IsTransient == false — a malformed recipient, a rejected payload —
+    // something that will fail identically no matter how many times it's retried). Skips the
+    // retry budget entirely and goes straight to the terminal Failed state, instead of consuming
+    // MaxRetryCount attempts (and their backoff delays) pointlessly before a human ever sees it.
+    public void MarkFailedPermanently(string error)
+    {
+        RetryCount++;
+        LastError = error;
+        Status = OutboxMessageStatus.Failed;
+        NextAttemptAtUtc = null;
     }
 
     // SuperAdmin-triggered manual retry. Resets RetryCount to 0 — without that, a row already at
@@ -82,6 +114,7 @@ public class OutboxMessage
 
         Status = OutboxMessageStatus.Pending;
         RetryCount = 0;
+        NextAttemptAtUtc = null;
         return true;
     }
 }

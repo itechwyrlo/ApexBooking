@@ -17,6 +17,14 @@ public interface ITenantRepository : IGenericRepository<Tenant>
     // anonymous PayMongo webhook handler, which has no ambient tenant context to start from.
     Task<Tenant?> GetByBookingIdAsync(Guid bookingId, CancellationToken cancellationToken = default);
 
+    // Cross-tenant sweep query for ExpireStalePendingBookingsJob — same "Booking is a Tenant
+    // child, escape-hatch query" rationale as GetByBookingIdAsync above, but returning every
+    // matching tenant (with their full Bookings collection loaded) instead of a single one.
+    // Runs with no ambient tenant (background job), so the global query filter already passes
+    // everything through, but IgnoreQueryFilters() states that intent explicitly rather than
+    // relying on it incidentally.
+    Task<IReadOnlyCollection<Tenant>> GetTenantsWithStalePendingBookingsAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default);
+
     // The generic repository's Include() only supports one navigation level deep, so it can't
     // express Services -> ServiceProviders (ThenInclude). Service catalog staff-assignment needs
     // that nested collection populated, hence this purpose-built query — same escape hatch already

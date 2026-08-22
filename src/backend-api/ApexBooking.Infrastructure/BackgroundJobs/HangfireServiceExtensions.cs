@@ -17,6 +17,7 @@ public static class HangfireServiceExtensions
 {
     private const string OutboxRelaySweepJobId = "outbox-relay-sweep";
     private const string TrialExpirySweepJobId = "trial-expiry-sweep";
+    private const string ExpireStalePendingBookingsJobId = "expire-stale-pending-bookings";
 
     public static IServiceCollection AddHangfireBackgroundJobs(this IServiceCollection services, IConfiguration config)
     {
@@ -39,6 +40,7 @@ public static class HangfireServiceExtensions
         services.AddScoped<IOutboxTrigger, HangfireOutboxTrigger>();
         services.AddScoped<OutboxRelayJob>();
         services.AddScoped<TrialExpiryJob>();
+        services.AddScoped<ExpireStalePendingBookingsJob>();
 
         return services;
     }
@@ -64,6 +66,14 @@ public static class HangfireServiceExtensions
             TrialExpirySweepJobId,
             job => job.Run(JobCancellationToken.Null),
             Cron.Hourly(),
+            new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+        // Every 5 minutes: frequent enough to reclaim a 30-minute-stale slot promptly without
+        // being wasteful. Adjust if a different cadence is preferred.
+        RecurringJob.AddOrUpdate<ExpireStalePendingBookingsJob>(
+            ExpireStalePendingBookingsJobId,
+            job => job.Run(JobCancellationToken.Null),
+            Cron.MinuteInterval(5),
             new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
         return app;

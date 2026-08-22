@@ -20,7 +20,9 @@ public interface IOutboxStore
 
     Task MarkProcessedAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task MarkFailedAsync(Guid id, string error, CancellationToken cancellationToken = default);
+    // isTransient=false skips the message's retry budget and fails it permanently right away — see
+    // OutboxMessage.MarkFailedPermanently and EmailDeliveryException.IsTransient.
+    Task MarkFailedAsync(Guid id, string error, bool isTransient = true, CancellationToken cancellationToken = default);
 
     // SuperAdmin failed-jobs view.
     Task<IReadOnlyList<OutboxMessage>> GetFailedAsync(CancellationToken cancellationToken = default);

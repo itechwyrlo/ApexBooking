@@ -1,7 +1,10 @@
 using System.Linq.Expressions;
 using ApexBooking.Core.Domain.Entities;
+using ApexBooking.Core.Domain.Services;
 using ApexBooking.Core.Persistence.Identity;
+using ApexBooking.Core.Persistence.Mappings;
 using ApexBooking.SharedKernel.Services;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +13,11 @@ using static ApexBooking.SharedKernel.ValueObject.ValueObjectTenantIdentifier;
 
 namespace ApexBooking.Core.Persistence.Data
 {
-    public class ApexBookingDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
+    public class ApexBookingDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>, IDataProtectionKeyContext
     {
         private readonly ITenantEntity _tenantEntity;
         private readonly ILogger<ApexBookingDbContext> _logger;
+        private readonly ISecretProtector _secretProtector;
 
         private TenantId? CurrentTenantId => _tenantEntity.TenantId;
         // Platform entities
@@ -56,10 +60,17 @@ namespace ApexBooking.Core.Persistence.Data
 
         public DbSet<RefundRequest> RefundRequests => Set<RefundRequest>();
 
-        public ApexBookingDbContext(DbContextOptions<ApexBookingDbContext> options, ITenantEntity tenantEntity)
+        // Idempotency ledger for PayMongo webhook deliveries — see ProcessedPaymentEvent.
+        public DbSet<ProcessedPaymentEvent> ProcessedPaymentEvents => Set<ProcessedPaymentEvent>();
+
+        // Data Protection key ring (ISecretProtector's backing store) — see IDataProtectionKeyContext.
+        public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+
+        public ApexBookingDbContext(DbContextOptions<ApexBookingDbContext> options, ITenantEntity tenantEntity, ISecretProtector secretProtector)
            : base(options)
         {
             _tenantEntity = tenantEntity;
+            _secretProtector = secretProtector;
         }
 
 
@@ -106,7 +117,13 @@ namespace ApexBooking.Core.Persistence.Data
                 entity.ToTable("role_claims");
             });
 
-            builder.ApplyConfigurationsFromAssembly(typeof(ApexBookingDbContext).Assembly);
+            // TenantPaymentCredentialConfiguration needs a constructor-injected ISecretProtector,
+            // which the parameterless-constructor assembly scan below can't provide — excluded from
+            // the scan and applied explicitly instead. Every other IEntityTypeConfiguration<> in
+            // this assembly is unaffected.
+            builder.ApplyConfigurationsFromAssembly(typeof(ApexBookingDbContext).Assembly,
+                t => t != typeof(TenantPaymentCredentialConfiguration));
+            builder.ApplyConfiguration(new TenantPaymentCredentialConfiguration(_secretProtector));
 
             ApplyGlobalFilters(builder);
 
